@@ -8,3 +8,8 @@ Here's some of its features:
 - Actually lets you remap your keyboard controls! No more icky AspyrConfig! Yay!
 - Update your config, the mod itself, and create a shortcut to the game all in the same window.
 - And more features will be coming soon!
+
+Things left to do:
+- Merge all config loading into a single function.
+- Finish adding options to the Graphics and Debug Settings tabs.
+- Write the save configuration system fully. AspyrConfig saving for keyboard mapping strings is working!
