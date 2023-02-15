@@ -18,11 +18,13 @@ from PIL import Image, ImageTk
 import os as OS
 import winshell as WS
 from win32com.client import Dispatch
+from win32api import GetSystemMetrics
 import requests as REQ
 import zipfile as ZIP
 import configparser as CF
 from bs4 import BeautifulSoup
 import pyaudio as PA
+from screeninfo import get_monitors
 
 # Version of the program.
 VERSION = "1.0"
@@ -84,6 +86,8 @@ def verify_files() -> None:
 # Create WTDE shortcut on desktop.
 def wtde_create_lnk() -> bool:
     """ Makes a shortcut to WTDE on the desktop. """
+    oldDir = OS.getcwd()
+    OS.chdir(OWD)
     config.read("Updater.ini")
 
     wtdeDir = config.get("Updater", "GameDirectory")
@@ -91,6 +95,9 @@ def wtde_create_lnk() -> bool:
 
     if (not OS.path.exists(wtdeExeDir)):
         messagebox.showerror("GHWT_Definitive.exe Not Found", "GHWT_Definitive.exe was not found. Either WTDE is not installed or the executable for WTDE was moved or deleted.")
+        
+        OS.chdir(oldDir)
+        
         return False
     else:
         desktop = WS.desktop()
@@ -105,6 +112,8 @@ def wtde_create_lnk() -> bool:
         shortcut.WorkingDirectory = workingDir
         shortcut.IconLocation = iconDir
         shortcut.save()
+
+        OS.chdir(oldDir)
 
         return True
 
@@ -345,7 +354,6 @@ def wtde_verify_config() -> None:
     valueToSet = ""
 
     # ================= CONFIG ================= #
-
     CONFIG_OPTIONS = [
         "Language",
         "RichPresence",
@@ -404,7 +412,8 @@ def wtde_verify_config() -> None:
         "HideBand",
         "HideInstruments",
         "Render2D",
-        "RenderScreenFX"
+        "RenderScreenFX",
+        "UseNativeRes"
     ]
 
     # Verify "Graphics" section.
@@ -427,6 +436,7 @@ def wtde_verify_config() -> None:
                 case "BlackStage":                  valueToSet = "0"
                 case "HideBand":                    valueToSet = "0"
                 case "HideInstruments":             valueToSet = "0"
+                case "UseNativeRes":                valueToSet = "0"
                 case _:                             valueToSet = "1"
             
             config.set("Graphics", item, valueToSet)
@@ -553,16 +563,6 @@ def wtde_verify_config() -> None:
 
     # Reset working directory.
     OS.chdir(oldDir)
-
-    
-
-
-    
-    
-
-
-
-
 
 # Save keyboard mappings to the AspyrConfig.xml file.
 def wtde_encode_input(inputStr: str) -> str:
@@ -1258,6 +1258,62 @@ def ask_venue_name(event) -> None:
 
         # Enter main loop.
         askVenueRoot.mainloop()
+
+# Get native monitor resolution.
+def get_screen_resolution() -> list[int]:
+    """ Returns the user's native PRIMARY monitor resolution. """
+    return [GetSystemMetrics(0), GetSystemMetrics(1)]
+
+# Get game title by option value.
+def wtde_get_game(checksum: str) -> str:
+    """ Returns the actual game name from an option value. """
+    match (checksum.lower()):
+        case "wtde":            return "GH World Tour Definitive Editon"
+        case "ghwt":            return "Guitar Hero World Tour"
+        case "ghwt_beta":       return "Guitar Hero World Tour (Beta)"
+        case "ghwt_wii":        return "Guitar Hero World Tour (Wii)"
+        case "ghwt_wii_hd":     return "Guitar Hero World Tour (Wii, HD)"
+        case "gh2":             return "Guitar Hero II"
+        case "gh3":             return "Guitar Hero III"
+        case "gh3_left":        return "Guitar Hero III (Left)"
+        case "gh3_console":     return "Guitar Hero III (Console)"
+        case "ghm":             return "Guitar Hero Metallica"
+        case "ghshits":         return "Guitar Hero Smash Hits"
+        case "ghvh":            return "Guitar Hero Van Halen"
+        case "gh5":             return "Guitar Hero 5"
+        case "ghwor":           return "Guitar Hero Warriors of Rock"
+        case "wor":             return "Guitar Hero Warriors of Rock"
+        case "bh":              return "Band Hero"
+        case "auto":            return "Automatic"
+        case "flat":            return "Flat Gems"
+        case _:                 return ""
+
+# Get gem color scheme.
+def wtde_get_gem_color(checksum: str) -> str:
+    """ Return the actual name of a given gem color theme. """
+    match (checksum):
+        case "standard_gems":           return "Normal Color"
+        case "pink_gems":               return "Pink"
+        case "stealth_gems":            return "Stealth"
+        case "Eggs_N_Bacon_gems":       return "Eggs 'N Bacon"
+        case "old_glory_gems":          return "Old Glory"
+        case "solid_gold_gems":         return "Solid Gold"
+        case "platinum_gems":           return "Platinum"
+        case "diabolic_gems":           return "Diabolic"
+        case "toxic_waste_gems":        return "Toxic Waste"
+        case "black_gems":              return "Black"
+        case "pastel_gems":             return "Pastel"
+        case "dark_gems":               return "Dark"
+        case "outline_gems":            return "Outline"
+        case "gh1proto_gems":           return "GH1 Prototype"
+        case "pure_green":              return "Pure Green"
+        case "pure_red":                return "Pure Red"
+        case "pure_yellow":             return "Pure Yellow"
+        case "pure_blue":               return "Pure Blue"
+        case "pure_orange":             return "Pure Orange"
+        case "candy_cane":              return "Candy Cane"
+        case "halloween":               return "Halloween"
+        case _:                         return ""
 
 # Verify files and main GHWTDE config file.
 verify_files()
@@ -2150,6 +2206,24 @@ inputMicDelayEntry.insert(0, config.get("Audio", "VocalAdjustment"))
 # ====================================================================== #
 #                          GRAPHICS SETTINGS TAB                         #
 # ====================================================================== #
+# Read the AspyrConfig for the settings held there.
+# Open the XML file and read its data.
+with (open(f"{wtde_find_appdata()}\\AspyrConfig.xml", 'rb')) as xml: aspyrConfigData = xml.read()
+
+# Run BS4 on this data.
+aspyrConfigDataBS = BeautifulSoup(aspyrConfigData, 'xml')
+
+# Find tag "s", but then we'll filter it into the keyboard information.
+aspyrConfigDataS = aspyrConfigDataBS.find_all('s')
+
+# Get the keyboard mapping string for the menu navigation.
+resWidthXML = aspyrConfigDataBS.find('s', {"id": "Video.Width"})
+resWidth = resWidthXML.decode_contents()
+
+# Get the keyboard mapping string for the menu navigation.
+resHeightXML = aspyrConfigDataBS.find('s', {"id": "Video.Height"})
+resHeight = resHeightXML.decode_contents()
+
 # Make sure we're in the INI directory.
 OS.chdir(wtde_find_config())
 config.read("GHWTDE.ini")
@@ -2157,7 +2231,39 @@ config.read("GHWTDE.ini")
 # Graphics settings tab information.
 TAB_INFO_GRAPHICS = "Graphics Settings: Set your preferences for graphics in WTDE.\nHover over any option to see what it does!"
 graphicsInfoLabel = Label(wtdeOptionsGraphics, text = TAB_INFO_GRAPHICS, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-graphicsInfoLabel.grid(row = 0, column = 0, columnspan = 999)
+graphicsInfoLabel.grid(row = 0, column = 0, columnspan = 999, sticky = 'w')
+
+# Set game resolution.
+RESOLUTION_TIP = "Set the resolution for the game."
+RES_WIDTH_TIP = "Set the width of the game window."
+RES_HEIGHT_TIP = "Set the height of the game window."
+
+graphicsResolutionLabel = Label(wtdeOptionsGraphics, text = "    Resolution:                          X", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
+graphicsResolutionLabel.grid(row = 1, column = 0, pady = 5, sticky = 'w')
+graphicsResolutionLabel = Hovertip(graphicsResolutionLabel, RESOLUTION_TIP, HOVER_DELAY)
+
+graphicsResolutionWidth = Entry(wtdeOptionsGraphics, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 10, validate = 'key')
+graphicsResolutionWidth.place(x = 128, y = 48)
+graphicsResolutionWidth.config(validatecommand = (graphicsResolutionWidth.register(input_verify_numeric), '%P', '%d'))
+graphicsResolutionWidthTip = Hovertip(graphicsResolutionWidth, RES_WIDTH_TIP, HOVER_DELAY)
+
+graphicsResolutionHeight = Entry(wtdeOptionsGraphics, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 10, validate = 'key')
+graphicsResolutionHeight.place(x = 242, y = 48)
+graphicsResolutionHeight.config(validatecommand = (graphicsResolutionHeight.register(input_verify_numeric), '%P', '%d'))
+graphicsResolutionHeightTip = Hovertip(graphicsResolutionHeight, RES_HEIGHT_TIP, HOVER_DELAY)
+
+graphicsResolutionWidth.insert(0, resWidth)
+graphicsResolutionHeight.insert(0, resHeight)
+
+# Use native resolution.
+useNativeResolution = StringVar()
+NATIVE_RESOLUTION_TIP = "Use the native resolution of your primary monitor as the resolution the game will run at."
+
+graphicsUseNativeRes = Checkbutton(wtdeOptionsGraphics, text = f"  Native Monitor Resolution ({get_screen_resolution()[0]} X {get_screen_resolution()[1]})", variable = useNativeResolution, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsUseNativeRes.grid(row = 2, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsUseNativeResTip = Hovertip(graphicsUseNativeRes, NATIVE_RESOLUTION_TIP, HOVER_DELAY)
+
+useNativeResolution.set(config.get("Graphics", "UseNativeRes"))
 
 # Set target FPS.
 fpsLimit = StringVar()
@@ -2168,13 +2274,13 @@ FPS_LIMIT_TIP = "Set the limit for the game's frame rate.\n\n" \
                 "to run at. Remember that if Vertical Sync (VSync) is turned ON,\n" \
                 "it will override this and lock the framerate at 60 FPS!"
 
-graphicsFPSLimitLabel = Label(wtdeOptionsGraphics, text = "     FPS Limit: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
-graphicsFPSLimitLabel.grid(row = 2, column = 0, pady = 5, sticky = 'w')
+graphicsFPSLimitLabel = Label(wtdeOptionsGraphics, text = "    FPS Limit:  ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
+graphicsFPSLimitLabel.grid(row = 3, column = 0, pady = 5, sticky = 'w')
 graphicsFPSLimitLabelTip = Hovertip(graphicsFPSLimitLabel, FPS_LIMIT_TIP, HOVER_DELAY)
 
 graphicsFPSLimit = OptionMenu(wtdeOptionsGraphics, fpsLimit, *fpsLimitOptions)
 graphicsFPSLimit.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-graphicsFPSLimit.place(x = 128, y = 45)
+graphicsFPSLimit.place(x = 128, y = 122)
 graphicsFPSLimitTip = Hovertip(graphicsFPSLimit, FPS_LIMIT_TIP, HOVER_DELAY)
 
 if (config.get("Graphics", "FPSLimit") == "0"): fpsLimit.set("Unlimited")
@@ -2185,13 +2291,169 @@ disableVSync = StringVar()
 VSYNC_LIMIT_TIP = "Turn ON or OFF vertical sync. If this is ON, it will cap the game at\n" \
                   "60 FPS, regardless of the set FPS limit."
 graphicsUseVSync = Checkbutton(wtdeOptionsGraphics, text = "  Use Vertical Sync", variable = disableVSync, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
-graphicsUseVSync.grid(row = 3, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsUseVSync.grid(row = 4, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsUseVSyncTip = Hovertip(graphicsUseVSync, VSYNC_LIMIT_TIP, HOVER_DELAY)
 
 if (config.get("Graphics", "DisableVSync") == "1"): graphicsUseVSync.deselect()
 else: graphicsUseVSync.select()
 
+# Enable/disable hit sparks.
+hitSparks = StringVar()
+HIT_SPARKS_TIP = "Turn ON or OFF sparks when notes are hit."
+graphicsUseHitSparks = Checkbutton(wtdeOptionsGraphics, text = "  Show Hit Sparks", variable = hitSparks, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsUseHitSparks.grid(row = 5, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsUseHitSparksTip = Hovertip(graphicsUseHitSparks, HIT_SPARKS_TIP, HOVER_DELAY)
 
+hitSparks.set(config.get("Graphics", "HitSparks"))
+
+# Enable/disable depth of field.
+disableDOF = StringVar()
+USE_DOF_TIP = "Turn ON or OFF depth of field."
+graphicsUseDOF = Checkbutton(wtdeOptionsGraphics, text = "  Depth of Field", variable = disableDOF, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsUseDOF.grid(row = 6, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsUseDOFTip = Hovertip(graphicsUseDOF, USE_DOF_TIP, HOVER_DELAY)
+
+if (config.get("Graphics", "DisableDOF") == "0"): disableDOF.set("1")
+
+# Enable/disable windowed mode.
+windowedMode = StringVar()
+WINDOWED_MODE_TIP = "Run the game in windowed mode."
+graphicsWindowedMode = Checkbutton(wtdeOptionsGraphics, text = "  Windowed Mode", variable = windowedMode, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsWindowedMode.grid(row = 7, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsWindowedModeTip = Hovertip(graphicsWindowedMode, WINDOWED_MODE_TIP, HOVER_DELAY)
+
+windowedMode.set(config.get("Graphics", "WindowedMode"))
+
+# Enable/disable borderless windowed mode.
+borderlessMode = StringVar()
+BORDERLESS_MODE_TIP = "Run the game in borderless windowed mode."
+graphicsBorderlessMode = Checkbutton(wtdeOptionsGraphics, text = "  Borderless Windowed", variable = borderlessMode, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsBorderlessMode.grid(row = 8, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsBorderlessModeTip = Hovertip(graphicsBorderlessMode, BORDERLESS_MODE_TIP, HOVER_DELAY)
+
+borderlessMode.set(config.get("Graphics", "Borderless"))
+
+# Enable/disable bloom.
+bloomFX = StringVar()
+BLOOM_FX_TIP = "Turn ON or OFF bloom."
+graphicsUseBloom = Checkbutton(wtdeOptionsGraphics, text = "  Use Bloom", variable = bloomFX, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsUseBloom.grid(row = 9, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsUseBloomTip = Hovertip(graphicsUseBloom, BLOOM_FX_TIP, HOVER_DELAY)
+
+if (config.get("Graphics", "DisableBloom") == "0"): bloomFX.set("1")
+
+# Enable/disable color filters.
+colorFilters = StringVar()
+COLOR_FILTERS_TIP = "Turn ON or OFF color filters. These are filters primarily used in\n" \
+                    "Guitar Hero: Metallica."
+graphicsUseColorFilters = Checkbutton(wtdeOptionsGraphics, text = "  Use Color Filters", variable = colorFilters, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsUseColorFilters.grid(row = 10, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsUseColorFiltersTip = Hovertip(graphicsUseColorFilters, COLOR_FILTERS_TIP, HOVER_DELAY)
+
+colorFilters.set(config.get("Graphics", "ColorFilters"))
+
+# Enable/disable color filters.
+colorFilters = StringVar()
+COLOR_FILTERS_TIP = "Turn ON or OFF color filters. These are filters primarily used in\n" \
+                    "Guitar Hero: Metallica."
+graphicsUseColorFilters = Checkbutton(wtdeOptionsGraphics, text = "  Use Color Filters", variable = colorFilters, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsUseColorFilters.grid(row = 10, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsUseColorFiltersTip = Hovertip(graphicsUseColorFilters, COLOR_FILTERS_TIP, HOVER_DELAY)
+
+colorFilters.set(config.get("Graphics", "ColorFilters"))
+
+# Enable/disable anti-aliasing.
+antiAliasing = StringVar()
+ANTIALIASING_TIP = "Turn ON or OFF anti-aliasing. The anti-aliasing used by GHWT is multi-sampling."
+graphicsUseAntiAliasing = Checkbutton(wtdeOptionsGraphics, text = "  Use Anti-Aliasing", variable = antiAliasing, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsUseAntiAliasing.grid(row = 11, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsUseAntiAliasingTip = Hovertip(graphicsUseAntiAliasing, ANTIALIASING_TIP, HOVER_DELAY)
+
+antiAliasing.set(config.get("Graphics", "AntiAliasing"))
+
+# Enable/disable particle rendering.
+renderParticles = StringVar()
+RENDER_PARTICLES_TIP = "Turn ON or OFF rendering of particles. This includes things like fire, sparks, smoke, etc."
+graphicsRenderParticles = Checkbutton(wtdeOptionsGraphics, text = "  Render Particles", variable = renderParticles, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsRenderParticles.grid(row = 12, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsRenderParticlesTip = Hovertip(graphicsRenderParticles, RENDER_PARTICLES_TIP, HOVER_DELAY)
+
+renderParticles.set(config.get("Graphics", "RenderParticles"))
+
+# Enable/disable level geometry.
+renderGeoms = StringVar()
+RENDER_GEOMETRY_TIP = "Turn ON or OFF rendering of level geometry, except level objects."
+graphicsRenderGeoms = Checkbutton(wtdeOptionsGraphics, text = "  Render Level Geometry", variable = renderGeoms, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsRenderGeoms.grid(row = 13, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsRenderGeomsTip = Hovertip(graphicsRenderGeoms, RENDER_GEOMETRY_TIP, HOVER_DELAY)
+
+renderGeoms.set(config.get("Graphics", "RenderGeoms"))
+
+# Enable/disable instance rendering.
+renderInstances = StringVar()
+RENDER_INSTANCES_TIP = "Turn ON or OFF rendering of instances. Controls rendering of things like dynamic\n" \
+                       "and level objects. Also includes characters and anything that moves."
+graphicsRenderInstances = Checkbutton(wtdeOptionsGraphics, text = "  Render Instances", variable = renderInstances, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsRenderInstances.grid(row = 14, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsRenderInstancesTip = Hovertip(graphicsRenderInstances, RENDER_INSTANCES_TIP, HOVER_DELAY)
+
+renderInstances.set(config.get("Graphics", "RenderInstances"))
+
+# Enable/disable draw projectors.
+drawProjectors = StringVar()
+DRAW_PROJECTORS_TIP = "Turn ON or OFF rendering of projectors. These are things like spotlight projectors that\n" \
+                      "show under characters and cast shadows."
+graphicsDrawProjectors = Checkbutton(wtdeOptionsGraphics, text = "  Draw Projectors", variable = drawProjectors, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsDrawProjectors.grid(row = 15, column = 0, padx = 20, pady = 5, sticky = 'w')
+graphicsDrawProjectorsTip = Hovertip(graphicsDrawProjectors, DRAW_PROJECTORS_TIP, HOVER_DELAY)
+
+drawProjectors.set(config.get("Graphics", "DrawProjectors"))
+
+# Enable/disable 2D rendering.
+render2D = StringVar()
+RENDER_2D_TIP = "Turn ON or OFF rendering 2D items.\n\n" \
+                "Note: If this is OFF, this disables rendering of ALL 2D elements, including the HUD and GUI!"
+graphicsRender2D = Checkbutton(wtdeOptionsGraphics, text = "  Render 2D Items", variable = render2D, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsRender2D.grid(row = 1, column = 1, padx = 40, pady = 5, sticky = 'w')
+graphicsRender2DTip = Hovertip(graphicsRender2D, RENDER_2D_TIP, HOVER_DELAY)
+
+render2D.set(config.get("Graphics", "Render2D"))
+
+# Enable/disable screen FX rendering.
+renderScreenFX = StringVar()
+RENDER_SCREEN_FX_TIP = "Turn ON or OFF rendering of screen effects, such as bloom, depth of field, saturation, etc."
+graphicsRenderScreenFX = Checkbutton(wtdeOptionsGraphics, text = "  Render Screen FX", variable = renderScreenFX, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsRenderScreenFX.grid(row = 2, column = 1, padx = 40, pady = 5, sticky = 'w')
+graphicsRenderScreenFXTip = Hovertip(graphicsRenderScreenFX, RENDER_SCREEN_FX_TIP, HOVER_DELAY)
+
+renderScreenFX.set(config.get("Graphics", "RenderScreenFX"))
+
+# Enable/disable black stage.
+blackStage = StringVar()
+BLACK_STAGE_TIP = "Turn ON or OFF black stage. Makes the stage completely black and hides all band members."
+graphicsBlackStage = Checkbutton(wtdeOptionsGraphics, text = "  Black Stage", variable = blackStage, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsBlackStage.grid(row = 3, column = 1, padx = 40, pady = 5, sticky = 'w')
+graphicsBlackStageTip = Hovertip(graphicsBlackStage, BLACK_STAGE_TIP, HOVER_DELAY)
+
+blackStage.set(config.get("Graphics", "BlackStage"))
+
+# Enable/disable hide band.
+hideBand = StringVar()
+HIDE_BAND_TIP = "Show or hide the band."
+graphicsHideBand = Checkbutton(wtdeOptionsGraphics, text = "  Hide Band", variable = hideBand, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsHideBand.grid(row = 4, column = 1, padx = 40, pady = 5, sticky = 'w')
+graphicsHideBandTip = Hovertip(graphicsHideBand, HIDE_BAND_TIP, HOVER_DELAY)
+
+hideBand.set(config.get("Graphics", "HideBand"))
+
+# Enable/disable hide instruments.
+hideInstruments = StringVar()
+HIDE_INSTRUMENTS_TIP = "Show or hide the band's instruments."
+graphicsHideInstruments = Checkbutton(wtdeOptionsGraphics, text = "  Hide Instruments", variable = hideBand, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsHideInstruments.grid(row = 5, column = 1, padx = 40, pady = 5, sticky = 'w')
+graphicsHideInstrumentsTip = Hovertip(graphicsHideInstruments, HIDE_INSTRUMENTS_TIP, HOVER_DELAY)
+
+hideInstruments.set(config.get("Graphics", "HideInstruments"))
 
 
 # ====================================================================== #
