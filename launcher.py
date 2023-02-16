@@ -16,6 +16,7 @@ from tkinter import ttk, filedialog, messagebox
 from idlelib.tooltip import Hovertip
 from PIL import Image, ImageTk
 import os as OS
+import sys as SYS
 import winshell as WS
 from win32com.client import Dispatch
 from win32api import GetSystemMetrics
@@ -36,10 +37,20 @@ OWD = OS.getcwd()
 config = CF.ConfigParser(comment_prefixes = ('#', ';'), allow_no_value = True)
 config.optionxform = str
 
+# Relative path function.
+def resource_path(relative_path: str) -> str:
+    """ Get the absolute path to a given resource. """
+    try:
+        base_path = SYS._MEIPASS
+    except Exception:
+        base_path = OS.path.abspath(".")
+
+    return OS.path.join(base_path, relative_path)
+
 # Verify file presence.
 def verify_files() -> None:
     """ Runs file verification. """
-    # Is the path to GHWT defined?
+    # Is there an Updater.ini file already present?
     if (OS.path.exists("Updater.ini")): print("Config file exists!")
 
     # If not, create a new, unconfigured INI file.
@@ -60,7 +71,11 @@ def verify_files() -> None:
     # Has the installation path to WTDE been defined?
     config.read("Updater.ini")
 
-    wtdePathGet = config.get("Updater", "GameDirectory")
+    wtdePathGet = ""
+
+    if (config.has_option("Updater", "GameDirectory")): wtdePathGet = config.get("Updater", "GameDirectory")
+    else:
+        config["Updater"] = { "GameDirectory" : "" }
 
     if (wtdePathGet == ""):
         # Try and auto detect the path.
@@ -120,13 +135,19 @@ def wtde_create_lnk() -> bool:
 # Save configuration settings and run WTDE.
 def wtde_run_save() -> None:
     """ Save the current configuration settings and run WTDE. """
+    oldDir = OS.getcwd()
+
     wtde_save_config()
 
     root.destroy()
 
+    OS.chdir(OWD)
+
     config.read("Updater.ini")
 
-    OS.chdir(config.get("Updater", "GameDirectory"))
+    wtdeDir = config.get("Updater", "GameDirectory")
+
+    OS.chdir(wtdeDir)
 
     OS.system(".\\GHWT_Definitive.exe")
 
@@ -137,19 +158,123 @@ def wtde_save_config() -> None:
     OS.chdir(wtde_find_config())
     config.read("GHWTDE.ini")
 
+    # Used on options where the inverse may be given.
+    valueToSet = "0"
+
     # ===================== SAVE GENERAL SETTINGS ===================== #
     config.set("Config", "RichPresence", richPresence.get())
+
     config.set("Config", "AllowHolidays", allowHolidays.get())
+
     config.set("Audio", "WhammyPitchShift", whammyPitchShift.get())
 
+    config.set("Config", "Language", wtde_convert_language(language.get()))
 
+    # ===================== SAVE GRAPHICS SETTINGS ===================== #
+    config.set("Graphics", "UseNativeRes", useNativeResolution.get())
 
+    config.set("Graphics", "FPSLimit", wtde_get_fps_limit())
 
+    if (disableVSync.get() == "0"): valueToSet = "1"
+    else: valueToSet = "0"
+    config.set("Graphics", "DisableVSync", valueToSet)
 
+    config.set("Graphics", "HitSparks", hitSparks.get())
 
+    if (disableDOF.get() == "0"): valueToSet = "1"
+    else: valueToSet = "0"
+    config.set("Graphics", "DisableDOF", valueToSet)
 
-    # ===================== SAVE INPUT SETTINGS ===================== #
-    # Last, we'll save our input settings.
+    config.set("Graphics", "WindowedMode", windowedMode.get())
+
+    config.set("Graphics", "Borderless", borderlessMode.get())
+
+    if (bloomFX.get() == "0"): valueToSet = "1"
+    else: valueToSet = "0"
+    config.set("Graphics", "DisableBloom", valueToSet)
+
+    config.set("Graphics", "ColorFilters", colorFilters.get())
+
+    config.set("Graphics", "AntiAliasing", antiAliasing.get())
+
+    config.set("Graphics", "RenderParticles", renderParticles.get())
+
+    config.set("Graphics", "RenderGeoms", renderGeoms.get())
+
+    config.set("Graphics", "RenderInstances", renderInstances.get())
+
+    config.set("Graphics", "DrawProjectors", drawProjectors.get())
+
+    config.set("Graphics", "Render2D", render2D.get())
+
+    config.set("Graphics", "RenderScreenFX", renderScreenFX.get())
+
+    config.set("Graphics", "BlackStage", blackStage.get())
+
+    config.set("Graphics", "HideBand", hideBand.get())
+
+    config.set("Graphics", "HideInstruments", hideInstruments.get())
+
+    # ===================== SAVE BAND SETTINGS ===================== #
+    config.set("Band", "PreferredGuitarist", bandPreferredGuitaristEntry.get())
+
+    config.set("Band", "PreferredBassist", bandPreferredBassistEntry.get())
+
+    config.set("Band", "PreferredDrummer", bandPreferredDrummerEntry.get())
+
+    config.set("Band", "PreferredSinger", bandPreferredVocalistEntry.get())
+
+    config.set("Band", "PreferredStage", bandPreferredStageEntry.get())
+
+    # ===================== SAVE AUTO LAUNCH SETTINGS ===================== #
+    config.set("AutoLaunch", "Enabled", enableAutoLaunch.get())
+    
+    config.set("AutoLaunch", "HideHUD", hideHUDAuto.get())
+
+    config.set("AutoLaunch", "SongTime", songTime.get())
+
+    config.set("AutoLaunch", "RawLoad", rawLoad.get())
+
+    config.set("AutoLaunch", "Players", playerCount.get())
+
+    config.set("AutoLaunch", "Venue", auto_save_venue(venueSelection.get()))
+
+    config.set("AutoLaunch", "Song", autoSongEntry.get())
+
+    config.set("AutoLaunch", "Difficulty", auto_get_diff(autoDifficulty1.get()))
+    config.set("AutoLaunch", "Difficulty2", auto_get_diff(autoDifficulty2.get()))
+    config.set("AutoLaunch", "Difficulty3", auto_get_diff(autoDifficulty3.get()))
+    config.set("AutoLaunch", "Difficulty4", auto_get_diff(autoDifficulty4.get()))
+
+    config.set("AutoLaunch", "Part", auto_get_part(autoInstrument1.get()))
+    config.set("AutoLaunch", "Part2", auto_get_part(autoInstrument2.get()))
+    config.set("AutoLaunch", "Part3", auto_get_part(autoInstrument3.get()))
+    config.set("AutoLaunch", "Part4", auto_get_part(autoInstrument4.get()))
+
+    config.set("AutoLaunch", "Bot", autoBot1.get())
+    config.set("AutoLaunch", "Bot2", autoBot2.get())
+    config.set("AutoLaunch", "Bot3", autoBot3.get())
+    config.set("AutoLaunch", "Bot4", autoBot4.get())
+
+    # ===================== SAVE DEBUG SETTINGS ===================== #
+    config.set("Debug", "FixNoteLimit", fixNoteLimit.get())
+
+    config.set("Debug", "FixMemoryHandler", fixMemoryHandler.get())
+
+    config.set("Logger", "Console", loggerConsole.get())
+
+    config.set("Logger", "WriteFile", writeFile.get())
+
+    config.set("Logger", "DisableSongLogging", disableSongLogging.get())
+
+    config.set("Logger", "DebugDLCSync", debugDLCSync.get())
+
+    config.set("Debug", "FixFSBObjects", fixFSBObjects.get())
+
+    with (open("GHWTDE.ini", 'w')) as cnf: config.write(cnf)
+
+    # ===================== SAVE INPUT AND OTHER GRAPHICS SETTINGS ===================== #
+    # Last, we'll save our input & other graphics settings.
 
     # ========== READ XML DATA ========== #
     # Open the XML file and read its data.
@@ -157,6 +282,16 @@ def wtde_save_config() -> None:
 
     # Run BS4 on this data.
     aspyrConfigDataBS = BeautifulSoup(aspyrConfigData, 'xml')
+
+    # ========== SAVE RESOLUTION ========== #
+    resWidthXML = aspyrConfigDataBS.find('s', {"id": "Video.Width"})
+    resHeightXML = aspyrConfigDataBS.find('s', {"id": "Video.Height"})
+    if (useNativeResolution.get() == "0"):
+        resWidthXML.string = graphicsResolutionWidth.get()
+        resHeightXML.string = graphicsResolutionHeight.get()
+    else:
+        resWidthXML.string = str(get_screen_resolution()[0])
+        resHeightXML.string = str(get_screen_resolution()[1])
 
     # ========== GUITAR INPUTS ========== #
     guitarInputString = ""
@@ -250,7 +385,7 @@ def wtde_save_config() -> None:
     # UP
     micInputString += "UP " + wtde_encode_input(inputKeyMicUpEntry.get()) + " "
     # MIC_VOL_DOWN
-    drumInputString += "MIC_VOL_DOWN " + wtde_encode_input(inputKeyMicMVDEntry.get()) + " "
+    micInputString += "MIC_VOL_DOWN " + wtde_encode_input(inputKeyMicMVDEntry.get()) + " "
 
     # Modify the string in the AspyrConfig.xml file to the newly created one that will be assigned to Keyboard_Mic.
     keyMicStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Mic"})
@@ -295,6 +430,70 @@ def wtde_save_config() -> None:
     # After all new strings have been created, write it all back in.
     with (open(f"{wtde_find_appdata()}\\AspyrConfig.xml", 'w', encoding = "utf-8")) as xml: xml.write(str(aspyrConfigDataBS))
 
+# Get FPS value from user's settings.
+def wtde_get_fps_limit() -> str:
+    """ Returns the FPS limit set by the user in the FPS Limit Graphics Settings option. """
+    # Get the value from the FPS limit dropdown.
+    match (fpsLimit.get()):
+        case "15 FPS":          return "15"
+        case "24 FPS":          return "24"
+        case "30 FPS":          return "30"
+        case "60 FPS":          return "60"
+        case "120 FPS":         return "120"
+        case "240 FPS":         return "240"
+        case "Unlimited":       return "0"
+        case _:                 return "0"
+
+# Get the instrument checksum from a given part.
+def auto_get_part(part: str) -> str:
+    """ Take a given instrument and return its part checksum. """
+    # Use the variable to match what it's supposed to be.
+    match (part):
+        case "Lead Guitar - PART GUITAR":       return "guitar"
+        case "Bass Guitar - PART BASS":         return "bass"
+        case "Drums - PART DRUMS":              return "drum"
+        case "Vocals - PART VOCALS":            return "vocals"
+        case _:                                 return ""
+
+# Get the difficulty from a given selector.
+def auto_get_diff(diff: str) -> str:
+    """ Take a given difficulty and return its difficulty checksum. """
+    # Use the variable to match what it's supposed to be.
+    match (diff):
+        case "Beginner":    return "easy_rhythm"
+        case "Easy":        return "easy"
+        case "Medium":      return "medium"
+        case "Hard":        return "hard"
+        case "Expert":      return "expert"
+        case _:             return ""
+
+# Get the venue from the venue selection.
+def auto_save_venue(venue: str) -> str:
+    """ Take the variable holding the selected Auto Launch venue and convert it to its zone PAK name. """
+    # Return the actual venue name.
+    match (venue):
+        case "Phi Psi Kappa":       return "z_frathouse"
+        case "Wilted Orchid":       return "z_goth"
+        case "Bone Church":         return "z_cathedral"
+        case "Pang Tang Bay":       return "z_harbor"
+        case "Amoeba Records":      return "z_recordstore"
+        case "Tool":                return "z_tool"
+        case "Swamp Shack":         return "z_bayou"
+        case "Rock Brigade":        return "z_military"
+        case "Strutter's Farm":     return "z_fairgrounds"
+        case "House of Blues":      return "z_hob"
+        case "Ted's Tiki Hut":      return "z_hotel"
+        case "Will Heilm's Keep":   return "z_castle"
+        case "Recording Studio":    return "z_studio2"
+        case "AT&T Park":           return "z_ballpark"
+        case "Tesla's Coil":        return "z_scifi"
+        case "Ozzfest":             return "z_metalfest"
+        case "Times Square":        return "z_newyork"
+        case "Sunna's Chariot":     return "z_credits"
+        case _:
+            if (not venue == ""): return venue
+            else: return "None"
+
 # Load configuration settings.
 def wtde_load_config() -> None:
     """
@@ -335,6 +534,107 @@ def wtde_load_config() -> None:
         case "ja":     language.set(languages[5])
         case "ko":     language.set(languages[6])
         case _:        language.set(languages[0])
+
+    # ===================== GRAPHICS ===================== #
+    useNativeResolution.set(config.get("Graphics", "UseNativeRes"))
+
+    if (config.get("Graphics", "FPSLimit") == "0"): fpsLimit.set("Unlimited")
+    else: fpsLimit.set(config.get("Graphics", "FPSLimit") + " FPS")
+
+    if (config.get("Graphics", "DisableVSync") == "1"): graphicsUseVSync.deselect()
+    else: graphicsUseVSync.select()
+
+    hitSparks.set(config.get("Graphics", "HitSparks"))
+
+    if (config.get("Graphics", "DisableDOF") == "0"): disableDOF.set("1")
+
+    windowedMode.set(config.get("Graphics", "WindowedMode"))
+
+    borderlessMode.set(config.get("Graphics", "Borderless"))
+
+    if (config.get("Graphics", "DisableBloom") == "0"): bloomFX.set("1")
+
+    colorFilters.set(config.get("Graphics", "ColorFilters"))
+
+    antiAliasing.set(config.get("Graphics", "AntiAliasing"))
+
+    renderParticles.set(config.get("Graphics", "RenderParticles"))
+
+    renderGeoms.set(config.get("Graphics", "RenderGeoms"))
+
+    renderInstances.set(config.get("Graphics", "RenderInstances"))
+
+    drawProjectors.set(config.get("Graphics", "DrawProjectors"))
+
+    render2D.set(config.get("Graphics", "Render2D"))
+
+    renderScreenFX.set(config.get("Graphics", "RenderScreenFX"))
+
+    blackStage.set(config.get("Graphics", "BlackStage"))
+
+    hideBand.set(config.get("Graphics", "HideBand"))
+
+    hideInstruments.set(config.get("Graphics", "HideInstruments"))
+
+    # ===================== AUTO LAUNCH ===================== #
+    enableAutoLaunch.set(config.get("AutoLaunch", "Enabled"))
+    auto_launch_status()
+
+    hideHUDAuto.set(config.get("AutoLaunch", "HideHUD"))
+
+    playerCount.set(config.get("AutoLaunch", "Players"))
+
+    venueSelection.set(auto_get_venue(config.get("AutoLaunch", "Venue")))
+
+    autoSongEntry.insert(0, config.get("AutoLaunch", "Song"))
+
+    # Player 1
+    autoInstrument1.set(auto_inst_diff("Part"))
+
+    autoDifficulty1.set(auto_inst_diff("Difficulty"))
+
+    autoBot1.set(config.get("AutoLaunch", "Bot"))
+
+    # Player 2
+    autoInstrument2.set(auto_inst_diff("Part2"))
+
+    autoDifficulty2.set(auto_inst_diff("Difficulty2"))
+
+    autoBot2.set(config.get("AutoLaunch", "Bot2"))
+
+    # Player 3
+    autoInstrument3.set(auto_inst_diff("Part3"))
+
+    autoDifficulty3.set(auto_inst_diff("Difficulty3"))
+
+    autoBot3.set(config.get("AutoLaunch", "Bot3"))
+
+    # Player 4
+    autoInstrument4.set(auto_inst_diff("Part4"))
+
+    autoDifficulty4.set(auto_inst_diff("Difficulty4"))
+
+    autoBot4.set(config.get("AutoLaunch", "Bot4"))
+
+    # Advanced Settings
+    rawLoad.set(config.get("AutoLaunch", "RawLoad"))
+
+    songTime.set(config.get("AutoLaunch", "RawLoad"))
+
+    # ===================== DEBUG ===================== #
+    fixNoteLimit.set(config.get("Debug", "FixNoteLimit"))
+
+    fixMemoryHandler.set(config.get("Debug", "FixMemoryHandler"))
+
+    loggerConsole.set(config.get("Logger", "Console"))
+
+    writeFile.set(config.get("Logger", "WriteFile"))
+
+    disableSongLogging.set(config.get("Logger", "DisableSongLogging"))
+
+    debugDLCSync.set(config.get("Logger", "DebugDLCSync"))
+
+    fixFSBObjects.set(config.get("Debug", "FixFSBObjects"))
 
     # Revert working directory.
     OS.chdir(oldDir)
@@ -552,6 +852,27 @@ def wtde_verify_config() -> None:
             config.set("AutoLaunch", item, valueToSet)
         else: continue
 
+    # ================= DEBUG ================= #
+    DEBUG_OPTIONS = [
+        "MicAttempts",
+        "BindWarningShown",
+        "FixMemoryHandler",
+        "FixFSBObjects",
+        "FixNoteLimit",
+        "InputHack",
+        "SetlistScaler",
+        "HeapScaler"
+    ]
+
+    # Verify "Debug" section.
+    for (item) in (DEBUG_OPTIONS):
+        if (not config.has_option("Debug", item)):
+            match (item):
+                case "FixMemoryHandler":    valueToSet = "1"
+                case _:                     valueToSet = "0"
+            
+            config.set("Debug", item, valueToSet)
+        else: continue
 
     # ================= FINALIZE CONFIG READ ================= #
     # Is there an unneeded Updater section? If so, get rid of it!
@@ -560,6 +881,42 @@ def wtde_verify_config() -> None:
  
     # Write this data.
     with (open("GHWTDE.ini", 'w')) as cnf: config.write(cnf)
+
+    # ================= VERIFY ASPYRCONFIG ================= #
+    # Change to our directory for AspyrConfig.
+    OS.chdir(wtde_find_appdata())
+
+    # Open the XML file and read its data.
+    with (open("AspyrConfig.xml", 'rb')) as xml: aspyrConfigData = xml.read()
+
+    # Run BS4 on this data.
+    aspyrConfigDataBS = BeautifulSoup(aspyrConfigData, 'xml')
+
+    # Do the drum and mic mapping strings exist?
+    try:
+        aspyrConfigDataBS.find('s', {'id': 'Keyboard_Drum'}).decode_contents()
+    except AttributeError:
+        originalData = aspyrConfigDataBS.r
+
+        normalDrumString = "GREEN 308 262 259 258 254 RED 252 236 227 313 YELLOW 322 305 232 331 BLUE 295 256 324 341 ORANGE 999 KICK 318 CANCEL 999 START 219 BACK 999 DOWN 231 UP 327 WHAMMY 999 "
+
+        drumStringNewTag = aspyrConfigDataBS.new_tag("s", id="Keyboard_Drum")
+        drumStringNewTag.string = normalDrumString
+        originalData.append(drumStringNewTag)
+
+    try:
+        aspyrConfigDataBS.find('s', {'id': 'Keyboard_Mic'}).decode_contents()
+    except AttributeError:
+        originalData = aspyrConfigDataBS.r
+
+        normalMicString = "GREEN 328 308 402 318 RED 221 YELLOW 340 BLUE 343 ORANGE 267 234 218 CANCEL 999 START 219 BACK 999 DOWN 400 231 UP 401 327 MIC_VOL_DOWN 273 "
+
+        micStringNewTag = aspyrConfigDataBS.new_tag("s", id="Keyboard_Mic")
+        micStringNewTag.string = normalMicString
+        originalData.append(micStringNewTag)
+
+    # After all new tags have been created, write it all back in.
+    with (open("AspyrConfig.xml", 'w', encoding = "utf-8")) as xml: xml.write(str(aspyrConfigDataBS))
 
     # Reset working directory.
     OS.chdir(oldDir)
@@ -731,6 +1088,9 @@ def key_number_encode(key: str) -> int:
 # Update to the latest version.
 def wtde_run_updater() -> None:
     """ Runs the updater program for WTDE. Aborts execution if the updater is not present. """
+    oldDir = OS.getcwd()
+    OS.chdir(OWD)
+
     config.read("Updater.ini")
 
     wtdeDir = config.get("Updater", "GameDirectory")
@@ -783,6 +1143,8 @@ def wtde_run_updater() -> None:
             messagebox.showinfo("Successfully Downloaded!", "The WTDE updater program was successfully downloaded!")
 
             print("WTDE Updater successfully downloaded and set up!")
+
+            OS.chdir(oldDir)
 
             return True
 
@@ -1315,6 +1677,20 @@ def wtde_get_gem_color(checksum: str) -> str:
         case "halloween":               return "Halloween"
         case _:                         return ""
 
+# Get language checksum.
+def wtde_convert_language(text: str) -> str:
+    """ Takes a language name and converts it to its option checksum in the INI. """
+    # Match the text to the input.
+    match (text):
+        case "English":                    return "en"
+        case "Spanish (Español)":          return "es"
+        case "Italian (Italiano)":         return "it"
+        case "French (Français)":          return "fr"
+        case "German (Deutsch)":           return "de"
+        case "Japanese (日本語)":           return "ja"
+        case "Korean (한국어)":             return "ko"
+        case _:                            return ""
+
 # Verify files and main GHWTDE config file.
 verify_files()
 wtde_verify_config()
@@ -1338,21 +1714,26 @@ HOVER_DELAY = 500
 root = Tk()
 root.title(f"GHWT: Definitive Edition Launcher++ - V{VERSION}")
 root.geometry("1280x768")
-root.iconbitmap("res/icon.ico")
+root.iconbitmap(resource_path("res/icon.ico"))
 root.config(bg = BG_COLOR)
 root.resizable(False, False)
 root.transient()
 root.focus_force()
 
 # Create image constants.
-IMAGE_BG                    = ImageTk.PhotoImage(Image.open("res/bg.png"))
-WTDE_LOGO                   = ImageTk.PhotoImage(Image.open("res/icon_192.png"))
-GENERAL_ICON                = ImageTk.PhotoImage(Image.open("res/icons/general_icon.png"))
-INPUT_ICON                  = ImageTk.PhotoImage(Image.open("res/icons/input_icon.png"))
-GRAPHICS_ICON               = ImageTk.PhotoImage(Image.open("res/icons/graphics_icon.png"))
-AUTO_LAUNCH_ICON            = ImageTk.PhotoImage(Image.open("res/icons/auto_launch_icon.png"))
-BAND_ICON                   = ImageTk.PhotoImage(Image.open("res/icons/band_icon.png"))
-DEBUG_ICON                  = ImageTk.PhotoImage(Image.open("res/icons/debug_icon.png"))
+IMAGE_BG = ImageTk.PhotoImage(Image.open(resource_path("res/bg.png")))
+WTDE_LOGO = ImageTk.PhotoImage(Image.open(resource_path("res/icon_192.png")))
+
+GENERAL_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/general_icon.png")))
+INPUT_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/input_icon.png")))
+GRAPHICS_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/graphics_icon.png")))
+AUTO_LAUNCH_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/auto_launch_icon.png")))
+BAND_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/band_icon.png")))
+DEBUG_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/debug_icon.png")))
+
+INPUT_GUITAR_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/guitar_bass.png")))
+INPUT_DRUMS_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/drums.png")))
+INPUT_MIC_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/vocals.png")))
 
 # Widget canvas.
 widgetCanvas = Canvas(root, width = 1300, height = 788)
@@ -1361,7 +1742,7 @@ widgetCanvas.place(x = -10, y = -10)
 widgetCanvas.create_image(0, 0, image = IMAGE_BG, anchor = 'nw')
 
 # Top panel: WTDE logo and run button.
-widgetCanvas.create_image(10, 10, image = WTDE_LOGO, anchor = 'nw')
+widgetCanvas.create_image(8, 8, image = WTDE_LOGO, anchor = 'nw')
 
 # Run WTDE button.
 wtdeRunButton = Button(root, text = "Save & Run WTDE", font = FONT_INFO, width = 30, height = 2, command = wtde_run_save, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
@@ -1426,7 +1807,7 @@ RICH_PRESENCE_TIP = "Use Discord Rich Presence.\n\n" \
                     "you are currently doing in-game, such as what mode\n" \
                     "you're playing, your instrument, what song you are\n" \
                     "currently in, time until it's over, and more!"
-generalRichPresence = Checkbutton(wtdeOptionsGeneral, text = "  Use Rich Presence", variable = richPresence, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+generalRichPresence = Checkbutton(wtdeOptionsGeneral, text = "  Use Discord Rich Presence", variable = richPresence, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 generalRichPresence.grid(row = 1, column = 0, padx = 20, pady = 5, sticky = 'w')
 generalRichPresenceTip = Hovertip(generalRichPresence, RICH_PRESENCE_TIP, HOVER_DELAY)
 
@@ -1468,16 +1849,19 @@ generalLanguageSelect = Hovertip(generalLanguageSelect, LANGUAGE_SELECT_TIP, HOV
 #                            INPUT SETTINGS TAB                          #
 # ====================================================================== #
 # This section primarily deals with the AspyrConfig.xml file in the user's Local AppData folder for keyboard mapping editing.
+oldWorkDir = OS.getcwd()
+OS.chdir(wtde_find_appdata())
+
 # Constants used for drawing the labels and entry boxes.
 INPUT_FIELD_LABEL_PADX = 0
 INPUT_FIELD_LABEL_PADY = 4
 INPUT_MAPPING_ENTRY_WIDTH = 20
 
 # Open the XML file and read its data.
-with (open(f"{wtde_find_appdata()}\\AspyrConfig.xml", 'rb')) as xml: aspyrConfigData = xml.read()
+with (open("AspyrConfig.xml", 'rb')) as xml: aspyrConfigData = xml.read()
 
 # Run BS4 on this data.
-aspyrConfigDataBS = BeautifulSoup(aspyrConfigData, 'xml')
+aspyrConfigDataBS = BeautifulSoup(aspyrConfigData, 'xml', from_encoding = 'utf-8')
 
 # Find tag "s", but then we'll filter it into the keyboard information.
 aspyrConfigDataS = aspyrConfigDataBS.find_all('s')
@@ -1494,7 +1878,7 @@ keyGuitarString = keyGuitarStringXML.decode_contents()
 keyDrumStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Drum"})
 keyDrumString = keyDrumStringXML.decode_contents()
 
-# Get the keyboard mapping string for the vocal controls.
+# Get the keyboard mapping string for the mic controls.
 keyVocalStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Mic"})
 keyVocalString = keyVocalStringXML.decode_contents()
 
@@ -1517,7 +1901,7 @@ KEY_INPUT_TIP = "Set the keyboard controls when playing.\n\n" \
 #                  GUITAR INPUTS                #
 # ============================================= #
 reset_working_directory()
-INPUT_GUITAR_ICON = ImageTk.PhotoImage(Image.open("res/icons/guitar_bass.png"))
+
 
 inputKeyGuitarLabel = Label(wtdeOptionsInput, text = " Guitar & Bass Keyboard Controls:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', image = INPUT_GUITAR_ICON, compound = 'left')
 inputKeyGuitarLabel.grid(row = 1, column = 0, columnspan = 2, padx = INPUT_FIELD_LABEL_PADX, pady = INPUT_FIELD_LABEL_PADY, sticky = 'w')
@@ -1694,7 +2078,7 @@ inputKeyGuitarRightEntry.insert(0, wtde_decode_input(keyGuitarString, "RIGHT"))
 # ============================================= #
 #                   DRUM INPUTS                 #
 # ============================================= #
-INPUT_DRUMS_ICON = ImageTk.PhotoImage(Image.open("res/icons/drums.png"))
+
 INPUT_FIELD_POST_LABEL_PADX = 10
 
 inputKeyDrumsLabel = Label(wtdeOptionsInput, text = " Drums Keyboard Controls:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', image = INPUT_DRUMS_ICON, compound = 'left')
@@ -1836,8 +2220,6 @@ inputKeyDrumsDownEntry.insert(0, wtde_decode_input(keyDrumString, "DOWN"))
 # ============================================= #
 #                   MIC INPUTS                  #
 # ============================================= #
-INPUT_MIC_ICON = ImageTk.PhotoImage(Image.open("res/icons/vocals.png"))
-
 inputKeyMicLabel = Label(wtdeOptionsInput, text = " Mic Keyboard Controls:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', image = INPUT_MIC_ICON, compound = 'left')
 inputKeyMicLabel.grid(row = 1, column = 4, columnspan = 2, padx = INPUT_FIELD_POST_LABEL_PADX, pady = INPUT_FIELD_LABEL_PADY, sticky = 'w')
 inputKeyMicLabelTip = Hovertip(inputKeyMicLabel, KEY_INPUT_TIP, HOVER_DELAY)
@@ -2263,8 +2645,6 @@ graphicsUseNativeRes = Checkbutton(wtdeOptionsGraphics, text = f"  Native Monito
 graphicsUseNativeRes.grid(row = 2, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsUseNativeResTip = Hovertip(graphicsUseNativeRes, NATIVE_RESOLUTION_TIP, HOVER_DELAY)
 
-useNativeResolution.set(config.get("Graphics", "UseNativeRes"))
-
 # Set target FPS.
 fpsLimit = StringVar()
 fpsLimitOptions = ["15 FPS", "24 FPS", "30 FPS", "60 FPS", "120 FPS", "240 FPS", "Unlimited"]
@@ -2283,19 +2663,14 @@ graphicsFPSLimit.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 graphicsFPSLimit.place(x = 128, y = 122)
 graphicsFPSLimitTip = Hovertip(graphicsFPSLimit, FPS_LIMIT_TIP, HOVER_DELAY)
 
-if (config.get("Graphics", "FPSLimit") == "0"): fpsLimit.set("Unlimited")
-else: fpsLimit.set(config.get("Graphics", "FPSLimit") + " FPS")
 
 # Enable/disable vertical sync.
 disableVSync = StringVar()
 VSYNC_LIMIT_TIP = "Turn ON or OFF vertical sync. If this is ON, it will cap the game at\n" \
-                  "60 FPS, regardless of the set FPS limit."
+                  "60 FPS, regardless of the set FPS limit. Helps aid screen tearing!"
 graphicsUseVSync = Checkbutton(wtdeOptionsGraphics, text = "  Use Vertical Sync", variable = disableVSync, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 graphicsUseVSync.grid(row = 4, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsUseVSyncTip = Hovertip(graphicsUseVSync, VSYNC_LIMIT_TIP, HOVER_DELAY)
-
-if (config.get("Graphics", "DisableVSync") == "1"): graphicsUseVSync.deselect()
-else: graphicsUseVSync.select()
 
 # Enable/disable hit sparks.
 hitSparks = StringVar()
@@ -2304,16 +2679,12 @@ graphicsUseHitSparks = Checkbutton(wtdeOptionsGraphics, text = "  Show Hit Spark
 graphicsUseHitSparks.grid(row = 5, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsUseHitSparksTip = Hovertip(graphicsUseHitSparks, HIT_SPARKS_TIP, HOVER_DELAY)
 
-hitSparks.set(config.get("Graphics", "HitSparks"))
-
 # Enable/disable depth of field.
 disableDOF = StringVar()
 USE_DOF_TIP = "Turn ON or OFF depth of field."
 graphicsUseDOF = Checkbutton(wtdeOptionsGraphics, text = "  Depth of Field", variable = disableDOF, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 graphicsUseDOF.grid(row = 6, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsUseDOFTip = Hovertip(graphicsUseDOF, USE_DOF_TIP, HOVER_DELAY)
-
-if (config.get("Graphics", "DisableDOF") == "0"): disableDOF.set("1")
 
 # Enable/disable windowed mode.
 windowedMode = StringVar()
@@ -2322,16 +2693,12 @@ graphicsWindowedMode = Checkbutton(wtdeOptionsGraphics, text = "  Windowed Mode"
 graphicsWindowedMode.grid(row = 7, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsWindowedModeTip = Hovertip(graphicsWindowedMode, WINDOWED_MODE_TIP, HOVER_DELAY)
 
-windowedMode.set(config.get("Graphics", "WindowedMode"))
-
 # Enable/disable borderless windowed mode.
 borderlessMode = StringVar()
 BORDERLESS_MODE_TIP = "Run the game in borderless windowed mode."
 graphicsBorderlessMode = Checkbutton(wtdeOptionsGraphics, text = "  Borderless Windowed", variable = borderlessMode, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 graphicsBorderlessMode.grid(row = 8, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsBorderlessModeTip = Hovertip(graphicsBorderlessMode, BORDERLESS_MODE_TIP, HOVER_DELAY)
-
-borderlessMode.set(config.get("Graphics", "Borderless"))
 
 # Enable/disable bloom.
 bloomFX = StringVar()
@@ -2340,8 +2707,6 @@ graphicsUseBloom = Checkbutton(wtdeOptionsGraphics, text = "  Use Bloom", variab
 graphicsUseBloom.grid(row = 9, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsUseBloomTip = Hovertip(graphicsUseBloom, BLOOM_FX_TIP, HOVER_DELAY)
 
-if (config.get("Graphics", "DisableBloom") == "0"): bloomFX.set("1")
-
 # Enable/disable color filters.
 colorFilters = StringVar()
 COLOR_FILTERS_TIP = "Turn ON or OFF color filters. These are filters primarily used in\n" \
@@ -2349,18 +2714,6 @@ COLOR_FILTERS_TIP = "Turn ON or OFF color filters. These are filters primarily u
 graphicsUseColorFilters = Checkbutton(wtdeOptionsGraphics, text = "  Use Color Filters", variable = colorFilters, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 graphicsUseColorFilters.grid(row = 10, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsUseColorFiltersTip = Hovertip(graphicsUseColorFilters, COLOR_FILTERS_TIP, HOVER_DELAY)
-
-colorFilters.set(config.get("Graphics", "ColorFilters"))
-
-# Enable/disable color filters.
-colorFilters = StringVar()
-COLOR_FILTERS_TIP = "Turn ON or OFF color filters. These are filters primarily used in\n" \
-                    "Guitar Hero: Metallica."
-graphicsUseColorFilters = Checkbutton(wtdeOptionsGraphics, text = "  Use Color Filters", variable = colorFilters, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
-graphicsUseColorFilters.grid(row = 10, column = 0, padx = 20, pady = 5, sticky = 'w')
-graphicsUseColorFiltersTip = Hovertip(graphicsUseColorFilters, COLOR_FILTERS_TIP, HOVER_DELAY)
-
-colorFilters.set(config.get("Graphics", "ColorFilters"))
 
 # Enable/disable anti-aliasing.
 antiAliasing = StringVar()
@@ -2369,8 +2722,6 @@ graphicsUseAntiAliasing = Checkbutton(wtdeOptionsGraphics, text = "  Use Anti-Al
 graphicsUseAntiAliasing.grid(row = 11, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsUseAntiAliasingTip = Hovertip(graphicsUseAntiAliasing, ANTIALIASING_TIP, HOVER_DELAY)
 
-antiAliasing.set(config.get("Graphics", "AntiAliasing"))
-
 # Enable/disable particle rendering.
 renderParticles = StringVar()
 RENDER_PARTICLES_TIP = "Turn ON or OFF rendering of particles. This includes things like fire, sparks, smoke, etc."
@@ -2378,16 +2729,12 @@ graphicsRenderParticles = Checkbutton(wtdeOptionsGraphics, text = "  Render Part
 graphicsRenderParticles.grid(row = 12, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsRenderParticlesTip = Hovertip(graphicsRenderParticles, RENDER_PARTICLES_TIP, HOVER_DELAY)
 
-renderParticles.set(config.get("Graphics", "RenderParticles"))
-
 # Enable/disable level geometry.
 renderGeoms = StringVar()
 RENDER_GEOMETRY_TIP = "Turn ON or OFF rendering of level geometry, except level objects."
 graphicsRenderGeoms = Checkbutton(wtdeOptionsGraphics, text = "  Render Level Geometry", variable = renderGeoms, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 graphicsRenderGeoms.grid(row = 13, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsRenderGeomsTip = Hovertip(graphicsRenderGeoms, RENDER_GEOMETRY_TIP, HOVER_DELAY)
-
-renderGeoms.set(config.get("Graphics", "RenderGeoms"))
 
 # Enable/disable instance rendering.
 renderInstances = StringVar()
@@ -2397,8 +2744,6 @@ graphicsRenderInstances = Checkbutton(wtdeOptionsGraphics, text = "  Render Inst
 graphicsRenderInstances.grid(row = 14, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsRenderInstancesTip = Hovertip(graphicsRenderInstances, RENDER_INSTANCES_TIP, HOVER_DELAY)
 
-renderInstances.set(config.get("Graphics", "RenderInstances"))
-
 # Enable/disable draw projectors.
 drawProjectors = StringVar()
 DRAW_PROJECTORS_TIP = "Turn ON or OFF rendering of projectors. These are things like spotlight projectors that\n" \
@@ -2406,8 +2751,6 @@ DRAW_PROJECTORS_TIP = "Turn ON or OFF rendering of projectors. These are things 
 graphicsDrawProjectors = Checkbutton(wtdeOptionsGraphics, text = "  Draw Projectors", variable = drawProjectors, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 graphicsDrawProjectors.grid(row = 15, column = 0, padx = 20, pady = 5, sticky = 'w')
 graphicsDrawProjectorsTip = Hovertip(graphicsDrawProjectors, DRAW_PROJECTORS_TIP, HOVER_DELAY)
-
-drawProjectors.set(config.get("Graphics", "DrawProjectors"))
 
 # Enable/disable 2D rendering.
 render2D = StringVar()
@@ -2417,16 +2760,12 @@ graphicsRender2D = Checkbutton(wtdeOptionsGraphics, text = "  Render 2D Items", 
 graphicsRender2D.grid(row = 1, column = 1, padx = 40, pady = 5, sticky = 'w')
 graphicsRender2DTip = Hovertip(graphicsRender2D, RENDER_2D_TIP, HOVER_DELAY)
 
-render2D.set(config.get("Graphics", "Render2D"))
-
 # Enable/disable screen FX rendering.
 renderScreenFX = StringVar()
 RENDER_SCREEN_FX_TIP = "Turn ON or OFF rendering of screen effects, such as bloom, depth of field, saturation, etc."
 graphicsRenderScreenFX = Checkbutton(wtdeOptionsGraphics, text = "  Render Screen FX", variable = renderScreenFX, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 graphicsRenderScreenFX.grid(row = 2, column = 1, padx = 40, pady = 5, sticky = 'w')
 graphicsRenderScreenFXTip = Hovertip(graphicsRenderScreenFX, RENDER_SCREEN_FX_TIP, HOVER_DELAY)
-
-renderScreenFX.set(config.get("Graphics", "RenderScreenFX"))
 
 # Enable/disable black stage.
 blackStage = StringVar()
@@ -2435,8 +2774,6 @@ graphicsBlackStage = Checkbutton(wtdeOptionsGraphics, text = "  Black Stage", va
 graphicsBlackStage.grid(row = 3, column = 1, padx = 40, pady = 5, sticky = 'w')
 graphicsBlackStageTip = Hovertip(graphicsBlackStage, BLACK_STAGE_TIP, HOVER_DELAY)
 
-blackStage.set(config.get("Graphics", "BlackStage"))
-
 # Enable/disable hide band.
 hideBand = StringVar()
 HIDE_BAND_TIP = "Show or hide the band."
@@ -2444,17 +2781,12 @@ graphicsHideBand = Checkbutton(wtdeOptionsGraphics, text = "  Hide Band", variab
 graphicsHideBand.grid(row = 4, column = 1, padx = 40, pady = 5, sticky = 'w')
 graphicsHideBandTip = Hovertip(graphicsHideBand, HIDE_BAND_TIP, HOVER_DELAY)
 
-hideBand.set(config.get("Graphics", "HideBand"))
-
 # Enable/disable hide instruments.
 hideInstruments = StringVar()
 HIDE_INSTRUMENTS_TIP = "Show or hide the band's instruments."
 graphicsHideInstruments = Checkbutton(wtdeOptionsGraphics, text = "  Hide Instruments", variable = hideBand, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 graphicsHideInstruments.grid(row = 5, column = 1, padx = 40, pady = 5, sticky = 'w')
 graphicsHideInstrumentsTip = Hovertip(graphicsHideInstruments, HIDE_INSTRUMENTS_TIP, HOVER_DELAY)
-
-hideInstruments.set(config.get("Graphics", "HideInstruments"))
-
 
 # ====================================================================== #
 #                             BAND SETTINGS TAB                          #
@@ -2608,18 +2940,12 @@ autoEnableLaunch = Checkbutton(wtdeOptionsAutoLaunch, text = "  Enable Auto Laun
 autoEnableLaunch.grid(row = 1, column = 0, padx = 20, pady = 5, sticky = 'w')
 autoEnableLaunchTip = Hovertip(autoEnableLaunch, ENABLE_AUTO_LAUNCH_TIP, HOVER_DELAY)
 
-if (config.get("AutoLaunch", "Enabled") == "0"): autoEnableLaunch.deselect()
-else: autoEnableLaunch.select()
-
 # Hide the HUD.
 hideHUDAuto = StringVar()
 HIDE_HUD_TIP = "When auto launch is enabled, do you want the interface hidden?"
 autoHideHUD = Checkbutton(wtdeOptionsAutoLaunch, text = "  Hide HUD", variable = hideHUDAuto, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 autoHideHUD.grid(row = 2, column = 0, padx = 20, pady = 5, sticky = 'w')
 autoHideHUDTip = Hovertip(autoHideHUD, HIDE_HUD_TIP, HOVER_DELAY)
-
-if (config.get("AutoLaunch", "HideHUD") == "0"): autoHideHUD.deselect()
-else: autoHideHUD.select()
 
 # Number of players.
 playerCount = StringVar()
@@ -2636,9 +2962,6 @@ autoPlayers.config(width = 3, bg = BUTTON_BG, fg = BUTTON_FG, activebackground =
 autoPlayers.grid(row = 2, column = 2, pady = 5, sticky = 'w')
 autoPlayersTip = Hovertip(autoPlayers, PLAYERS_COUNT_TIP, HOVER_DELAY)
 
-if (config.get("AutoLaunch", "Players") == ""): playerCount.set("")
-else: playerCount.set(config.get("AutoLaunch", "Players"))
-
 # Venue selection.
 venueSelection = StringVar()
 
@@ -2652,10 +2975,7 @@ autoVenueSelect.config(width = 25, bg = BUTTON_BG, fg = BUTTON_FG, activebackgro
 autoVenueSelect.grid(row = 2, column = 4, pady = 5, sticky = 'w')
 autoVenueSelectTip = Hovertip(autoVenueSelect, VENUE_SELECTION_TIP, HOVER_DELAY)
 
-venueSelection.set(auto_get_venue(config.get("AutoLaunch", "Venue")))
-
 # Song to boot into.
-songChecksum = StringVar()
 SONG_ID_TIP = "The checksum of the song to boot into."
 
 autoSongLabel = Label(wtdeOptionsAutoLaunch, text = "              Song: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
@@ -2665,8 +2985,6 @@ autoSongLabelTip = Hovertip(autoSongLabel, SONG_ID_TIP, HOVER_DELAY)
 autoSongEntry = Entry(wtdeOptionsAutoLaunch, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 20, disabledbackground = BUTTON_BG)
 autoSongEntry.grid(row = 2, column = 6, pady = 5, sticky = 'w')
 autoSongEntryTip = Hovertip(autoSongEntry, SONG_ID_TIP, HOVER_DELAY)
-
-autoSongEntry.insert(0, config.get("AutoLaunch", "Song"))
 
 # Show player settings section.
 autoPlayerSectionLabel = Label(wtdeOptionsAutoLaunch, text = "Player Settings:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR)
@@ -2696,8 +3014,6 @@ autoP1Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 autoP1Instrument.grid(row = 4, column = 2, sticky = 'w', columnspan = 2)
 autoP1InstrumentTip = Hovertip(autoP1Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
-autoInstrument1.set(auto_inst_diff("Part"))
-
 # For manual placing when the grid won't cooperate.
 LABEL_Y = 188
 DROPDOWN_Y = 185
@@ -2711,8 +3027,6 @@ autoP1Difficulty = OptionMenu(wtdeOptionsAutoLaunch, autoDifficulty1, *difficult
 autoP1Difficulty.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
 autoP1Difficulty.place(x = 627, y = 185)
 autoP1DifficultyTip = Hovertip(autoP1Difficulty, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
-
-autoDifficulty1.set(auto_inst_diff("Difficulty"))
 
 autoBot1 = StringVar()
 autoP1UseBot = Checkbutton(wtdeOptionsAutoLaunch, text = "  Use Bot?", variable = autoBot1, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
@@ -2738,8 +3052,6 @@ autoP2Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 autoP2Instrument.grid(row = 5, column = 2, sticky = 'w', columnspan = 2)
 autoP2InstrumentTip = Hovertip(autoP2Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
-autoInstrument2.set(auto_inst_diff("Part2"))
-
 autoP2DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "P2 Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP2DifficultyLabel.place(x = 535, y = 235)
 autoP2DifficultyLabelTip = Hovertip(autoP2DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
@@ -2750,15 +3062,10 @@ autoP2Difficulty.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 autoP2Difficulty.place(x = 627, y = 232)
 autoP2DifficultyTip = Hovertip(autoP2Difficulty, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
-autoDifficulty2.set(auto_inst_diff("Difficulty2"))
-
 autoBot2 = StringVar()
 autoP2UseBot = Checkbutton(wtdeOptionsAutoLaunch, text = "  Use Bot?", variable = autoBot2, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 autoP2UseBot.place(x = 762, y = 233)
 autoP2UseBotTip = Hovertip(autoP2UseBot, AUTO_USE_BOT_TIP, HOVER_DELAY)
-
-if (config.get("AutoLaunch", "Bot2") == "1"): autoP2UseBot.select()
-else: autoP2UseBot.deselect()
 
 # =============== PLAYER 3 SETTINGS =============== #
 P3_SETTINGS_INFO = "Edit the settings for Player 3."
@@ -2776,8 +3083,6 @@ autoP3Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 autoP3Instrument.grid(row = 6, column = 2, sticky = 'w', columnspan = 2)
 autoP3InstrumentTip = Hovertip(autoP3Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
-autoInstrument3.set(auto_inst_diff("Part3"))
-
 autoP3DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "P3 Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP3DifficultyLabel.place(x = 535, y = 282)
 autoP3DifficultyLabelTip = Hovertip(autoP3DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
@@ -2788,15 +3093,10 @@ autoP3Difficulty.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 autoP3Difficulty.place(x = 627, y = 279)
 autoP3DifficultyTip = Hovertip(autoP3Difficulty, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
-autoDifficulty3.set(auto_inst_diff("Difficulty3"))
-
 autoBot3 = StringVar()
 autoP3UseBot = Checkbutton(wtdeOptionsAutoLaunch, text = "  Use Bot?", variable = autoBot3, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 autoP3UseBot.place(x = 762, y = 280)
 autoP3UseBotTip = Hovertip(autoP3UseBot, AUTO_USE_BOT_TIP, HOVER_DELAY)
-
-if (config.get("AutoLaunch", "Bot3") == "1"): autoP3UseBot.select()
-else: autoP3UseBot.deselect()
 
 # =============== PLAYER 4 SETTINGS =============== #
 P4_SETTINGS_INFO = "Edit the settings for Player 4."
@@ -2814,8 +3114,6 @@ autoP4Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 autoP4Instrument.grid(row = 7, column = 2, sticky = 'w', columnspan = 2)
 autoP4InstrumentTip = Hovertip(autoP4Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
-autoInstrument4.set(auto_inst_diff("Part4"))
-
 autoP4DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "P4 Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP4DifficultyLabel.place(x = 535, y = 329)
 autoP4DifficultyLabelTip = Hovertip(autoP4DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
@@ -2826,15 +3124,10 @@ autoP4Difficulty.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 autoP4Difficulty.place(x = 627, y = 326)
 autoP4DifficultyTip = Hovertip(autoP4Difficulty, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
-autoDifficulty4.set(auto_inst_diff("Difficulty4"))
-
 autoBot4 = StringVar()
 autoP4UseBot = Checkbutton(wtdeOptionsAutoLaunch, text = "  Use Bot?", variable = autoBot4, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 autoP4UseBot.place(x = 762, y = 327)
 autoP4UseBotTip = Hovertip(autoP4UseBot, AUTO_USE_BOT_TIP, HOVER_DELAY)
-
-if (config.get("AutoLaunch", "Bot4") == "1"): autoP4UseBot.select()
-else: autoP4UseBot.deselect()
 
 # =============== ADVANCED SETTINGS =============== #
 autoAdvancedSectionLabel = Label(wtdeOptionsAutoLaunch, text = "Advanced Settings:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR)
@@ -2850,18 +3143,12 @@ autoRawLoad = Checkbutton(wtdeOptionsAutoLaunch, text = "  Use Raw PAK Loading",
 autoRawLoad.grid(row = 9, column = 0, padx = 20, sticky = 'w')
 autoRawLoadTip = Hovertip(autoRawLoad, RAW_LOAD_TIP, HOVER_DELAY)
 
-if (config.get("AutoLaunch", "RawLoad") == "0"): autoRawLoad.deselect()
-else: autoRawLoad.select()
-
 # Show the song time.
 songTime = StringVar()
 SONG_TIME_TIP = "Show the song time on-screen. The time is shown in seconds."
 autoSongTime = Checkbutton(wtdeOptionsAutoLaunch, text = "  Show Time", variable = songTime, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 autoSongTime.grid(row = 9, column = 1, sticky = 'w')
 autoSongTimeTip = Hovertip(autoSongTime, SONG_TIME_TIP, HOVER_DELAY)
-
-if (config.get("AutoLaunch", "SongTime") == "0"): autoSongTime.deselect()
-else: autoSongTime.select()
 
 # Update the status of all widgets.
 auto_launch_status()
@@ -2884,11 +3171,6 @@ debugFixNoteLimit = Checkbutton(wtdeOptionsDebug, text = "  Fix Note Limit", var
 debugFixNoteLimit.grid(row = 1, column = 0, padx = 20, pady = 5, sticky = 'w')
 debugFixNoteLimitTip = Hovertip(debugFixNoteLimit, FIX_NOTE_LIMIT_TIP, HOVER_DELAY)
 
-# Set value for FixNoteLimit based on the configuration file.
-fixNoteLimitValue = config.get("Debug", "FixNoteLimit")
-if (fixNoteLimitValue == "1"): debugFixNoteLimit.select()
-else: debugFixNoteLimit.deselect()
-
 # Fix memory handler.
 fixMemoryHandler = StringVar()
 FIX_MEMORY_HANDLER_TIP = "Fixes the memory handler. This extends memory limits, shows errors if compact pools\n" \
@@ -2898,22 +3180,12 @@ debugFixMemoryHandler = Checkbutton(wtdeOptionsDebug, text = "  Fix Memory Handl
 debugFixMemoryHandler.grid(row = 2, column = 0, padx = 20, pady = 5, sticky = 'w')
 debugFixMemoryHandlerTip = Hovertip(debugFixMemoryHandler, FIX_MEMORY_HANDLER_TIP, HOVER_DELAY)
 
-# Set value for FixMemoryHandler based on the configuration file.
-fixMemoryHandlerValue = config.get("Debug", "FixMemoryHandler")
-if (fixNoteLimitValue == "1"): debugFixMemoryHandler.select()
-else: debugFixMemoryHandler.deselect()
-
 # Open debug console.
 loggerConsole = StringVar()
 DEBUG_CONSOLE_TIP = "Opens the debug console in the background while WTDE is open."
 debugOpenConsole = Checkbutton(wtdeOptionsDebug, text = "  Open Debug Console", variable = loggerConsole, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 debugOpenConsole.grid(row = 3, column = 0, padx = 20, pady = 5, sticky = 'w')
 debugOpenConsoleTip = Hovertip(debugOpenConsole, DEBUG_CONSOLE_TIP, HOVER_DELAY)
-
-# Set value for Console based on the configuration file.
-loggerConsoleValue = config.get("Logger", "Console")
-if (loggerConsoleValue == "1"): debugOpenConsole.select()
-else: debugOpenConsole.deselect()
 
 # Write debug.txt file.
 writeFile = StringVar()
@@ -2923,11 +3195,6 @@ WRITE_DEBUG_LOG_TIP = "Write a file to the disk that holds the debug log written
 debugWriteDebugLog = Checkbutton(wtdeOptionsDebug, text = "  Write Debug Log", variable = writeFile, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 debugWriteDebugLog.grid(row = 4, column = 0, padx = 20, pady = 5, sticky = 'w')
 debugWriteDebugLogTip = Hovertip(debugWriteDebugLog, WRITE_DEBUG_LOG_TIP, HOVER_DELAY)
-
-# Set value for WriteFile based on the configuration file.
-writeFileValue = config.get("Logger", "WriteFile")
-if (writeFileValue == "1"): debugWriteDebugLog.select()
-else: debugWriteDebugLog.deselect()
 
 # Skip song logging.
 disableSongLogging = StringVar()
@@ -2939,11 +3206,6 @@ debugSkipSongLogging = Checkbutton(wtdeOptionsDebug, text = "  Skip Song Logging
 debugSkipSongLogging.grid(row = 5, column = 0, padx = 20, pady = 5, sticky = 'w')
 debugSkipSongLoggingTip = Hovertip(debugSkipSongLogging, SKIP_SONG_LOGGING_TIP, HOVER_DELAY)
 
-# Set value for WriteFile based on the configuration file.
-disableSongLoggingValue = config.get("Logger", "DisableSongLogging")
-if (disableSongLoggingValue == "1"): debugSkipSongLogging.select()
-else: debugSkipSongLogging.deselect()
-
 # Debug DLC sync.
 debugDLCSync = StringVar()
 DLC_SYNC_DEBUG_TIP = "Enable or disable song syncing debugging.\n\n" \
@@ -2954,11 +3216,6 @@ debugDLCSyncOption = Checkbutton(wtdeOptionsDebug, text = "  DLC Sync Debugging"
 debugDLCSyncOption.grid(row = 6, column = 0, padx = 20, pady = 5, sticky = 'w')
 debugDLCSyncTip = Hovertip(debugDLCSyncOption, DLC_SYNC_DEBUG_TIP, HOVER_DELAY)
 
-# Set value for DebugDLCSync based on the configuration file.
-debugDLCSyncValue = config.get("Logger", "DebugDLCSync")
-if (debugDLCSyncValue == "1"): debugDLCSyncOption.select()
-else: debugDLCSyncOption.deselect()
-
 # Fix FMOD Sound Bank objects.
 fixFSBObjects = StringVar()
 FIX_FSB_OBJECTS_TIP = "Enable or disable fixing FMOD Sound Bank objects."
@@ -2966,11 +3223,6 @@ FIX_FSB_OBJECTS_TIP = "Enable or disable fixing FMOD Sound Bank objects."
 fixFSBObjectsOption = Checkbutton(wtdeOptionsDebug, text = "  Fix FMOD Sound Bank Objects", variable = fixFSBObjects, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 fixFSBObjectsOption.grid(row = 7, column = 0, padx = 20, pady = 5, sticky = 'w')
 fixFSBObjectsOptionTip = Hovertip(fixFSBObjectsOption, FIX_FSB_OBJECTS_TIP, HOVER_DELAY)
-
-# Set value for DebugDLCSync based on the configuration file.
-debugDLCSyncValue = config.get("Logger", "DebugDLCSync")
-if (debugDLCSyncValue == "1"): debugDLCSyncOption.select()
-else: debugDLCSyncOption.deselect()
 
 # ====================================================================== #
 #                              ADD THE TABS                              #
