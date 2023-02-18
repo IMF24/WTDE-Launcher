@@ -1,14 +1,16 @@
-# ====================================================================== #
-#                        WTDE LAUNCHER++ BY IMF24                        #
-# A new version of the launcher for GHWT: Definitive Edition.            #
-#                                                                        #
-# Features of the launcher:                                              #
-# • INI graphical editor, with toggles for the various different options #
-#   that can be set for use in-game.                                     #
-# • Allows easy editing for keyboard shortcuts.                          #
-# • Comprehensive design, meant to streamline the editing process for    #
-#   all various GHWTDE INI settings.                                     #
-# ====================================================================== #
+# ================================================================================================================= #
+#                                                                                                                   #
+#  __          _________ _____  ______     _              _    _ _   _  _____ _    _ ______ _____                   #
+#  \ \        / /__   __|  __ \|  ____|   | |        /\  | |  | | \ | |/ ____| |  | |  ____|  __ \  _     _         #
+#   \ \  /\  / /   | |  | |  | | |__      | |       /  \ | |  | |  \| | |    | |__| | |__  | |__) || |_ _| |_       #
+#    \ \/  \/ /    | |  | |  | |  __|     | |      / /\ \| |  | | . ` | |    |  __  |  __| |  _  /_   _|_   _|      #
+#     \  /\  /     | |  | |__| | |____    | |____ / ____ \ |__| | |\  | |____| |  | | |____| | \ \ |_|   |_|        #
+#      \/  \/      |_|  |_____/|______|   |______/_/    \_\____/|_| \_|\_____|_|  |_|______|_|  \_\                 #
+#                                                                                                                   #
+#            Coded by IMF24               Guitar Hero World Tour: Definitive Edition by Fretworks EST. 2021         #
+#                                                                                                                   #
+#                                      Updater Coded by Zedek the Plague Doctor™                                    #
+# ================================================================================================================= #
 # Import required modules.
 from tkinter import *
 from tkinter.font import *
@@ -17,6 +19,7 @@ from idlelib.tooltip import Hovertip
 from PIL import Image, ImageTk
 import os as OS
 import sys as SYS
+import subprocess as SP
 import winshell as WS
 from win32com.client import Dispatch
 from win32api import GetSystemMetrics
@@ -37,6 +40,112 @@ OWD = OS.getcwd()
 config = CF.ConfigParser(comment_prefixes = ('#', ';'), allow_no_value = True)
 config.optionxform = str
 
+# Argument parser at the command line.
+def arg_cmd_parse() -> None:
+    args = SYS.argv
+
+    # Set up console colors.
+    BLACK = "\033[0;30m"
+    RED = "\033[0;31m"
+    GREEN = "\033[0;32m"
+    BROWN = "\033[0;33m"
+    BLUE = "\033[0;34m"
+    PURPLE = "\033[0;35m"
+    CYAN = "\033[0;36m"
+    WHITE = "\033[0;37m"
+    DARK_GRAY = "\033[1;30m"
+    LIGHT_RED = "\033[1;31m"
+    LIGHT_GREEN = "\033[1;32m"
+    YELLOW = "\033[1;33m"
+    LIGHT_BLUE = "\033[1;34m"
+    LIGHT_PURPLE = "\033[1;35m"
+    LIGHT_CYAN = "\033[1;36m"
+    LIGHT_WHITE = "\033[1;37m"
+    BOLD = "\033[1m"
+    FAINT = "\033[2m"
+    ITALIC = "\033[3m"
+    UNDERLINE = "\033[4m"
+    BLINK = "\033[5m"
+    NEGATIVE = "\033[7m"
+    CROSSED = "\033[9m"
+    END = "\033[0m"
+
+    # Help message.
+    HELP_INFO = "-=-=-=-=-=-=- GHWT: Definitive Edition Launcher++ -=-=-=-=-=-=-\n" \
+                "List of command line arguments:\n" \
+                "[-h] [--help]          - Print this message.\n" \
+                "[-i] [--ini]           - Update a setting in GHWTDE.ini.\n" \
+                "[-u] [--update]        - Update WTDE to the latest version.\n" \
+                "[-d] [--dir]           - Edit your defined install path to WTDE.\n" \
+                "[-r] [--normal]        - Run normally."
+    
+    if (len(args) > 1):
+        def print_help() -> None:
+            """ Print command line help information. """
+            print(HELP_INFO)
+            SYS.exit(0)
+
+        def ini_edit_cmd() -> None:
+            """ Update a setting in GHWTDE.ini at the command line. """
+            match (len(args)):
+                case 2: print(f"{YELLOW}Usage: --ini <section> <option> <value>{WHITE}")
+
+                case 3: print(f"{RED}Invalid argument count! Usage: --ini <section> <option> <value>{WHITE}")
+
+                case 4: print(f"{RED}Invalid argument count! Usage: --ini <section> <option> <value>{WHITE}")
+
+                case 5:
+                    print(f"{YELLOW}Attempting to edit option {args[3]} in section {args[2]}...{WHITE}")
+                    
+                    OS.chdir(wtde_find_config())
+
+                    config.read("GHWTDE.ini")
+
+                    if (not config.has_section(args[2])):
+                        print(f"{RED}Error: Section does not exist!{WHITE}")
+                        SYS.exit(0)
+
+                    if (not config.has_option(args[2], args[3])):
+                        print(f"{RED}Error: Option does not exist!{WHITE}")
+                        SYS.exit(0)
+
+                    print("Value found! Modifying...")
+
+                    config.set(args[2], args[3], args[4])
+
+                    print(f"Changed option {args[3]} with value {args[4]}")
+                    print("Writing new data...")
+
+                    with (open("GHWTDE.ini", 'w')) as cnf: config.write(cnf)
+
+                    print(f"{GREEN}Update complete! The option {args[3]} should be updated.{WHITE}")
+
+                    SYS.exit(0)
+
+
+            SYS.exit(0)
+
+        match (args[1]):
+            case "-h": print_help()
+
+            case "--help": print_help()
+
+            case "-i": ini_edit_cmd()
+
+            case "--ini": ini_edit_cmd()
+
+            case "-u":
+                wtde_run_updater()
+                SYS.exit(0)
+
+            case "--update":
+                wtde_run_updater()
+                SYS.exit(0)
+
+            case _:
+                print(f"Unknown argument: {args[1]}. Type -h or --help for a list of parameters.")
+                SYS.exit(0)
+
 # Relative path function.
 def resource_path(relative_path: str) -> str:
     """ Get the absolute path to a given resource. """
@@ -51,7 +160,7 @@ def resource_path(relative_path: str) -> str:
 def verify_files() -> None:
     """ Runs file verification. """
     # Is there an Updater.ini file already present?
-    if (OS.path.exists("Updater.ini")): print("Config file exists!")
+    if (OS.path.exists("Updater.ini")): pass # print("Config file exists!")
 
     # If not, create a new, unconfigured INI file.
     else:
@@ -224,7 +333,7 @@ def wtde_save_config() -> None:
 
     config.set("Band", "PreferredSinger", bandPreferredVocalistEntry.get())
 
-    config.set("Band", "PreferredStage", bandPreferredStageEntry.get())
+    config.set("Band", "PreferredStage", auto_save_venue(preferredVenue.get()))
 
     # ===================== SAVE AUTO LAUNCH SETTINGS ===================== #
     config.set("AutoLaunch", "Enabled", enableAutoLaunch.get())
@@ -270,11 +379,17 @@ def wtde_save_config() -> None:
     config.set("Logger", "DebugDLCSync", debugDLCSync.get())
 
     config.set("Debug", "FixFSBObjects", fixFSBObjects.get())
-
-    with (open("GHWTDE.ini", 'w')) as cnf: config.write(cnf)
-
+    
     # ===================== SAVE INPUT AND OTHER GRAPHICS SETTINGS ===================== #
     # Last, we'll save our input & other graphics settings.
+    config.set("Audio", "MicDevice", micDevice.get())
+
+    config.set("Audio", "VocalAdjustment", wtde_vocal_delay_get(inputMicDelayEntry.get()))
+
+    if (inputHack.get() == "1"): config.set("Debug", "DisableInputHack", "0")
+    else: config.set("Debug", "DisableInputHack", "1")
+
+    with (open("GHWTDE.ini", 'w')) as cnf: config.write(cnf)
 
     # ========== READ XML DATA ========== #
     # Open the XML file and read its data.
@@ -491,8 +606,8 @@ def auto_save_venue(venue: str) -> str:
         case "Times Square":        return "z_newyork"
         case "Sunna's Chariot":     return "z_credits"
         case _:
-            if (not venue == ""): return venue
-            else: return "None"
+            if (not venue == "") and (not venue == "None"): return venue
+            else: return ""
 
 # Load configuration settings.
 def wtde_load_config() -> None:
@@ -575,6 +690,17 @@ def wtde_load_config() -> None:
     hideBand.set(config.get("Graphics", "HideBand"))
 
     hideInstruments.set(config.get("Graphics", "HideInstruments"))
+
+    noteStyle.set(wtde_get_note_info('style'))
+
+    noteTheme.set(wtde_get_note_info('color'))
+
+    # ===================== INPUT ===================== #
+    inputMicDelayEntry.insert(0, config.get("Audio", "VocalAdjustment"))
+
+    if (config.get("Debug", "DisableInputHack") == "1"): inputUseInputHack.deselect()
+    else: inputUseInputHack.select()
+    
 
     # ===================== AUTO LAUNCH ===================== #
     enableAutoLaunch.set(config.get("AutoLaunch", "Enabled"))
@@ -671,6 +797,8 @@ def wtde_verify_config() -> None:
     ]
 
     # Verify "Config" section.
+    if (not config.has_section("Config")): config["Config"] = {}
+
     for (item) in (CONFIG_OPTIONS):
         if (not config.has_option("Config", item)):
             match (item):
@@ -717,6 +845,8 @@ def wtde_verify_config() -> None:
     ]
 
     # Verify "Graphics" section.
+    if (not config.has_section("Graphics")): config["Graphics"] = {}
+
     for (item) in (GRAPHICS_OPTIONS):
         if (not config.has_option("Graphics", item)):
             match (item):
@@ -754,6 +884,8 @@ def wtde_verify_config() -> None:
     ]
     
     # Verify "Band" section.
+    if (not config.has_section("Band")): config["Band"] = {}
+
     for (item) in (BAND_OPTIONS):
         if (not config.has_option("Band", item)):
             match (item):
@@ -772,6 +904,8 @@ def wtde_verify_config() -> None:
     ]
 
     # Verify "Audio" section.
+    if (not config.has_section("Audio")): config["Audio"] = {}
+    
     for (item) in (AUDIO_OPTIONS):
         if (not config.has_option("Audio", item)):
             match (item):
@@ -794,6 +928,8 @@ def wtde_verify_config() -> None:
     ]
 
     # Verify "Logger" section.
+    if (not config.has_section("Logger")): config["Logger"] = {}
+
     for (item) in (LOGGER_OPTIONS):
         if (not config.has_option("Logger", item)):
             match (item):
@@ -829,6 +965,8 @@ def wtde_verify_config() -> None:
     ]
 
     # Verify "AutoLaunch" section.
+    if (not config.has_section("AutoLaunch")): config["AutoLaunch"] = {}
+
     for (item) in (AUTO_LAUNCH_OPTIONS):
         if (not config.has_option("AutoLaunch", item)):
             match (item):
@@ -859,16 +997,19 @@ def wtde_verify_config() -> None:
         "FixMemoryHandler",
         "FixFSBObjects",
         "FixNoteLimit",
-        "InputHack",
+        "DisableInputHack",
         "SetlistScaler",
         "HeapScaler"
     ]
 
     # Verify "Debug" section.
+    if (not config.has_section("Debug")): config["Debug"] = {}
+
     for (item) in (DEBUG_OPTIONS):
         if (not config.has_option("Debug", item)):
             match (item):
                 case "FixMemoryHandler":    valueToSet = "1"
+                case "DisableInputHack":    valueToSet = "1"
                 case _:                     valueToSet = "0"
             
             config.set("Debug", item, valueToSet)
@@ -1097,7 +1238,7 @@ def wtde_run_updater() -> None:
 
     if (OS.path.exists(f"{wtdeDir}/Updater.exe")):
         OS.chdir(wtdeDir)
-        OS.system(".\\Updater.exe")
+        OS.startfile("Updater.exe")
         return True
     else:
         print("WTDE Updater not downloaded!")
@@ -1140,7 +1281,7 @@ def wtde_run_updater() -> None:
 
                 print("New Updater configuration file successfully created!")
 
-            messagebox.showinfo("Successfully Downloaded!", "The WTDE updater program was successfully downloaded!")
+            messagebox.showinfo("Successfully Downloaded!", "The WTDE updater program was successfully downloaded! Select this button again to update your mod to the latest version.")
 
             print("WTDE Updater successfully downloaded and set up!")
 
@@ -1571,29 +1712,29 @@ def auto_inst_diff(setting: str) -> str:
         case "expert":                  return "Expert"
 
 # Ask for a different venue not listed in the venue list for auto launch.
-def ask_venue_name(event) -> None:
+def ask_venue_name(var: StringVar, event) -> None:
     """ Asks the user for a venue zone ID not specified already in lists of venues. """
     def avn_exit_protocol() -> None:
         """ Exit protocol for the Input Venue ID window. """
         OS.chdir(oldCWD)
-        if (venueEntryBox.get().strip() == ""): venueSelection.set("Phi Psi Kappa")
-        else: venueSelection.set(venueEntryBox.get())
+        if (venueEntryBox.get().strip() == ""): var.set("Phi Psi Kappa")
+        else: var.set(venueEntryBox.get())
         askVenueRoot.destroy()
 
     def avn_cancel() -> None:
         """ The cancel button for the Input Venue ID window. """
-        venueSelection.set("Phi Psi Kappa")
+        var.set("Phi Psi Kappa")
         askVenueRoot.destroy()
 
     oldCWD = OS.getcwd()
 
-    if (venueSelection.get() == "Other..."):
+    if (var.get() == "Other..."):
         # Set up window.
         OS.chdir(OWD)
         askVenueRoot = Tk()
         askVenueRoot.title("Input Venue ID")
         askVenueRoot.iconbitmap("res/icon.ico")
-        askVenueRoot.geometry("480x192")
+        askVenueRoot.geometry("480x192+600+280")
         askVenueRoot.config(bg = BG_COLOR)
         askVenueRoot.resizable(False, False)
         askVenueRoot.protocol("WM_DELETE_WINDOW", avn_exit_protocol)
@@ -1610,6 +1751,7 @@ def ask_venue_name(event) -> None:
 
         venueEntryBox = Entry(askVenueRoot, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 30)
         venueEntryBox.grid(row = 1, column = 1, sticky = 'w')
+        venueEntryBox.focus_set()
 
         # OK and cancel buttons.
         venueEntryOK = Button(askVenueRoot, text = "OK", command = avn_exit_protocol, font = FONT_INFO, width = 10, height = 1, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
@@ -1674,7 +1816,7 @@ def wtde_get_gem_color(checksum: str) -> str:
         case "pure_blue":               return "Pure Blue"
         case "pure_orange":             return "Pure Orange"
         case "candy_cane":              return "Candy Cane"
-        case "halloween":               return "Halloween"
+        case "halloween":               return "Ghoulish"
         case _:                         return ""
 
 # Get language checksum.
@@ -1691,9 +1833,106 @@ def wtde_convert_language(text: str) -> str:
         case "Korean (한국어)":             return "ko"
         case _:                            return ""
 
+# Make sure the vocal calibration has only numbers.
+def wtde_vocal_delay_get(text: str) -> str:
+    """ Returns the value of the Mic Audio Delay field, with only numbers and negatives. """
+    # This will hold the final string.
+    finalString = ""
+
+    # Is there a negative at the front of the string?
+    try:
+        if (text.index("-") == 0): finalString += "-"
+        text = text.replace("-", "")
+
+    except ValueError:
+        pass
+
+    splitInputString = text.split()
+
+    for (char) in (splitInputString):
+        if (char.isnumeric()): finalString += char
+        else: continue
+
+    return finalString
+
+# Get the gem theme or style.
+def wtde_get_note_info(mode: str) -> str:
+    """
+    Return the information of a note theme/style.
+    \n
+    - mode : str >> Either a literal 'style' or 'color'. Identifier for the function to tell which aspect of the
+    notes it needs to look for.
+    \n
+    Returns the respective option name.
+    """
+    # Original working directory.
+    oldDir = OS.getcwd()
+
+    # Value to return.
+    valueToReturn = ""
+
+    # Change to our config directory and read its contents.
+    OS.chdir(wtde_find_config())
+    config.read("GHWTDE.ini")
+
+    # Operate based on given arguments.
+    if (mode == 'style'):
+        noteStyles = ["GHWT Notes (Default)", "GH3 Notes", "GH: WOR Notes", "Flat Notes"]
+        match (config.get("Graphics", "GemTheme")):
+            case "ghwt":            valueToReturn = noteStyles[0]
+            case "gh3":             valueToReturn = noteStyles[1]
+            case "wor":             valueToReturn = noteStyles[2]
+            case "flat":            valueToReturn = noteStyles[3]
+            case _:                 valueToReturn = noteStyles[0]
+
+    elif (mode == 'color'):
+        noteThemesChecksums = [
+            "standard_gems", "pink_gems", "stealth_gems", "Eggs_N_Bacon_gems", "old_glory_gems", "solid_gold_gems", "platinum_gems",
+            "diabolic_gems", "toxic_waste_gems", "black_gems", "pastel_gems", "dark_gems", "outline_gems", "gh1proto_gems",
+            "pure_green", "pure_red", "pure_yellow", "pure_blue", "pure_orange", "candy_cane", "halloween"
+        ]
+
+        noteThemesOptionNames = [
+            "Normal Color (Default)", "Pink", "Stealth", "Eggs 'N Bacon", "Old Glory", "Solid Gold", "Platinum",
+            "Diabolic", "Toxic Waste", "Black", "Pastel", "Dark", "Outline", "GH1 Prototype", "Pure Green",
+            "Pure Red", "Pure Yellow", "Pure Blue", "Pure Orange", "Candy Cane", "Ghoulish"
+        ]
+
+        for (x), (item) in (enumerate(noteThemesChecksums)):
+            if (config.get("Graphics", "GemColors") == item): valueToReturn = noteThemesOptionNames[x]
+            else: continue
+    
+    else: valueToReturn = ""
+
+    # Reset working directory.
+    OS.chdir(oldDir)
+
+    # Return the necessary value.
+    return valueToReturn
+
+# Open Mods folder.
+def open_mods_folder() -> None:
+    """ Opens the user's Mods folder in DATA/MODS. """
+    # Change directory to original directory.
+    oldDir = OS.getcwd()
+    OS.chdir(OWD)
+
+    # Read Updater.ini and get the user's WTDE directory.
+    config.read("Updater.ini")
+    wtdeDir = config.get("Updater", "GameDirectory")
+
+    # Open MODS folder from the identified directory.
+    OS.startfile(f"{wtdeDir}/DATA/MODS")
+
+    # Restore working directory.
+    OS.chdir(oldDir)
+
 # Verify files and main GHWTDE config file.
 verify_files()
 wtde_verify_config()
+
+# Parse command line arguments (if running at the command line).
+arg_cmd_parse()
 
 # Default program variables.
 BG_COLOR = "#0B101F"
@@ -1713,7 +1952,7 @@ HOVER_DELAY = 500
 # Create program window.
 root = Tk()
 root.title(f"GHWT: Definitive Edition Launcher++ - V{VERSION}")
-root.geometry("1280x768")
+root.geometry("1280x768+300+140")
 root.iconbitmap(resource_path("res/icon.ico"))
 root.config(bg = BG_COLOR)
 root.resizable(False, False)
@@ -1745,23 +1984,28 @@ widgetCanvas.create_image(0, 0, image = IMAGE_BG, anchor = 'nw')
 widgetCanvas.create_image(8, 8, image = WTDE_LOGO, anchor = 'nw')
 
 # Run WTDE button.
-wtdeRunButton = Button(root, text = "Save & Run WTDE", font = FONT_INFO, width = 30, height = 2, command = wtde_run_save, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
+wtdeRunButton = Button(root, text = "Save & Run WTDE", font = FONT_INFO, width = 25, height = 2, command = wtde_run_save, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
 wtdeRunButton.place(x = 196, y = 10)
 wtdeRunButtonTip = Hovertip(wtdeRunButton, "Save all configuration settings and run GHWT: Definitive Edition.", HOVER_DELAY)
 
 # Save config button.
-wtdeSaveConfigButton = Button(root, text = "Save Configuration", font = FONT_INFO, width = 30, height = 2, command = wtde_save_config, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
-wtdeSaveConfigButton.place(x = 466, y = 10)
+wtdeSaveConfigButton = Button(root, text = "Save Configuration", font = FONT_INFO, width = 25, height = 2, command = wtde_save_config, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
+wtdeSaveConfigButton.place(x = 412, y = 10)
 wtdeSaveConfigButtonTip = Hovertip(wtdeSaveConfigButton, "Save your configuration settings.", HOVER_DELAY)
 
 # Update WTDE button.
-wtdeUpdateButton = Button(root, text = "Update WTDE", font = FONT_INFO, width = 30, height = 2, command = wtde_run_updater, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
-wtdeUpdateButton.place(x = 736, y = 10)
+wtdeUpdateButton = Button(root, text = "Update WTDE", font = FONT_INFO, width = 25, height = 2, command = wtde_run_updater, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
+wtdeUpdateButton.place(x = 628, y = 10)
 wtdeUpdateButtonTip = Hovertip(wtdeUpdateButton, "Update WTDE to the latest version and verify your installation's integrity.", HOVER_DELAY)
 
+# Open MODS folder.
+wtdeModsFolderButton = Button(root, text = "Open Mods Folder", font = FONT_INFO, width = 25, height = 2, command = open_mods_folder, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
+wtdeModsFolderButton.place(x = 844, y = 10)
+wtdeModsFolderButtonTip = Hovertip(wtdeModsFolderButton, "Open your Mods folder in your GHWT installation folder.", HOVER_DELAY)
+
 # Make WTDE shortcut on Desktop button.
-wtdeShortcutButton = Button(root, text = "Make Shortcut on Desktop", font = FONT_INFO, width = 30, height = 2, command = wtde_create_lnk, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
-wtdeShortcutButton.place(x = 1006, y = 10)
+wtdeShortcutButton = Button(root, text = "Make Shortcut on Desktop", font = FONT_INFO, width = 25, height = 2, command = wtde_create_lnk, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
+wtdeShortcutButton.place(x = 1060, y = 10)
 wtdeShortcutButtonTip = Hovertip(wtdeShortcutButton, "Add a shortcut to WTDE on the Desktop.", HOVER_DELAY)
 
 # Main tabbed options through TTK's Notebook widget.
@@ -2578,12 +2822,16 @@ inputMicDelayLabel = Label(wtdeOptionsInput, text = "Mic Audio Delay: ", bg = BG
 inputMicDelayLabel.grid(row = 16, column = 3, pady = 20, sticky = 'e')
 inputMicDelayLabelTip = Hovertip(inputMicDelayLabel, MIC_DELAY_TIP, HOVER_DELAY)
 
-inputMicDelayEntry = Entry(wtdeOptionsInput, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 10, validate = 'key')
+inputMicDelayEntry = Entry(wtdeOptionsInput, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 10)
 inputMicDelayEntry.grid(row = 16, column = 4, pady = 20, sticky = 'w')
-inputMicDelayEntry.config(validatecommand = (inputMicDelayEntry.register(input_verify_numeric), '%P', '%d'))
 inputMicDelayEntryTip = Hovertip(inputMicDelayEntry, MIC_DELAY_TIP, HOVER_DELAY)
 
-inputMicDelayEntry.insert(0, config.get("Audio", "VocalAdjustment"))
+# Use input hack.
+inputHack = StringVar()
+INPUT_HACK_TIP = "Enable or disable the input hack."
+inputUseInputHack = Checkbutton(wtdeOptionsInput, text = f"  Use Input Hack", variable = inputHack, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+inputUseInputHack.grid(row = 16, column = 5, pady = 5, sticky = 'w')
+inputUseInputHackTip = Hovertip(inputUseInputHack, INPUT_HACK_TIP, HOVER_DELAY)
 
 # ====================================================================== #
 #                          GRAPHICS SETTINGS TAB                         #
@@ -2625,12 +2873,12 @@ graphicsResolutionLabel.grid(row = 1, column = 0, pady = 5, sticky = 'w')
 graphicsResolutionLabel = Hovertip(graphicsResolutionLabel, RESOLUTION_TIP, HOVER_DELAY)
 
 graphicsResolutionWidth = Entry(wtdeOptionsGraphics, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 10, validate = 'key')
-graphicsResolutionWidth.place(x = 128, y = 48)
+graphicsResolutionWidth.place(x = 128, y = 50)
 graphicsResolutionWidth.config(validatecommand = (graphicsResolutionWidth.register(input_verify_numeric), '%P', '%d'))
 graphicsResolutionWidthTip = Hovertip(graphicsResolutionWidth, RES_WIDTH_TIP, HOVER_DELAY)
 
 graphicsResolutionHeight = Entry(wtdeOptionsGraphics, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 10, validate = 'key')
-graphicsResolutionHeight.place(x = 242, y = 48)
+graphicsResolutionHeight.place(x = 242, y = 50)
 graphicsResolutionHeight.config(validatecommand = (graphicsResolutionHeight.register(input_verify_numeric), '%P', '%d'))
 graphicsResolutionHeightTip = Hovertip(graphicsResolutionHeight, RES_HEIGHT_TIP, HOVER_DELAY)
 
@@ -2660,7 +2908,7 @@ graphicsFPSLimitLabelTip = Hovertip(graphicsFPSLimitLabel, FPS_LIMIT_TIP, HOVER_
 
 graphicsFPSLimit = OptionMenu(wtdeOptionsGraphics, fpsLimit, *fpsLimitOptions)
 graphicsFPSLimit.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-graphicsFPSLimit.place(x = 128, y = 122)
+graphicsFPSLimit.place(x = 128, y = 124)
 graphicsFPSLimitTip = Hovertip(graphicsFPSLimit, FPS_LIMIT_TIP, HOVER_DELAY)
 
 
@@ -2784,9 +3032,39 @@ graphicsHideBandTip = Hovertip(graphicsHideBand, HIDE_BAND_TIP, HOVER_DELAY)
 # Enable/disable hide instruments.
 hideInstruments = StringVar()
 HIDE_INSTRUMENTS_TIP = "Show or hide the band's instruments."
-graphicsHideInstruments = Checkbutton(wtdeOptionsGraphics, text = "  Hide Instruments", variable = hideBand, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+graphicsHideInstruments = Checkbutton(wtdeOptionsGraphics, text = "  Hide Instruments", variable = hideInstruments, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
 graphicsHideInstruments.grid(row = 5, column = 1, padx = 40, pady = 5, sticky = 'w')
 graphicsHideInstrumentsTip = Hovertip(graphicsHideInstruments, HIDE_INSTRUMENTS_TIP, HOVER_DELAY)
+
+# Select note style.
+noteStyles = ["GHWT Notes (Default)", "GH3 Notes", "GH: WOR Notes", "Flat Notes"]
+NOTE_STYLE_TIP = "Select the style of notes used on the highway."
+graphicsNoteStyleLabel = Label(wtdeOptionsGraphics, text = "         Note (Gem) Style:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+graphicsNoteStyleLabel.grid(row = 6, column = 1, pady = 5, sticky = 'w')
+graphicsNoteStyleLabelTip = Hovertip(graphicsNoteStyleLabel, NOTE_STYLE_TIP, HOVER_DELAY)
+
+noteStyle = StringVar()
+graphicsNoteStyle = OptionMenu(wtdeOptionsGraphics, noteStyle, *noteStyles)
+graphicsNoteStyle.config(width = 20, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
+graphicsNoteStyle.grid(row = 6, column = 2, pady = 5, sticky = 'w')
+graphicsNoteStyleTip = Hovertip(graphicsNoteStyle, NOTE_STYLE_TIP, HOVER_DELAY)
+
+# Select gem theme.
+noteThemes = [
+    "Normal Color (Default)", "Pink", "Stealth", "Eggs 'N Bacon", "Old Glory", "Solid Gold", "Platinum",
+    "Diabolic", "Toxic Waste", "Black", "Pastel", "Dark", "Outline", "GH1 Prototype", "Pure Green",
+    "Pure Red", "Pure Yellow", "Pure Blue", "Pure Orange", "Candy Cane", "Ghoulish"
+]
+NOTE_THEME_TIP = "Select the color scheme for the notes on the highway."
+graphicsNoteThemeLabel = Label(wtdeOptionsGraphics, text = "         Note (Gem) Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+graphicsNoteThemeLabel.grid(row = 7, column = 1, pady = 5, sticky = 'w')
+graphicsNoteThemeLabelTip = Hovertip(graphicsNoteThemeLabel, NOTE_THEME_TIP, HOVER_DELAY)
+
+noteTheme = StringVar()
+graphicsNoteTheme = OptionMenu(wtdeOptionsGraphics, noteTheme, *noteThemes)
+graphicsNoteTheme.config(width = 20, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
+graphicsNoteTheme.grid(row = 7, column = 2, pady = 5, sticky = 'w')
+graphicsNoteThemeTip = Hovertip(graphicsNoteTheme, NOTE_THEME_TIP, HOVER_DELAY)
 
 # ====================================================================== #
 #                             BAND SETTINGS TAB                          #
@@ -2908,19 +3186,22 @@ venues = [
     "Other..."
 ]
 
-VENUE_PREFERRED_TIP = "Set the ID of the venue you want to always use.\n\n" \
-                      "The IDs for these venues are stored in the DATA/ZONES folder."
+preferredVenue = StringVar()
+
+VENUE_PREFERRED_TIP = "Set the venue you want to always use while in-game. If a venue you wish to\n" \
+                      "use isn't listed, select \"Other...\" to specify it."
 
 bandPreferredStageLabel = Label(wtdeOptionsBand, text = "Preferred Venue: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
 bandPreferredStageLabel.grid(row = 5, column = 0, padx = 10, pady = 5, sticky = 'e')
 bandPreferredStageLabelTip = Hovertip(bandPreferredStageLabel, VENUE_PREFERRED_TIP, HOVER_DELAY)
 
-bandPreferredStageEntry = Entry(wtdeOptionsBand, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 30)
-bandPreferredStageEntry.grid(row = 5, column = 1, pady = 5)
-bandPreferredStageEntryTip = Hovertip(bandPreferredStageEntry, VENUE_PREFERRED_TIP, HOVER_DELAY)
+bandPreferredStageMenu = OptionMenu(wtdeOptionsBand, preferredVenue, *venues, command = lambda e: ask_venue_name(preferredVenue, e))
+bandPreferredStageMenu.config(width = 28, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
+bandPreferredStageMenu.grid(row = 5, column = 1, pady = 5)
+bandPreferredStageMenu = Hovertip(bandPreferredStageMenu, VENUE_PREFERRED_TIP, HOVER_DELAY)
 
 # Get the preferred venue already in the config.
-bandPreferredStageEntry.insert(0, config.get("Band", "PreferredSinger"))
+preferredVenue.set(auto_get_venue(config.get("Band", "PreferredStage")))
 
 # ====================================================================== #
 #                        AUTO LAUNCH SETTINGS TAB                        #
@@ -2970,7 +3251,7 @@ autoVenueLabel = Label(wtdeOptionsAutoLaunch, text = "             Venue: ", bg 
 autoVenueLabel.grid(row = 2, column = 3, pady = 5, sticky = 'e')
 autoVenueLabelTip = Hovertip(autoVenueLabel, VENUE_SELECTION_TIP, HOVER_DELAY)
 
-autoVenueSelect = OptionMenu(wtdeOptionsAutoLaunch, venueSelection, *venues, command = ask_venue_name)
+autoVenueSelect = OptionMenu(wtdeOptionsAutoLaunch, venueSelection, *venues, command = lambda e: ask_venue_name(venueSelection, e))
 autoVenueSelect.config(width = 25, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
 autoVenueSelect.grid(row = 2, column = 4, pady = 5, sticky = 'w')
 autoVenueSelectTip = Hovertip(autoVenueSelect, VENUE_SELECTION_TIP, HOVER_DELAY)
