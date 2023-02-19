@@ -1,7 +1,7 @@
 # GHWT: Definitive Edition Launcher++
 An upgraded launcher for Guitar Hero World Tour: Definitive Edition!
 
-**IMPORTANT:** In its current state, this program isn't 100% functional. It will be ready by the time V1.0.4 of WTDE is released!
+**IMPORTANT:** In its current state, this program isn't 100% functional. It will be ready by the time V1.1 of WTDE is released!
 
 Here's some of its features:
 - An entire graphical editor for just about every INI setting there is for WTDE, along with detailed and concise descriptions of each option and what it does.
