@@ -7,7 +7,7 @@
 #     \  /\  /     | |  | |__| | |____    | |____ / ____ \ |__| | |\  | |____| |  | | |____| | \ \ |_|   |_|        #
 #      \/  \/      |_|  |_____/|______|   |______/_/    \_\____/|_| \_|\_____|_|  |_|______|_|  \_\                 #
 #                                                                                                                   #
-#            Coded by IMF24               Guitar Hero World Tour: Definitive Edition by Fretworks EST. 2021         #
+#         Coded by IMF24               Guitar Hero World Tour: Definitive Edition by Fretworks EST. 2021            #
 #                                                                                                                   #
 #                                      Updater Coded by Zedek the Plague Doctor™                                    #
 # ================================================================================================================= #
@@ -23,7 +23,7 @@ import subprocess as SP
 import winshell as WS
 from win32com.client import Dispatch
 from win32api import GetSystemMetrics
-import requests as REQ
+import requests
 import zipfile as ZIP
 import configparser as CF
 from bs4 import BeautifulSoup
@@ -334,6 +334,12 @@ def wtde_save_config() -> None:
     config.set("Band", "PreferredSinger", bandPreferredVocalistEntry.get())
 
     config.set("Band", "PreferredStage", auto_save_venue(preferredVenue.get()))
+
+    config.set("Band", "PreferredGuitaristHighway", bandPreferredGuitaristHighwayEntry.get())
+
+    config.set("Band", "PreferredBassistHighway", bandPreferredBassistHighwayEntry.get())
+
+    config.set("Band", "PreferredDrummerHighway", bandPreferredDrummerHighwayEntry.get())
 
     # ===================== SAVE AUTO LAUNCH SETTINGS ===================== #
     config.set("AutoLaunch", "Enabled", enableAutoLaunch.get())
@@ -695,6 +701,8 @@ def wtde_load_config() -> None:
 
     noteTheme.set(wtde_get_note_info('color'))
 
+    introStyle.set(wtde_get_intro_load('intro'))
+
     # ===================== INPUT ===================== #
     inputMicDelayEntry.insert(0, config.get("Audio", "VocalAdjustment"))
 
@@ -879,6 +887,9 @@ def wtde_verify_config() -> None:
         "PreferredDrummer",
         "PreferredSinger",
         "PreferredStage",
+        "PreferredGuitaristHighway",
+        "PreferredBassistHighway",
+        "PreferredDrummerHighway",
         "GuitarStrumAnim",
         "BassStrumAnim"
     ]
@@ -1229,65 +1240,71 @@ def key_number_encode(key: str) -> int:
 # Update to the latest version.
 def wtde_run_updater() -> None:
     """ Runs the updater program for WTDE. Aborts execution if the updater is not present. """
-    oldDir = OS.getcwd()
-    OS.chdir(OWD)
+    # Is the user connected to the internet?
+    if (is_connected("https://cdn.discordapp.com/attachments/872794777060515890/1044075617307590666/Updater_Main_1_0_3.zip")):
+        oldDir = OS.getcwd()
+        OS.chdir(OWD)
 
-    config.read("Updater.ini")
+        config.read("Updater.ini")
 
-    wtdeDir = config.get("Updater", "GameDirectory")
+        wtdeDir = config.get("Updater", "GameDirectory")
 
-    if (OS.path.exists(f"{wtdeDir}/Updater.exe")):
-        OS.chdir(wtdeDir)
-        OS.startfile("Updater.exe")
-        return True
-    else:
-        print("WTDE Updater not downloaded!")
-        
-        # If the updater isn't downloaded, ask the user if they want to download it.
-        if (messagebox.askyesno("Download Updater?", "The WTDE updater program was not found in your\ngame folder. Do you want to download it?")):
-            print("Downloading files and extracting ZIP...")
-
-            # Print GHWT install location.
-            print(wtdeDir)
-
-            # Download the updater files.
-            updaterDir = "https://cdn.discordapp.com/attachments/872794777060515890/1044075617307590666/Updater_Main_1_0_3.zip"
-
-            saveDir = f"{wtdeDir}/updater_files.zip"
-
-            zipData = REQ.get(updaterDir, allow_redirects = True)
-
-            open(saveDir, 'wb').write(zipData.content)
-
-            # Extract the ZIP file to the local directory.
-            with ZIP.ZipFile(saveDir, "r") as zipRef:
-                zipRef.extractall(path = wtdeDir)
-
-            # Delete the ZIP file, we no longer need it.
-            OS.remove(saveDir)
-
-            # If it doesn't exist, add the Updater.ini to accompany the updater program.
-            updaterINIDir = f"{wtdeDir}/Updater.ini"
-
-            if (not OS.path.exists(updaterINIDir)):
-                config.write(open(updaterINIDir, 'w'))
-
-                config["Updater"] = {
-                    "GameDirectory" : wtdeDir
-                }
-
-                with open(updaterINIDir, 'w') as cnf:
-                    config.write(cnf)
-
-                print("New Updater configuration file successfully created!")
-
-            messagebox.showinfo("Successfully Downloaded!", "The WTDE updater program was successfully downloaded! Select this button again to update your mod to the latest version.")
-
-            print("WTDE Updater successfully downloaded and set up!")
-
-            OS.chdir(oldDir)
-
+        if (OS.path.exists(f"{wtdeDir}/Updater.exe")):
+            OS.chdir(wtdeDir)
+            OS.startfile("Updater.exe")
             return True
+        else:
+            print("WTDE Updater not downloaded!")
+            
+            # If the updater isn't downloaded, ask the user if they want to download it.
+            if (messagebox.askyesno("Download Updater?", "The WTDE updater program was not found in your\ngame folder. Do you want to download it?")):
+                print("Downloading files and extracting ZIP...")
+
+                # Print GHWT install location.
+                print(wtdeDir)
+
+                # Download the updater files.
+                updaterDir = "https://cdn.discordapp.com/attachments/872794777060515890/1044075617307590666/Updater_Main_1_0_3.zip"
+
+                saveDir = f"{wtdeDir}/updater_files.zip"
+
+                zipData = requests.get(updaterDir, allow_redirects = True)
+
+                open(saveDir, 'wb').write(zipData.content)
+
+                # Extract the ZIP file to the local directory.
+                with ZIP.ZipFile(saveDir, "r") as zipRef:
+                    zipRef.extractall(path = wtdeDir)
+
+                # Delete the ZIP file, we no longer need it.
+                OS.remove(saveDir)
+
+                # If it doesn't exist, add the Updater.ini to accompany the updater program.
+                updaterINIDir = f"{wtdeDir}/Updater.ini"
+
+                if (not OS.path.exists(updaterINIDir)):
+                    config.write(open(updaterINIDir, 'w'))
+
+                    config["Updater"] = {
+                        "GameDirectory" : wtdeDir
+                    }
+
+                    with open(updaterINIDir, 'w') as cnf:
+                        config.write(cnf)
+
+                    print("New Updater configuration file successfully created!")
+
+                messagebox.showinfo("Successfully Downloaded!", "The WTDE updater program was successfully downloaded! Select this button again to update your mod to the latest version.")
+
+                print("WTDE Updater successfully downloaded and set up!")
+
+                OS.chdir(oldDir)
+
+                return True
+            
+    else:
+        messagebox.showerror("No Internet Connection", "We can't update your mod because you are not currently connected to the internet. Please check your internet connection, then try again.")
+        return False
 
 # Find the main WTDE configuration file.
 def wtde_find_config() -> str:
@@ -1690,7 +1707,7 @@ def auto_set_player(id: int | str, status: str) -> None:
             autoP4UseBot.config(state = status)
 
 # Enable widgets based on player count (event version used by OptionMenu).
-def auto_update_players_event(event) -> None:
+def auto_update_players_event(event: Event) -> None:
     """ An alternate version of auto_update_players() used by the player selection OptionMenu. """
     auto_update_players()
 
@@ -1712,7 +1729,7 @@ def auto_inst_diff(setting: str) -> str:
         case "expert":                  return "Expert"
 
 # Ask for a different venue not listed in the venue list for auto launch.
-def ask_venue_name(var: StringVar, event) -> None:
+def ask_venue_name(var: StringVar, event: Event) -> None:
     """ Asks the user for a venue zone ID not specified already in lists of venues. """
     def avn_exit_protocol() -> None:
         """ Exit protocol for the Input Venue ID window. """
@@ -1733,8 +1750,8 @@ def ask_venue_name(var: StringVar, event) -> None:
         OS.chdir(OWD)
         askVenueRoot = Tk()
         askVenueRoot.title("Input Venue ID")
-        askVenueRoot.iconbitmap("res/icon.ico")
-        askVenueRoot.geometry("480x192+600+280")
+        askVenueRoot.iconbitmap(resource_path("res/icon.ico"))
+        askVenueRoot.geometry(f"480x192+{get_screen_resolution()[0] // 3}+{get_screen_resolution()[1] // 4}")
         askVenueRoot.config(bg = BG_COLOR)
         askVenueRoot.resizable(False, False)
         askVenueRoot.protocol("WM_DELETE_WINDOW", avn_exit_protocol)
@@ -1927,6 +1944,63 @@ def open_mods_folder() -> None:
     # Restore working directory.
     OS.chdir(oldDir)
 
+# Is the user connected to the internet?
+def is_connected(url: str, tout = 10) -> bool | Exception:  
+    # Try to ping the webside and get its contents.
+    # If we can do that, return True.
+    try:
+        request = requests.get(url, timeout = tout)
+        return True
+
+    # Catch the error, if found. Return False.
+    except (requests.ConnectionError, requests.Timeout) as exception:
+        return False
+
+# Retrieve the latest version of WTDE on the Pastebin page.
+def wtde_latest_version() -> str:
+    """ Retrieves the latest version of WTDE on the Pastebin page. """
+    versionPage = "https://pastebin.com/raw/wk00Mq3M"
+
+    if (is_connected(versionPage)):
+        return requests.get(versionPage).text
+    else:
+        return "??? (connect to internet)"
+
+# Retrieve the latest version of WTDE on the Pastebin page.
+def wtde_get_news() -> str:
+    """ Retrieves the latest news for WTDE on the Pastebin page. """
+    newsPage = "https://pastebin.com/raw/c9MwubYS"
+
+    if (is_connected("https://pastebin.com/raw/c9MwubYS")):
+        return requests.get(newsPage).text
+    
+    else:
+        try:
+            requests.get(newsPage).text
+        except Exception as exception:
+            excep = exception
+
+        return f"Hm... We couldn't establish a connection to the internet.\n\nIs the Wi-Fi and/or router turned on?\n\nError Information:\n{excep}"
+
+# Get intro text style or load screen theme.
+def wtde_get_intro_load(mode: str) -> str:
+    """ Reads option names and deciphers them into their INI checksums for loading screen themes and intro text styles. """
+    # mode: 'intro' or 'load'
+    if (mode == 'intro'):
+        # This is the song intro text shown on the top left of the screen.
+        introStyles = [
+            "Normal GHWT (Default)", "Guitar Hero III", "Guitar Hero III (Left)", "GH: Smash Hits", "GH: Metallica", "GH: Van Halen", "Guitar Hero 5", "Band Hero", "GH: Warriors of Rock", "Auto (Based on Setlist)"
+        ]
+
+        introChecksums = [
+            "ghwt", "gh3", "gh3_left", "ghshits", "ghm", "ghvh", "gh5", "bh", "ghwor", "auto"
+        ]
+
+        for (x), (item) in (enumerate(introChecksums)):
+            if (config.get("Graphics", "SongIntroStyle") == item): return introStyles[x]
+        
+        return introStyles[0]
+
 # Verify files and main GHWTDE config file.
 verify_files()
 wtde_verify_config()
@@ -1945,6 +2019,7 @@ FONT = "Tahoma"
 FONT_SIZE = 11
 FONT_INFO = (FONT, FONT_SIZE)
 FONT_INFO_DROPDOWN = (FONT, 9)
+FONT_INFO_DIVIDER = (FONT, 1)
 TAB_WINDOW_WIDTH = 1060
 TAB_WINDOW_HEIGHT = 620
 HOVER_DELAY = 500
@@ -1952,7 +2027,7 @@ HOVER_DELAY = 500
 # Create program window.
 root = Tk()
 root.title(f"GHWT: Definitive Edition Launcher++ - V{VERSION}")
-root.geometry("1280x768+300+140")
+root.geometry(f"1280x768+{get_screen_resolution()[0] // 6}+{get_screen_resolution()[1] // 8}")
 root.iconbitmap(resource_path("res/icon.ico"))
 root.config(bg = BG_COLOR)
 root.resizable(False, False)
@@ -1961,14 +2036,18 @@ root.focus_force()
 
 # Create image constants.
 IMAGE_BG = ImageTk.PhotoImage(Image.open(resource_path("res/bg.png")))
-WTDE_LOGO = ImageTk.PhotoImage(Image.open(resource_path("res/icon_192.png")))
+WTDE_LOGO = ImageTk.PhotoImage(Image.open(resource_path("res/logo.png")))
+WTDE_LOGO_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icon_192.png")))
+WTDE_LOGO_SMALLER = ImageTk.PhotoImage(Image.open(resource_path("res/logo_smaller.png")))
 
+NEWS_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/news_icon.png")))
 GENERAL_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/general_icon.png")))
 INPUT_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/input_icon.png")))
 GRAPHICS_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/graphics_icon.png")))
 AUTO_LAUNCH_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/auto_launch_icon.png")))
 BAND_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/band_icon.png")))
 DEBUG_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/debug_icon.png")))
+CREDITS_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/credits_icon.png")))
 
 INPUT_GUITAR_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/guitar_bass.png")))
 INPUT_DRUMS_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/drums.png")))
@@ -1981,7 +2060,7 @@ widgetCanvas.place(x = -10, y = -10)
 widgetCanvas.create_image(0, 0, image = IMAGE_BG, anchor = 'nw')
 
 # Top panel: WTDE logo and run button.
-widgetCanvas.create_image(8, 8, image = WTDE_LOGO, anchor = 'nw')
+widgetCanvas.create_image(8, 8, image = WTDE_LOGO_ICON, anchor = 'nw')
 
 # Run WTDE button.
 wtdeRunButton = Button(root, text = "Save & Run WTDE", font = FONT_INFO, width = 25, height = 2, command = wtde_run_save, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
@@ -2013,28 +2092,56 @@ wtdeOptionsRoot = ttk.Notebook(root)
 wtdeOptionsRoot.place(x = 200, y = 70)
 
 # Set up tab frames.
+wtdeOptionsNews = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 wtdeOptionsGeneral = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 wtdeOptionsInput = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 wtdeOptionsGraphics = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 wtdeOptionsBand = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 wtdeOptionsAutoLaunch = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 wtdeOptionsDebug = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
+wtdeOptionsCredits = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 
 # Pack tab frames into the notebook.
+wtdeOptionsNews.pack(fill = 'both', expand = 1)
 wtdeOptionsGeneral.pack(fill = 'both', expand = 1)
 wtdeOptionsInput.pack(fill = 'both', expand = 1)
 wtdeOptionsGraphics.pack(fill = 'both', expand = 1)
 wtdeOptionsBand.pack(fill = 'both', expand = 1)
 wtdeOptionsAutoLaunch.pack(fill = 'both', expand = 1)
 wtdeOptionsDebug.pack(fill = 'both', expand = 1)
+wtdeOptionsCredits.pack(fill = 'both', expand = 1)
 
-# Ready the config to translate its settings into the program.
-OS.chdir(wtde_find_config())
-config.read("GHWTDE.ini")
+# ====================================================================== #
+#                               WTDE NEWS TAB                            #
+# ====================================================================== #
+# Show any news for GHWT: DE.
+# Show image at top.
+WTDE_NEWS_TITLE_TEXT = "    Want some of the latest news for GHWT: DE? Have a look for yourself here!\n\n\n    This page attempts to be as up-to-date as possible. Stay tuned for more!"
+
+newsTitleLabel = Label(wtdeOptionsNews, text = WTDE_NEWS_TITLE_TEXT, image = WTDE_LOGO_SMALLER, compound = 'left', bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+newsTitleLabel.pack(fill = 'x', anchor = 'n')
+
+# Add a white line.
+newsSeparator = ttk.Separator(wtdeOptionsNews, orient = 'horizontal')
+newsSeparator.pack(fill = 'x')
+
+newsLabel = Text(wtdeOptionsNews, bg = BG_COLOR, fg = FG_COLOR, relief = 'flat', font = FONT_INFO, wrap = WORD)
+newsLabel.pack(side = 'left', fill = 'both', expand = 1)
+newsLabel.insert(END, wtde_get_news())
+newsLabel.configure(state = 'disabled')
+
+newsScroll = ttk.Scrollbar(wtdeOptionsNews, orient = 'vertical', command = newsLabel.yview)
+newsScroll.pack(side = 'right', fill = 'y')
+
+newsLabel.config(yscrollcommand = newsScroll.set)
 
 # ====================================================================== #
 #                           GENERAL SETTINGS TAB                         #
 # ====================================================================== #
+# Ready the config to translate its settings into the program.
+OS.chdir(wtde_find_config())
+config.read("GHWTDE.ini")
+
 # This tab will primarily use settings found under [Config].
 
 # General settings tab information.
@@ -3066,13 +3173,29 @@ graphicsNoteTheme.config(width = 20, bg = BUTTON_BG, fg = BUTTON_FG, activebackg
 graphicsNoteTheme.grid(row = 7, column = 2, pady = 5, sticky = 'w')
 graphicsNoteThemeTip = Hovertip(graphicsNoteTheme, NOTE_THEME_TIP, HOVER_DELAY)
 
+# Select song intro style.
+introStyles = [
+    "Normal GHWT (Default)", "Guitar Hero III", "Guitar Hero III (Left)", "GH: Smash Hits", "GH: Metallica", "GH: Van Halen", "Guitar Hero 5", "Band Hero", "GH: Warriors of Rock", "Auto (Based on Setlist)"
+]
+INTRO_STYLE_TIP = "Select the style of intro shown on the top left corner of the\n" \
+                  "screen at the beginning of songs."
+graphicsIntroStyleLabel = Label(wtdeOptionsGraphics, text = "         Song Intro Style:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+graphicsIntroStyleLabel.grid(row = 8, column = 1, pady = 5, sticky = 'w')
+graphicsIntroStyleLabelTip = Hovertip(graphicsIntroStyleLabel, INTRO_STYLE_TIP, HOVER_DELAY)
+
+introStyle = StringVar()
+graphicsIntroStyle = OptionMenu(wtdeOptionsGraphics, introStyle, *introStyles)
+graphicsIntroStyle.config(width = 20, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
+graphicsIntroStyle.grid(row = 8, column = 2, pady = 5, sticky = 'w')
+graphicsIntroStyleTip = Hovertip(graphicsIntroStyle, INTRO_STYLE_TIP, HOVER_DELAY)
+
 # ====================================================================== #
 #                             BAND SETTINGS TAB                          #
 # ====================================================================== #
 # Band settings tab information.
 TAB_INFO_BAND = "Band Settings: Modify your preferred characters and venue for your band.\nHover over any option to see what it does!"
 bandInfoLabel = Label(wtdeOptionsBand, text = TAB_INFO_BAND, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-bandInfoLabel.grid(row = 0, column = 0, columnspan = 999)
+bandInfoLabel.grid(row = 0, column = 0, columnspan = 999, sticky = 'w')
 
 # Preferred guitarist setting.
 GUITAR_PREFERRED_TIP = "Set the ID of the character to force as the active guitarist. Leave this blank to force no character.\n\n" \
@@ -3203,6 +3326,48 @@ bandPreferredStageMenu = Hovertip(bandPreferredStageMenu, VENUE_PREFERRED_TIP, H
 # Get the preferred venue already in the config.
 preferredVenue.set(auto_get_venue(config.get("Band", "PreferredStage")))
 
+# Preferred guitarist highway.
+GUITAR_HWY_PREFERRED_TIP = "Set the preferred highway that the guitarist will use.\n\n" \
+                           "For a list of highway IDs, see the \"ID_Highways.txt\" file in your Resources folder."
+bandPreferredGuitaristHighwayLabel = Label(wtdeOptionsBand, text = "     Preferred Guitarist Highway:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
+bandPreferredGuitaristHighwayLabel.grid(row = 1, column = 2, padx = 10, pady = 5, sticky = 'e')
+bandPreferredGuitaristHighwayLabelTip = Hovertip(bandPreferredGuitaristHighwayLabel, GUITAR_HWY_PREFERRED_TIP, HOVER_DELAY)
+
+bandPreferredGuitaristHighwayEntry = Entry(wtdeOptionsBand, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 30)
+bandPreferredGuitaristHighwayEntry.grid(row = 1, column = 3, pady = 5)
+bandPreferredGuitaristHighwayTip = Hovertip(bandPreferredGuitaristHighwayEntry, GUITAR_HWY_PREFERRED_TIP, HOVER_DELAY)
+
+# Get the preferred guitarist already in the config.
+bandPreferredGuitaristHighwayEntry.insert(0, config.get("Band", "PreferredGuitaristHighway"))
+
+# Preferred bassist highway.
+BASS_HWY_PREFERRED_TIP = "Set the preferred highway that the bassist will use.\n\n" \
+                         "For a list of highway IDs, see the \"ID_Highways.txt\" file in your Resources folder."
+bandPreferredBassistHighwayLabel = Label(wtdeOptionsBand, text = "       Preferred Bassist Highway:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
+bandPreferredBassistHighwayLabel.grid(row = 2, column = 2, padx = 10, pady = 5, sticky = 'e')
+bandPreferredBassistHighwayLabelTip = Hovertip(bandPreferredBassistHighwayLabel, BASS_HWY_PREFERRED_TIP, HOVER_DELAY)
+
+bandPreferredBassistHighwayEntry = Entry(wtdeOptionsBand, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 30)
+bandPreferredBassistHighwayEntry.grid(row = 2, column = 3, pady = 5)
+bandPreferredBassistHighwayEntryTip = Hovertip(bandPreferredBassistHighwayEntry, BASS_HWY_PREFERRED_TIP, HOVER_DELAY)
+
+# Get the preferred bassist already in the config.
+bandPreferredBassistHighwayEntry.insert(0, config.get("Band", "PreferredBassistHighway"))
+
+# Preferred drummer highway.
+DRUM_HWY_PREFERRED_TIP = "Set the preferred highway that the drummer will use.\n\n" \
+                         "For a list of highway IDs, see the \"ID_Highways.txt\" file in your Resources folder."
+bandPreferredDrummerHighwayLabel = Label(wtdeOptionsBand, text = "       Preferred Drummer Highway:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
+bandPreferredDrummerHighwayLabel.grid(row = 3, column = 2, padx = 10, pady = 5, sticky = 'e')
+bandPreferredDrummerHighwayLabelTip = Hovertip(bandPreferredDrummerHighwayLabel, DRUM_HWY_PREFERRED_TIP, HOVER_DELAY)
+
+bandPreferredDrummerHighwayEntry = Entry(wtdeOptionsBand, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 30)
+bandPreferredDrummerHighwayEntry.grid(row = 3, column = 3, pady = 5)
+bandPreferredDrummerHighwayEntryTip = Hovertip(bandPreferredDrummerHighwayEntry, DRUM_HWY_PREFERRED_TIP, HOVER_DELAY)
+
+# Get the preferred bassist already in the config.
+bandPreferredDrummerHighwayEntry.insert(0, config.get("Band", "PreferredDrummerHighway"))
+
 # ====================================================================== #
 #                        AUTO LAUNCH SETTINGS TAB                        #
 # ====================================================================== #
@@ -3285,7 +3450,7 @@ autoP1SectionLabel = Label(wtdeOptionsAutoLaunch, text = "      Player 1: ", bg 
 autoP1SectionLabel.grid(row = 4, column = 0)
 autoP1SectionLabelTip = Hovertip(autoP1SectionLabel, P1_SETTINGS_INFO, HOVER_DELAY)
 
-autoP1InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "P1 Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
+autoP1InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "1P Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP1InstrumentLabel.grid(row = 4, column = 1, sticky = 'e')
 autoP1InstrumentLabelTip = Hovertip(autoP1InstrumentLabel, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
  
@@ -3299,7 +3464,7 @@ autoP1InstrumentTip = Hovertip(autoP1Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELA
 LABEL_Y = 188
 DROPDOWN_Y = 185
 
-autoP1DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "P1 Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
+autoP1DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "1P Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP1DifficultyLabel.place(x = 535, y = 188)
 autoP1DifficultyLabelTip = Hovertip(autoP1DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
@@ -3323,7 +3488,7 @@ autoP2SectionLabel = Label(wtdeOptionsAutoLaunch, text = "      Player 2: ", bg 
 autoP2SectionLabel.grid(row = 5, column = 0, pady = 20)
 autoP2SectionLabelTip = Hovertip(autoP2SectionLabel, P2_SETTINGS_INFO, HOVER_DELAY)
 
-autoP2InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "P2 Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
+autoP2InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "2P Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP2InstrumentLabel.grid(row = 5, column = 1, sticky = 'e')
 autoP2InstrumentLabelTip = Hovertip(autoP2InstrumentLabel, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
  
@@ -3333,7 +3498,7 @@ autoP2Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 autoP2Instrument.grid(row = 5, column = 2, sticky = 'w', columnspan = 2)
 autoP2InstrumentTip = Hovertip(autoP2Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
-autoP2DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "P2 Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
+autoP2DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "2P Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP2DifficultyLabel.place(x = 535, y = 235)
 autoP2DifficultyLabelTip = Hovertip(autoP2DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
@@ -3354,7 +3519,7 @@ autoP3SectionLabel = Label(wtdeOptionsAutoLaunch, text = "      Player 3: ", bg 
 autoP3SectionLabel.grid(row = 6, column = 0)
 autoP3SectionLabelTip = Hovertip(autoP3SectionLabel, P3_SETTINGS_INFO, HOVER_DELAY)
 
-autoP3InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "P3 Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
+autoP3InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "3P Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP3InstrumentLabel.grid(row = 6, column = 1, sticky = 'e')
 autoP3InstrumentLabelTip = Hovertip(autoP3InstrumentLabel, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
  
@@ -3364,7 +3529,7 @@ autoP3Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 autoP3Instrument.grid(row = 6, column = 2, sticky = 'w', columnspan = 2)
 autoP3InstrumentTip = Hovertip(autoP3Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
-autoP3DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "P3 Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
+autoP3DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "3P Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP3DifficultyLabel.place(x = 535, y = 282)
 autoP3DifficultyLabelTip = Hovertip(autoP3DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
@@ -3385,7 +3550,7 @@ autoP4SectionLabel = Label(wtdeOptionsAutoLaunch, text = "      Player 4: ", bg 
 autoP4SectionLabel.grid(row = 7, column = 0, pady = 20)
 autoP4SectionLabelTip = Hovertip(autoP4SectionLabel, P4_SETTINGS_INFO, HOVER_DELAY)
 
-autoP4InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "P4 Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
+autoP4InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "4P Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP4InstrumentLabel.grid(row = 7, column = 1, sticky = 'e')
 autoP4InstrumentLabelTip = Hovertip(autoP3InstrumentLabel, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
  
@@ -3395,7 +3560,7 @@ autoP4Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackgr
 autoP4Instrument.grid(row = 7, column = 2, sticky = 'w', columnspan = 2)
 autoP4InstrumentTip = Hovertip(autoP4Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
-autoP4DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "P4 Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
+autoP4DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "4P Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
 autoP4DifficultyLabel.place(x = 535, y = 329)
 autoP4DifficultyLabelTip = Hovertip(autoP4DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
@@ -3506,22 +3671,54 @@ fixFSBObjectsOption.grid(row = 7, column = 0, padx = 20, pady = 5, sticky = 'w')
 fixFSBObjectsOptionTip = Hovertip(fixFSBObjectsOption, FIX_FSB_OBJECTS_TIP, HOVER_DELAY)
 
 # ====================================================================== #
+#                               CREDITS TAB                              #
+# ====================================================================== #
+# Logo image of WTDE.
+creditsLogoLabel = Label(wtdeOptionsCredits, image = WTDE_LOGO, bg = BG_COLOR, fg = FG_COLOR)
+creditsLogoLabel.pack()
+
+# Credits text.
+CREDITS_TAB_TEXT = "GH World Tour: Definitive Edition Launcher++ by IMF24\n\n" \
+                   "GHWT: DE Developed by Fretworks, EST. 2021\n\n" \
+                   "🧪 ✨ WTDE Developers ✨ 🧪\n" \
+                   "Zedek the Plague Doctor \u2122         Dodylectable               donnaken15              Oktoberfest\n" \
+                   "         Nevermind                   WonkyTonkBotty            AngelLeyend            PikminGuts92\n" \
+                   "            RazQ                               Uzis                        IMF24                  Dragon3989\n" \
+                   "             Viran5                         Akiba Komori                   ftpjif                   huckleberrypie\n" \
+                   "          Aibot                              asseye                   CactusJosh                  FoxJudy\n" \
+                   "     JimmyEatWaffles                 xxblackkat66                 king91six                 MexicanPB\n" \
+                   "          NaviRivers                      RankGH159                   realexo                    realexoticri\n" \
+                   "               StrangerX01                thardwardy\n\n" \
+                   "A special thanks to our development testers and of course, all of you, the players, modders, content creators, and everything in between!\n\n" \
+                   "Making your Guitar Hero World Tour experience better, one update at a time!\n\n" \
+                   "GHWT: DE and Fretworks are not associated with Activision, Neversoft, or RedOctane in any way, shape, or form.\n" \
+                   "GHWT: DE is and always will be a non-profit fan-made project."
+creditsTextLabel = Label(wtdeOptionsCredits, text = CREDITS_TAB_TEXT, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO)
+creditsTextLabel.pack()
+
+# ====================================================================== #
 #                              ADD THE TABS                              #
 # ====================================================================== #
 # Add the tabs into the notebook.
+wtdeOptionsRoot.add(wtdeOptionsNews, text = " GHWT: DE News", image = NEWS_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsGeneral, text = " General Settings", image = GENERAL_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsInput, text = " Input Settings", image = INPUT_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsGraphics, text = " Graphics Settings", image = GRAPHICS_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsBand, text = " Band Settings", image = BAND_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsAutoLaunch, text = " Auto Launch Settings", image = AUTO_LAUNCH_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsDebug, text = " Debug Settings", image = DEBUG_ICON, compound = 'left')
+wtdeOptionsRoot.add(wtdeOptionsCredits, text = " Credits", image = CREDITS_ICON, compound = 'left')
 
 # Load config data.
 wtde_load_config()
 
 # Credits text on the bottom of the screen.
-CREDITS_TEXT = "Made by IMF24, WTDE by Fretworks, Updater by Zedek the Plague Doctor\u2122"
+CREDITS_TEXT = "Made by IMF24, WTDE by Fretworks, Updater by Zedek the Plague Doctor \u2122"
 widgetCanvas.create_text(18, 772, text = CREDITS_TEXT, fill = FG_COLOR, font = FONT_INFO, justify = 'left', anchor = 'sw')
+
+# Credits text on the bottom of the screen.
+VERSION_TEXT = f"Version {VERSION} || WTDE Latest Version: {wtde_latest_version()}"
+widgetCanvas.create_text(1280, 772, text = VERSION_TEXT, fill = FG_COLOR, font = FONT_INFO, justify = 'right', anchor = 'se')
 
 # Enter main loop.
 root.mainloop()
