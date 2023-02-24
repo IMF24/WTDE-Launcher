@@ -15,7 +15,6 @@
 from tkinter import *
 from tkinter.font import *
 from tkinter import ttk, filedialog, messagebox
-from tkinterweb import *
 from idlelib.tooltip import Hovertip
 from PIL import Image, ImageTk
 import os as OS
@@ -1089,10 +1088,16 @@ def wtde_verify_config() -> None:
     # Run BS4 on this data.
     aspyrConfigDataBS = BeautifulSoup(aspyrConfigData, 'xml')
 
-    # Do the drum and mic mapping strings exist?
-    try:
-        aspyrConfigDataBS.find('s', {'id': 'Keyboard_Drum'}).decode_contents()
-    except AttributeError:
+    # Do the necessary strings and tags exist?
+    # Tag validity boolean. Use this to tell if the strings in the AspyrConfig exist or not.
+    wasValid = False
+
+    # Drum string.
+    keyDrumStringTest = aspyrConfigDataBS.find('s', {'id': 'Keyboard_Drum'})
+    
+    if (keyDrumStringTest): wasValid = True
+    
+    if (not wasValid):
         originalData = aspyrConfigDataBS.r
 
         normalDrumString = "GREEN 308 262 259 258 254 RED 252 236 227 313 YELLOW 322 305 232 331 BLUE 295 256 324 341 ORANGE 999 KICK 318 CANCEL 999 START 219 BACK 999 DOWN 231 UP 327 WHAMMY 999 "
@@ -1101,9 +1106,14 @@ def wtde_verify_config() -> None:
         drumStringNewTag.string = normalDrumString
         originalData.append(drumStringNewTag)
 
-    try:
-        aspyrConfigDataBS.find('s', {'id': 'Keyboard_Mic'}).decode_contents()
-    except AttributeError:
+    wasValid = False
+
+    # Mic string.
+    keyMicStringTest = aspyrConfigDataBS.find('s', {'id': 'Keyboard_Mic'})
+    
+    if (keyMicStringTest): wasValid = True
+    
+    if (not wasValid):
         originalData = aspyrConfigDataBS.r
 
         normalMicString = "GREEN 328 308 402 318 RED 221 YELLOW 340 BLUE 343 ORANGE 267 234 218 CANCEL 999 START 219 BACK 999 DOWN 400 231 UP 401 327 MIC_VOL_DOWN 273 "
@@ -1111,6 +1121,62 @@ def wtde_verify_config() -> None:
         micStringNewTag = aspyrConfigDataBS.new_tag("s", id="Keyboard_Mic")
         micStringNewTag.string = normalMicString
         originalData.append(micStringNewTag)
+
+    wasValid = False
+
+    # Mic visual lag.
+    micVisualLagTest = aspyrConfigDataBS.find('s', {'id': 'Options.VocalsVisualLag'})
+    
+    if (micVisualLagTest): wasValid = True
+    
+    if (not wasValid):
+        originalData = aspyrConfigDataBS.r
+
+        micVisualLagNewTag = aspyrConfigDataBS.new_tag("s", id="Options.VocalsVisualLag")
+        micVisualLagNewTag.string = "0"
+        originalData.append(micVisualLagNewTag)
+
+    wasValid = False
+
+    # Audio buffer length.
+    audioBuffLenTest = aspyrConfigDataBS.find('s', {'id': 'Audio.BuffLen'})
+    
+    if (audioBuffLenTest): wasValid = True
+    
+    if (not wasValid):
+        originalData = aspyrConfigDataBS.r
+
+        audioBuffLenNewTag = aspyrConfigDataBS.new_tag("s", id="Audio.BuffLen")
+        audioBuffLenNewTag.string = "4096"
+        originalData.append(audioBuffLenNewTag)
+
+    wasValid = False
+
+    # Resolution width.
+    resWidthTest = aspyrConfigDataBS.find('s', {'id': 'Video.Width'})
+    
+    if (resWidthTest): wasValid = True
+    
+    if (not wasValid):
+        originalData = aspyrConfigDataBS.r
+
+        resWidthNewTag = aspyrConfigDataBS.new_tag("s", id="Video.Width")
+        resWidthNewTag.string = "1280"
+        originalData.append(resWidthNewTag)
+
+    wasValid = False
+
+    # Resolution height.
+    resHeightTest = aspyrConfigDataBS.find('s', {'id': 'Video.Height'})
+    
+    if (resHeightTest): wasValid = True
+    
+    if (not wasValid):
+        originalData = aspyrConfigDataBS.r
+
+        resHeightNewTag = aspyrConfigDataBS.new_tag("s", id="Video.Height")
+        resHeightNewTag.string = "720"
+        originalData.append(resHeightNewTag)
 
     # After all new tags have been created, write it all back in.
     with (open("AspyrConfig.xml", 'w', encoding = "utf-8")) as xml: xml.write(str(aspyrConfigDataBS))
