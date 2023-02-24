@@ -31,7 +31,7 @@ import pyaudio as PA
 from screeninfo import get_monitors
 
 # Version of the program.
-VERSION = "1.0 Beta"
+VERSION = "1.0 Beta Release 4"
 
 # Original working directory.
 OWD = OS.getcwd()
@@ -3733,6 +3733,9 @@ TAB_INFO_AUTO_LAUNCH = "Auto Launch Settings: Set up the game to automatically l
 autoInfoLabel = Label(wtdeOptionsAutoLaunch, text = TAB_INFO_AUTO_LAUNCH, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
 autoInfoLabel.grid(row = 0, column = 0, columnspan = 999, sticky = 'w')
 
+autoInfoWarnLabel = Label(wtdeOptionsAutoLaunch, text = "Warning: This may erase your save data, so make sure to back it up first!", bg = BG_COLOR, fg = '#FF0000', font = FONT_INFO, justify = 'left')
+autoInfoWarnLabel.grid(row = 1, column = 0, columnspan = 999, sticky = 'w')
+
 # Enable auto launch. If this is disabled, all other widgets will be disabled.
 enableAutoLaunch = StringVar()
 ENABLE_AUTO_LAUNCH_TIP = "Enable or disable auto launch.\n\n" \
@@ -3740,14 +3743,14 @@ ENABLE_AUTO_LAUNCH_TIP = "Enable or disable auto launch.\n\n" \
                          "You can even set it up to autoplay, too!\n\n" \
                          "Be warned! This may erase your save data, so make sure to back it up first!"
 autoEnableLaunch = Checkbutton(wtdeOptionsAutoLaunch, text = "  Enable Auto Launch", variable = enableAutoLaunch, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000", command = auto_launch_status)
-autoEnableLaunch.grid(row = 1, column = 0, padx = 20, pady = 5, sticky = 'w')
+autoEnableLaunch.grid(row = 2, column = 0, padx = 20, pady = 5, sticky = 'w')
 autoEnableLaunchTip = Hovertip(autoEnableLaunch, ENABLE_AUTO_LAUNCH_TIP, HOVER_DELAY)
 
 # Hide the HUD.
 hideHUDAuto = StringVar()
 HIDE_HUD_TIP = "When auto launch is enabled, do you want the interface hidden?"
 autoHideHUD = Checkbutton(wtdeOptionsAutoLaunch, text = "  Hide HUD", variable = hideHUDAuto, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
-autoHideHUD.grid(row = 2, column = 0, padx = 20, pady = 5, sticky = 'w')
+autoHideHUD.grid(row = 3, column = 0, padx = 20, pady = 5, sticky = 'w')
 autoHideHUDTip = Hovertip(autoHideHUD, HIDE_HUD_TIP, HOVER_DELAY)
 
 # Number of players.
@@ -3755,14 +3758,14 @@ playerCount = StringVar()
 PLAYERS_COUNT_TIP = "How many players do you want?"
 
 autoPlayersLabel = Label(wtdeOptionsAutoLaunch, text = "Players: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoPlayersLabel.grid(row = 2, column = 1, pady = 5, sticky = 'e')
+autoPlayersLabel.grid(row = 3, column = 1, pady = 5, sticky = 'e')
 autoPlayersLabelTip = Hovertip(autoPlayersLabel, PLAYERS_COUNT_TIP, HOVER_DELAY)
 
 playerNumbers = ["1", "2", "3", "4"]
 
 autoPlayers = OptionMenu(wtdeOptionsAutoLaunch, playerCount, *playerNumbers, command = auto_update_players_event)
 autoPlayers.config(width = 3, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-autoPlayers.grid(row = 2, column = 2, pady = 5, sticky = 'w')
+autoPlayers.grid(row = 3, column = 2, pady = 5, sticky = 'w')
 autoPlayersTip = Hovertip(autoPlayers, PLAYERS_COUNT_TIP, HOVER_DELAY)
 
 # Venue selection.
@@ -3770,28 +3773,28 @@ venueSelection = StringVar()
 
 VENUE_SELECTION_TIP = "Select the venue you want to use."
 autoVenueLabel = Label(wtdeOptionsAutoLaunch, text = "             Venue: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoVenueLabel.grid(row = 2, column = 3, pady = 5, sticky = 'e')
+autoVenueLabel.grid(row = 3, column = 3, pady = 5, sticky = 'e')
 autoVenueLabelTip = Hovertip(autoVenueLabel, VENUE_SELECTION_TIP, HOVER_DELAY)
 
 autoVenueSelect = OptionMenu(wtdeOptionsAutoLaunch, venueSelection, *venues, command = lambda e: ask_venue_name(venueSelection, e))
 autoVenueSelect.config(width = 25, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-autoVenueSelect.grid(row = 2, column = 4, pady = 5, sticky = 'w')
+autoVenueSelect.grid(row = 3, column = 4, pady = 5, sticky = 'w')
 autoVenueSelectTip = Hovertip(autoVenueSelect, VENUE_SELECTION_TIP, HOVER_DELAY)
 
 # Song to boot into.
 SONG_ID_TIP = "The checksum of the song to boot into."
 
 autoSongLabel = Label(wtdeOptionsAutoLaunch, text = "              Song: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoSongLabel.grid(row = 2, column = 5, pady = 5, sticky = 'e')
+autoSongLabel.grid(row = 3, column = 5, pady = 5, sticky = 'e')
 autoSongLabelTip = Hovertip(autoSongLabel, SONG_ID_TIP, HOVER_DELAY)
 
 autoSongEntry = Entry(wtdeOptionsAutoLaunch, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 20, disabledbackground = BUTTON_BG)
-autoSongEntry.grid(row = 2, column = 6, pady = 5, sticky = 'w')
+autoSongEntry.grid(row = 3, column = 6, pady = 5, sticky = 'w')
 autoSongEntryTip = Hovertip(autoSongEntry, SONG_ID_TIP, HOVER_DELAY)
 
 # Show player settings section.
 autoPlayerSectionLabel = Label(wtdeOptionsAutoLaunch, text = "Player Settings:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoPlayerSectionLabel.grid(row = 3, column = 0, columnspan = 999, pady = 20, sticky = 'w')
+autoPlayerSectionLabel.grid(row = 4, column = 0, columnspan = 999, pady = 20, sticky = 'w')
 
 instruments = ["Lead Guitar - PART GUITAR", "Bass Guitar - PART BASS", "Drums - PART DRUMS", "Vocals - PART VOCALS"]
 difficulties = ["Beginner", "Easy", "Medium", "Hard", "Expert"]
@@ -3804,17 +3807,17 @@ AUTO_USE_BOT_TIP = "Should this player have the bot enabled?"
 # =============== PLAYER 1 SETTINGS =============== #
 P1_SETTINGS_INFO = "Edit the settings for Player 1."
 autoP1SectionLabel = Label(wtdeOptionsAutoLaunch, text = "      Player 1: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP1SectionLabel.grid(row = 4, column = 0)
+autoP1SectionLabel.grid(row = 5, column = 0)
 autoP1SectionLabelTip = Hovertip(autoP1SectionLabel, P1_SETTINGS_INFO, HOVER_DELAY)
 
 autoP1InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "1P Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP1InstrumentLabel.grid(row = 4, column = 1, sticky = 'e')
+autoP1InstrumentLabel.grid(row = 5, column = 1, sticky = 'e')
 autoP1InstrumentLabelTip = Hovertip(autoP1InstrumentLabel, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
  
 autoInstrument1 = StringVar()
 autoP1Instrument = OptionMenu(wtdeOptionsAutoLaunch, autoInstrument1, *instruments)
 autoP1Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-autoP1Instrument.grid(row = 4, column = 2, sticky = 'w', columnspan = 2)
+autoP1Instrument.grid(row = 5, column = 2, sticky = 'w', columnspan = 2)
 autoP1InstrumentTip = Hovertip(autoP1Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
 # For manual placing when the grid won't cooperate.
@@ -3822,18 +3825,18 @@ LABEL_Y = 188
 DROPDOWN_Y = 185
 
 autoP1DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "1P Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP1DifficultyLabel.place(x = 535, y = 188)
+autoP1DifficultyLabel.place(x = 535, y = 212)
 autoP1DifficultyLabelTip = Hovertip(autoP1DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
 autoDifficulty1 = StringVar()
 autoP1Difficulty = OptionMenu(wtdeOptionsAutoLaunch, autoDifficulty1, *difficulties)
 autoP1Difficulty.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-autoP1Difficulty.place(x = 627, y = 185)
+autoP1Difficulty.place(x = 627, y = 209)
 autoP1DifficultyTip = Hovertip(autoP1Difficulty, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
 autoBot1 = StringVar()
 autoP1UseBot = Checkbutton(wtdeOptionsAutoLaunch, text = "  Use Bot?", variable = autoBot1, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
-autoP1UseBot.place(x = 762, y = 186)
+autoP1UseBot.place(x = 762, y = 210)
 autoP1UseBotTip = Hovertip(autoP1UseBot, AUTO_USE_BOT_TIP, HOVER_DELAY)
 
 if (config.get("AutoLaunch", "Bot") == "1"): autoP1UseBot.select()
@@ -3842,99 +3845,99 @@ else: autoP1UseBot.deselect()
 # =============== PLAYER 2 SETTINGS =============== #
 P2_SETTINGS_INFO = "Edit the settings for Player 2."
 autoP2SectionLabel = Label(wtdeOptionsAutoLaunch, text = "      Player 2: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP2SectionLabel.grid(row = 5, column = 0, pady = 20)
+autoP2SectionLabel.grid(row = 6, column = 0, pady = 20)
 autoP2SectionLabelTip = Hovertip(autoP2SectionLabel, P2_SETTINGS_INFO, HOVER_DELAY)
 
 autoP2InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "2P Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP2InstrumentLabel.grid(row = 5, column = 1, sticky = 'e')
+autoP2InstrumentLabel.grid(row = 6, column = 1, sticky = 'e')
 autoP2InstrumentLabelTip = Hovertip(autoP2InstrumentLabel, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
  
 autoInstrument2 = StringVar()
 autoP2Instrument = OptionMenu(wtdeOptionsAutoLaunch, autoInstrument2, *instruments)
 autoP2Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-autoP2Instrument.grid(row = 5, column = 2, sticky = 'w', columnspan = 2)
+autoP2Instrument.grid(row = 6, column = 2, sticky = 'w', columnspan = 2)
 autoP2InstrumentTip = Hovertip(autoP2Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
 autoP2DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "2P Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP2DifficultyLabel.place(x = 535, y = 235)
+autoP2DifficultyLabel.place(x = 535, y = 259)
 autoP2DifficultyLabelTip = Hovertip(autoP2DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
 autoDifficulty2 = StringVar()
 autoP2Difficulty = OptionMenu(wtdeOptionsAutoLaunch, autoDifficulty2, *difficulties)
 autoP2Difficulty.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-autoP2Difficulty.place(x = 627, y = 232)
+autoP2Difficulty.place(x = 627, y = 256)
 autoP2DifficultyTip = Hovertip(autoP2Difficulty, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
 autoBot2 = StringVar()
 autoP2UseBot = Checkbutton(wtdeOptionsAutoLaunch, text = "  Use Bot?", variable = autoBot2, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
-autoP2UseBot.place(x = 762, y = 233)
+autoP2UseBot.place(x = 762, y = 257)
 autoP2UseBotTip = Hovertip(autoP2UseBot, AUTO_USE_BOT_TIP, HOVER_DELAY)
 
 # =============== PLAYER 3 SETTINGS =============== #
 P3_SETTINGS_INFO = "Edit the settings for Player 3."
 autoP3SectionLabel = Label(wtdeOptionsAutoLaunch, text = "      Player 3: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP3SectionLabel.grid(row = 6, column = 0)
+autoP3SectionLabel.grid(row = 7, column = 0)
 autoP3SectionLabelTip = Hovertip(autoP3SectionLabel, P3_SETTINGS_INFO, HOVER_DELAY)
 
 autoP3InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "3P Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP3InstrumentLabel.grid(row = 6, column = 1, sticky = 'e')
+autoP3InstrumentLabel.grid(row = 7, column = 1, sticky = 'e')
 autoP3InstrumentLabelTip = Hovertip(autoP3InstrumentLabel, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
  
 autoInstrument3 = StringVar()
 autoP3Instrument = OptionMenu(wtdeOptionsAutoLaunch, autoInstrument3, *instruments)
 autoP3Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-autoP3Instrument.grid(row = 6, column = 2, sticky = 'w', columnspan = 2)
+autoP3Instrument.grid(row = 7, column = 2, sticky = 'w', columnspan = 2)
 autoP3InstrumentTip = Hovertip(autoP3Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
 autoP3DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "3P Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP3DifficultyLabel.place(x = 535, y = 282)
+autoP3DifficultyLabel.place(x = 535, y = 306)
 autoP3DifficultyLabelTip = Hovertip(autoP3DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
 autoDifficulty3 = StringVar()
 autoP3Difficulty = OptionMenu(wtdeOptionsAutoLaunch, autoDifficulty3, *difficulties)
 autoP3Difficulty.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-autoP3Difficulty.place(x = 627, y = 279)
+autoP3Difficulty.place(x = 627, y = 303)
 autoP3DifficultyTip = Hovertip(autoP3Difficulty, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
 autoBot3 = StringVar()
 autoP3UseBot = Checkbutton(wtdeOptionsAutoLaunch, text = "  Use Bot?", variable = autoBot3, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
-autoP3UseBot.place(x = 762, y = 280)
+autoP3UseBot.place(x = 762, y = 304)
 autoP3UseBotTip = Hovertip(autoP3UseBot, AUTO_USE_BOT_TIP, HOVER_DELAY)
 
 # =============== PLAYER 4 SETTINGS =============== #
 P4_SETTINGS_INFO = "Edit the settings for Player 4."
 autoP4SectionLabel = Label(wtdeOptionsAutoLaunch, text = "      Player 4: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP4SectionLabel.grid(row = 7, column = 0, pady = 20)
+autoP4SectionLabel.grid(row = 8, column = 0, pady = 20)
 autoP4SectionLabelTip = Hovertip(autoP4SectionLabel, P4_SETTINGS_INFO, HOVER_DELAY)
 
 autoP4InstrumentLabel = Label(wtdeOptionsAutoLaunch, text = "4P Instrument: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP4InstrumentLabel.grid(row = 7, column = 1, sticky = 'e')
+autoP4InstrumentLabel.grid(row = 8, column = 1, sticky = 'e')
 autoP4InstrumentLabelTip = Hovertip(autoP3InstrumentLabel, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
  
 autoInstrument4 = StringVar()
 autoP4Instrument = OptionMenu(wtdeOptionsAutoLaunch, autoInstrument4, *instruments)
 autoP4Instrument.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-autoP4Instrument.grid(row = 7, column = 2, sticky = 'w', columnspan = 2)
+autoP4Instrument.grid(row = 8, column = 2, sticky = 'w', columnspan = 2)
 autoP4InstrumentTip = Hovertip(autoP4Instrument, AUTO_INSTRUMENT_TIP, HOVER_DELAY)
 
 autoP4DifficultyLabel = Label(wtdeOptionsAutoLaunch, text = "4P Difficulty: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoP4DifficultyLabel.place(x = 535, y = 329)
+autoP4DifficultyLabel.place(x = 535, y = 353)
 autoP4DifficultyLabelTip = Hovertip(autoP4DifficultyLabel, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
 autoDifficulty4 = StringVar()
 autoP4Difficulty = OptionMenu(wtdeOptionsAutoLaunch, autoDifficulty4, *difficulties)
 autoP4Difficulty.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-autoP4Difficulty.place(x = 627, y = 326)
+autoP4Difficulty.place(x = 627, y = 350)
 autoP4DifficultyTip = Hovertip(autoP4Difficulty, AUTO_DIFFICULTY_TIP, HOVER_DELAY)
 
 autoBot4 = StringVar()
 autoP4UseBot = Checkbutton(wtdeOptionsAutoLaunch, text = "  Use Bot?", variable = autoBot4, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
-autoP4UseBot.place(x = 762, y = 327)
+autoP4UseBot.place(x = 762, y = 351)
 autoP4UseBotTip = Hovertip(autoP4UseBot, AUTO_USE_BOT_TIP, HOVER_DELAY)
 
 # =============== ADVANCED SETTINGS =============== #
 autoAdvancedSectionLabel = Label(wtdeOptionsAutoLaunch, text = "Advanced Settings:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR)
-autoAdvancedSectionLabel.grid(row = 8, column = 0, columnspan = 999, pady = 20, sticky = 'w')
+autoAdvancedSectionLabel.grid(row = 9, column = 0, columnspan = 999, pady = 20, sticky = 'w')
 
 # Use raw loading.
 rawLoad = StringVar()
@@ -3943,14 +3946,14 @@ RAW_LOAD_TIP = "Turn ON or OFF raw loading of the venue.\n\n" \
                "as a song or load into a game mode. Good for creating custom venues and\n" \
                "testing if the SCN and TEX files are working properly!"
 autoRawLoad = Checkbutton(wtdeOptionsAutoLaunch, text = "  Use Raw PAK Loading", variable = rawLoad, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
-autoRawLoad.grid(row = 9, column = 0, padx = 20, sticky = 'w')
+autoRawLoad.grid(row = 10, column = 0, padx = 20, sticky = 'w')
 autoRawLoadTip = Hovertip(autoRawLoad, RAW_LOAD_TIP, HOVER_DELAY)
 
 # Show the song time.
 songTime = StringVar()
 SONG_TIME_TIP = "Show the song time on-screen. The time is shown in seconds."
 autoSongTime = Checkbutton(wtdeOptionsAutoLaunch, text = "  Show Time", variable = songTime, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
-autoSongTime.grid(row = 9, column = 1, sticky = 'w')
+autoSongTime.grid(row = 10, column = 1, sticky = 'w')
 autoSongTimeTip = Hovertip(autoSongTime, SONG_TIME_TIP, HOVER_DELAY)
 
 # Update the status of all widgets.
