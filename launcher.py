@@ -340,6 +340,8 @@ def wtde_save_config() -> None:
 
     config.set("Graphics", "GemColors", wtde_save_note_info('color'))
 
+    config.set("Graphics", "SongIntroStyle", wtde_get_game_checksum(introStyle))
+
     # ===================== SAVE BAND SETTINGS ===================== #
     config.set("Band", "PreferredGuitarist", bandPreferredGuitaristEntry.get())
 
@@ -1849,9 +1851,32 @@ def wtde_get_game(checksum: str) -> str:
         case "ghwor":           return "Guitar Hero Warriors of Rock"
         case "wor":             return "Guitar Hero Warriors of Rock"
         case "bh":              return "Band Hero"
-        case "auto":            return "Automatic"
+        case "auto":            return "Auto (Based on Setlist)"
         case "flat":            return "Flat Gems"
         case _:                 return ""
+
+# Use game name and get its checksum.
+def wtde_get_game_checksum(value: StringVar) -> str:
+    """ Takes the given option and returns its game checksum, if applicable. """
+    # Value to return.
+    valueToReturn = ""
+
+    # List of options.
+    gameNameOptions = ["GH World Tour Definitive Editon", "Guitar Hero World Tour", "Normal GHWT (Default)", "GHWT (Default)", "Guitar Hero World Tour (Beta)", "Guitar Hero World Tour (Wii)",
+                       "Guitar Hero World Tour (Wii, HD)", "Guitar Hero II", "Guitar Hero III", "Guitar Hero III (Left)", "Guitar Hero III (Console)",
+                       "Guitar Hero Metallica", "GH: Metallica", "Guitar Hero Smash Hits", "GH: Smash Hits", "Guitar Hero Van Halen", "GH: Van Halen", "Guitar Hero 5", "Guitar Hero Warriors of Rock",
+                       "GH: Warriors of Rock", "Band Hero", "Auto (Based on Setlist)"]
+
+    # List of checksums.
+    gameNameChecksums = ["wtde", "ghwt", "ghwt", "none", "ghwt_beta", "ghwt_wii", "ghwt_wii_hd", "gh2", "gh3", "gh3_left", "gh3_console", "ghm", "ghm", "ghshits", "ghshits", "ghvh", "ghvh", "gh5",
+                         "ghwor", "ghwor", "bh", "auto"]
+
+    # Loop through the option names, and find its matching checksum.
+    for (x), (item) in (enumerate(gameNameOptions)):
+        if (value.get() == item): valueToReturn = gameNameChecksums[x]
+        else: continue
+
+    return valueToReturn
 
 # Get gem color scheme.
 def wtde_get_gem_color(checksum: str) -> str:
