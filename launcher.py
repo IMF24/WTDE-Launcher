@@ -1092,6 +1092,38 @@ def wtde_verify_config() -> None:
     # Tag validity boolean. Use this to tell if the strings in the AspyrConfig exist or not.
     wasValid = False
 
+    # Menu string.
+    keyMenuStringTest = aspyrConfigDataBS.find('s', {"id": "Keyboard_Menu"})
+
+    if (keyMenuStringTest): wasValid = True
+
+    if (not wasValid):
+        originalData = aspyrConfigDataBS.r
+
+        normalMenuString = "GREEN 308 328 RED 221 YELLOW 340 BLUE 343 ORANGE 267 CANCEL 999 START 219 BACK 402 311 DOWN 400 231 UP 401 327 WHAMMY 310 KICK 318 LEFT 265 RIGHT 309 "
+
+        menuStringNewTag = aspyrConfigDataBS.new_tag("s", id="Keyboard_Menu")
+        menuStringNewTag.string = normalMenuString
+        originalData.append(menuStringNewTag)
+
+    wasValid = False
+
+    # Guitar string.
+    keyGuitarStringTest = aspyrConfigDataBS.find('s', {"id": "Keyboard_Guitar"})
+
+    if (keyGuitarStringTest): wasValid = True
+
+    if (not wasValid):
+        originalData = aspyrConfigDataBS.r
+
+        normalGuitarString = "GREEN 328 308 RED 221 YELLOW 340 BLUE 343 ORANGE 267 STAR 402 318 CANCEL 999 START 219 BACK 999 DOWN 231 400 UP 327 401 WHAMMY 310 LEFT 265 RIGHT 309 "
+
+        guitarStringNewTag = aspyrConfigDataBS.new_tag("s", id="Keyboard_Guitar")
+        guitarStringNewTag.string = normalGuitarString
+        originalData.append(guitarStringNewTag)
+
+    wasValid = False
+
     # Drum string.
     keyDrumStringTest = aspyrConfigDataBS.find('s', {'id': 'Keyboard_Drum'})
     
