@@ -1,7 +1,7 @@
 # GHWT: Definitive Edition Launcher++
 An upgraded launcher for Guitar Hero World Tour: Definitive Edition!
 
-**IMPORTANT:** In its current state, this program isn't 100% functional. It will be ready by the time V1.1 of WTDE is released!
+**NOTE:** In its current state, this program is 100% functional, but it is not yet feature-complete for 1.1. It will be ready by the time V1.1 of WTDE is released!
 
 Here's some of its features:
 - An entire graphical editor for just about every INI setting there is for WTDE, along with detailed and concise descriptions of each option and what it does.
@@ -10,6 +10,4 @@ Here's some of its features:
 - And more features will be coming soon!
 
 Things left to do:
-- Merge all config loading into a single function.
-- Finish adding options to the Graphics and Debug Settings tabs.
-- Write the save configuration system fully. AspyrConfig saving for keyboard mapping strings is working!
+- Finish adding options to the necessary tabs.
