@@ -1453,26 +1453,19 @@ def wtde_run_updater() -> None:
 def wtde_find_config() -> str:
     """ Tries to locate the main config file for WTDE (GHWTDE.ini). The path is returned if found; an empty string is returned if not. """
     # Normal directory. Any sane computer *SHOULD* hold it here.
-    wtdeConfigNormalDir = "~/Documents/My Games/Guitar Hero World Tour Definitive Edition"
-
-    # Some may have the OneDrive folder... thanks Microsoft for the dumb design...
-    wtdeConfigBackupDir = "~/OneDrive/Documents/My Games/Guitar Hero World Tour Definitive Edition"
+    wtdeConfigDir = f"{WS.my_documents()}/My Games/Guitar Hero World Tour Definitive Edition"
 
     # Attempt the default location.
-    normalDirOutput = OS.path.expanduser(wtdeConfigNormalDir)
-    backupDirOutput = OS.path.expanduser(wtdeConfigBackupDir)
+    normalDirOutput = OS.path.expanduser(wtdeConfigDir)
 
     if (OS.path.exists(normalDirOutput)):
-        fixedPath = OS.path.expanduser(wtdeConfigNormalDir).replace("/", "\\")
-        return fixedPath
-
-    # If the above didn't work, we'll try a different directory.
-    elif (OS.path.exists(backupDirOutput)):
-        fixedPath = OS.path.expanduser(wtdeConfigBackupDir).replace("/", "\\")
+        fixedPath = OS.path.expanduser(wtdeConfigDir).replace("/", "\\")
         return fixedPath
 
     # If neither worked, it's a bad path, so just return nothing.
-    else: return ""
+    else:
+        # Alert the user that their GHWTDE.ini can't be found.
+        messagebox.showerror("GHWTDE.ini Not Auto Detected", "We couldn't automatically detect GHWTDE.ini.")
 
 # Access the GHWT local AppData folder.
 def wtde_find_appdata() -> str:
