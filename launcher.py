@@ -15,6 +15,7 @@
 from tkinter import *
 from tkinter.font import *
 from tkinter import ttk, filedialog, messagebox
+from tkinterweb import *
 from idlelib.tooltip import Hovertip
 from PIL import Image, ImageTk
 import os as OS
@@ -23,7 +24,7 @@ import subprocess as SP
 import winshell as WS
 from win32com.client import Dispatch
 from win32api import GetSystemMetrics
-import requests
+import requests as REQ
 import zipfile as ZIP
 import configparser as CF
 from bs4 import BeautifulSoup
@@ -31,7 +32,7 @@ import pyaudio as PA
 from screeninfo import get_monitors
 
 # Version of the program.
-VERSION = "1.0"
+VERSION = "1.0 Beta"
 
 # Original working directory.
 OWD = OS.getcwd()
@@ -72,6 +73,7 @@ def arg_cmd_parse() -> None:
 
     # Help message.
     HELP_INFO = "-=-=-=-=-=-=- GHWT: Definitive Edition Launcher++ -=-=-=-=-=-=-\n" \
+                "You've entered the debug mode for the GHWT: DE Launcher++!\n" \
                 "List of command line arguments:\n" \
                 "[-h] [--help]          - Print this message.\n" \
                 "[-i] [--ini]           - Update a setting in GHWTDE.ini.\n" \
@@ -126,21 +128,15 @@ def arg_cmd_parse() -> None:
             SYS.exit(0)
 
         match (args[1]):
-            case "-h": print_help()
+            case "-h" | "--help": print_help()
 
-            case "--help": print_help()
+            case "-i" | "--ini": ini_edit_cmd()
 
-            case "-i": ini_edit_cmd()
-
-            case "--ini": ini_edit_cmd()
-
-            case "-u":
+            case "-u" | "--update":
                 wtde_run_updater()
                 SYS.exit(0)
 
-            case "--update":
-                wtde_run_updater()
-                SYS.exit(0)
+            case "-r" | "--normal": pass
 
             case _:
                 print(f"Unknown argument: {args[1]}. Type -h or --help for a list of parameters.")
@@ -279,6 +275,22 @@ def wtde_save_config() -> None:
 
     config.set("Config", "Language", wtde_convert_language(language.get()))
 
+    config.set("Config", "UseCareerOption", useCareerOption.get())
+
+    config.set("Config", "UseQuickplayOption", useQuickplayOption.get())
+
+    config.set("Config", "UseHeadToHeadOption", useHeadToHeadOption.get())
+
+    config.set("Config", "UseOnlineOption", useOnlineOption.get())
+
+    config.set("Config", "UseMusicStudioOption", useMusicStudioOption.get())
+
+    config.set("Config", "UseCAROption", useCAROption.get())
+
+    config.set("Config", "UseOptionsOption", useOptionsOption.get())
+
+    config.set("Config", "UseQuitOption", useQuitOption.get())
+
     # ===================== SAVE GRAPHICS SETTINGS ===================== #
     config.set("Graphics", "UseNativeRes", useNativeResolution.get())
 
@@ -323,6 +335,10 @@ def wtde_save_config() -> None:
     config.set("Graphics", "HideBand", hideBand.get())
 
     config.set("Graphics", "HideInstruments", hideInstruments.get())
+
+    config.set("Graphics", "GemTheme", wtde_save_note_info('style'))
+
+    config.set("Graphics", "GemColors", wtde_save_note_info('color'))
 
     # ===================== SAVE BAND SETTINGS ===================== #
     config.set("Band", "PreferredGuitarist", bandPreferredGuitaristEntry.get())
@@ -386,11 +402,11 @@ def wtde_save_config() -> None:
 
     config.set("Debug", "FixFSBObjects", fixFSBObjects.get())
     
-    # ===================== SAVE INPUT AND OTHER GRAPHICS SETTINGS ===================== #
+    # ===================== SAVE INPUT AND OTHER SETTINGS ===================== #
     # Last, we'll save our input & other graphics settings.
     config.set("Audio", "MicDevice", micDevice.get())
 
-    config.set("Audio", "VocalAdjustment", wtde_vocal_delay_get(inputMicDelayEntry.get()))
+    config.set("Audio", "VocalAdjustment", input_filter_numeric(inputMicDelayEntry.get()))
 
     if (inputHack.get() == "1"): config.set("Debug", "DisableInputHack", "0")
     else: config.set("Debug", "DisableInputHack", "1")
@@ -407,12 +423,15 @@ def wtde_save_config() -> None:
     # ========== SAVE RESOLUTION ========== #
     resWidthXML = aspyrConfigDataBS.find('s', {"id": "Video.Width"})
     resHeightXML = aspyrConfigDataBS.find('s', {"id": "Video.Height"})
+    audioBuffLenXML = aspyrConfigDataBS.find('s', {"id": "Audio.BuffLen"})
     if (useNativeResolution.get() == "0"):
         resWidthXML.string = graphicsResolutionWidth.get()
         resHeightXML.string = graphicsResolutionHeight.get()
     else:
         resWidthXML.string = str(get_screen_resolution()[0])
         resHeightXML.string = str(get_screen_resolution()[1])
+
+    audioBuffLenXML.string = audioBuffLenOption.get()
 
     # ========== GUITAR INPUTS ========== #
     guitarInputString = ""
@@ -633,6 +652,8 @@ def wtde_load_config() -> None:
     # Read config file.
     config.read("GHWTDE.ini")
 
+    # ===================== GENERAL ===================== #
+
     # Load rich presence.
     if (config.get("Config", "RichPresence") == "1"): generalRichPresence.select()
     else: generalRichPresence.deselect()
@@ -655,6 +676,22 @@ def wtde_load_config() -> None:
         case "ja":     language.set(languages[5])
         case "ko":     language.set(languages[6])
         case _:        language.set(languages[0])
+
+    useCareerOption.set(config.get("Config", "UseCareerOption"))
+
+    useQuickplayOption.set(config.get("Config", "UseQuickplayOption"))
+
+    useHeadToHeadOption.set(config.get("Config", "UseHeadToHeadOption"))
+
+    useOnlineOption.set(config.get("Config", "UseOnlineOption"))
+
+    useMusicStudioOption.set(config.get("Config", "UseMusicStudioOption"))
+
+    useCAROption.set(config.get("Config", "UseCAROption"))
+
+    useOptionsOption.set(config.get("Config", "UseOptionsOption"))
+
+    useQuitOption.set(config.get("Config", "UseQuitOption"))
 
     # ===================== GRAPHICS ===================== #
     useNativeResolution.set(config.get("Graphics", "UseNativeRes"))
@@ -706,9 +743,15 @@ def wtde_load_config() -> None:
     # ===================== INPUT ===================== #
     inputMicDelayEntry.insert(0, config.get("Audio", "VocalAdjustment"))
 
+    inputMicVideoDelayEntry.insert(0, audioVisualLag)
+
     if (config.get("Debug", "DisableInputHack") == "1"): inputUseInputHack.deselect()
     else: inputUseInputHack.select()
+
+    # ===================== BAND ===================== #
+    guitarStrumAnim.set(wtde_get_game(config.get("Band", "GuitarStrumAnim")))
     
+    bassStrumAnim.set(wtde_get_game(config.get("Band", "BassStrumAnim")))
 
     # ===================== AUTO LAUNCH ===================== #
     enableAutoLaunch.set(config.get("AutoLaunch", "Enabled"))
@@ -798,7 +841,7 @@ def wtde_verify_config() -> None:
         "UseQuickplayOption",
         "UseHeadToHeadOption",
         "UseOnlineOption",
-        "UseMusicOptionOption",
+        "UseMusicStudioOption",
         "UseCAROption",
         "UseOptionsOption",
         "UseQuitOption"
@@ -1268,7 +1311,7 @@ def wtde_run_updater() -> None:
 
                 saveDir = f"{wtdeDir}/updater_files.zip"
 
-                zipData = requests.get(updaterDir, allow_redirects = True)
+                zipData = REQ.get(updaterDir, allow_redirects = True)
 
                 open(saveDir, 'wb').write(zipData.content)
 
@@ -1791,6 +1834,7 @@ def wtde_get_game(checksum: str) -> str:
     match (checksum.lower()):
         case "wtde":            return "GH World Tour Definitive Editon"
         case "ghwt":            return "Guitar Hero World Tour"
+        case "none":            return "GHWT (Default)"
         case "ghwt_beta":       return "Guitar Hero World Tour (Beta)"
         case "ghwt_wii":        return "Guitar Hero World Tour (Wii)"
         case "ghwt_wii_hd":     return "Guitar Hero World Tour (Wii, HD)"
@@ -1850,9 +1894,27 @@ def wtde_convert_language(text: str) -> str:
         case "Korean (한국어)":             return "ko"
         case _:                            return ""
 
-# Make sure the vocal calibration has only numbers.
-def wtde_vocal_delay_get(text: str) -> str:
-    """ Returns the value of the Mic Audio Delay field, with only numbers and negatives. """
+# Make sure the given string has only numbers (includes leading negatives).
+def input_filter_numeric(text: str) -> str:
+    """
+    In a given string, this filters out ALL non-numeric characters, with the exception of a leading negative sign.
+    
+    Arguments
+    ---------
+    `text`: `str` >> The string of text to filter out.
+
+    Returns
+    -------
+    `str` >> Returns the given string with all non-numeric characters (except leading negatives) filtered out.
+
+    Examples of Use
+    --------------
+    >>> inputString = "28FE3D"
+    >>> print(input_filter_numeric(inputString))
+    283
+    >>> print(input_filter_numeric("-1A79E5"))
+    -1795
+    """
     # This will hold the final string.
     finalString = ""
 
@@ -1867,7 +1929,7 @@ def wtde_vocal_delay_get(text: str) -> str:
     splitInputString = text.split()
 
     for (char) in (splitInputString):
-        if (char.isnumeric()): finalString += char
+        if (char.isnumeric()) or (char == "."): finalString += char
         else: continue
 
     return finalString
@@ -1927,6 +1989,49 @@ def wtde_get_note_info(mode: str) -> str:
     # Return the necessary value.
     return valueToReturn
 
+# Get the gem theme or style.
+def wtde_save_note_info(mode: str) -> str:
+    """
+    Save the information of the note theme/style options.
+    \n
+    - mode : str >> Either a literal 'style' or 'color'. Identifier for the function to tell which aspect of the
+    notes it needs to look for.
+    \n
+    Returns the respective option name.
+    """
+    # Value to return.
+    valueToReturn = ""
+
+    # Operate based on given arguments.
+    if (mode == 'style'):
+        noteStyleOptions = ["GHWT Notes (Default)", "GH3 Notes", "GH: WOR Notes", "Flat Notes"]
+        noteStyles = ["ghwt", "gh3", "wor", "flat"]
+        for (x), (item) in (enumerate(noteStyleOptions)):
+            if (noteStyle.get() == item): valueToReturn = noteStyles[x]
+            else: continue
+
+    elif (mode == 'color'):
+        noteThemesChecksums = [
+            "standard_gems", "pink_gems", "stealth_gems", "Eggs_N_Bacon_gems", "old_glory_gems", "solid_gold_gems", "platinum_gems",
+            "diabolic_gems", "toxic_waste_gems", "black_gems", "pastel_gems", "dark_gems", "outline_gems", "gh1proto_gems",
+            "pure_green", "pure_red", "pure_yellow", "pure_blue", "pure_orange", "candy_cane", "halloween"
+        ]
+
+        noteThemesOptionNames = [
+            "Normal Color (Default)", "Pink", "Stealth", "Eggs 'N Bacon", "Old Glory", "Solid Gold", "Platinum",
+            "Diabolic", "Toxic Waste", "Black", "Pastel", "Dark", "Outline", "GH1 Prototype", "Pure Green",
+            "Pure Red", "Pure Yellow", "Pure Blue", "Pure Orange", "Candy Cane", "Ghoulish"
+        ]
+
+        for (x), (item) in (enumerate(noteThemesOptionNames)):
+            if (noteTheme.get() == item): valueToReturn = noteThemesChecksums[x]
+            else: continue
+    
+    else: valueToReturn = ""
+
+    # Return the necessary value.
+    return valueToReturn
+
 # Open Mods folder.
 def open_mods_folder() -> None:
     """ Opens the user's Mods folder in DATA/MODS. """
@@ -1949,11 +2054,11 @@ def is_connected(url: str, tout = 10) -> bool | Exception:
     # Try to ping the webside and get its contents.
     # If we can do that, return True.
     try:
-        request = requests.get(url, timeout = tout)
+        request = REQ.get(url, timeout = tout)
         return True
 
     # Catch the error, if found. Return False.
-    except (requests.ConnectionError, requests.Timeout) as exception:
+    except (REQ.ConnectionError, REQ.Timeout) as exception:
         return False
 
 # Retrieve the latest version of WTDE on the Pastebin page.
@@ -1962,7 +2067,7 @@ def wtde_latest_version() -> str:
     versionPage = "https://pastebin.com/raw/wk00Mq3M"
 
     if (is_connected(versionPage)):
-        return requests.get(versionPage).text
+        return REQ.get(versionPage).text
     else:
         return "??? (connect to internet)"
 
@@ -1972,11 +2077,11 @@ def wtde_get_news() -> str:
     newsPage = "https://pastebin.com/raw/c9MwubYS"
 
     if (is_connected("https://pastebin.com/raw/c9MwubYS")):
-        return requests.get(newsPage).text
+        return REQ.get(newsPage).text
     
     else:
         try:
-            requests.get(newsPage).text
+            REQ.get(newsPage).text
         except Exception as exception:
             excep = exception
 
@@ -2001,9 +2106,57 @@ def wtde_get_intro_load(mode: str) -> str:
         
         return introStyles[0]
 
+# Set mic calibration.
+def mic_set_calibration(audio: int | str, video: int | str) -> None:
+    """ Set the user's microphone calibration to the given values. """
+    # Update the values.
+    inputMicDelayEntry.delete(0, END)
+    inputMicDelayEntry.insert(0, str(audio))
+
+    inputMicVideoDelayEntry.delete(0, END)
+    inputMicVideoDelayEntry.insert(0, str(video))
+
 # Verify files and main GHWTDE config file.
 verify_files()
 wtde_verify_config()
+
+# Read AspyrConfig.xml and its properties.
+# Open the XML file and read its data.
+OS.chdir(wtde_find_appdata())
+with (open("AspyrConfig.xml", 'rb')) as xml: aspyrConfigData = xml.read()
+
+# Run BS4 on this data.
+aspyrConfigDataBS = BeautifulSoup(aspyrConfigData, 'xml', from_encoding = 'utf-8')
+
+# Find tag "s", but then we'll filter it into the keyboard information.
+aspyrConfigDataS = aspyrConfigDataBS.find_all('s')
+
+# Get the keyboard mapping string for the menu navigation.
+keyMenuString = aspyrConfigDataBS.find('s', {"id": "Keyboard_Menu"}).decode_contents()
+
+# Get the keyboard mapping string for the guitar controls.
+keyGuitarString = aspyrConfigDataBS.find('s', {"id": "Keyboard_Guitar"}).decode_contents()
+
+# Get the keyboard mapping string for the drum controls.
+keyDrumString = aspyrConfigDataBS.find('s', {"id": "Keyboard_Drum"}).decode_contents()
+
+# Get the keyboard mapping string for the mic controls.
+keyVocalString = aspyrConfigDataBS.find('s', {"id": "Keyboard_Mic"}).decode_contents()
+
+# Audio visual lag.
+audioVisualLag = aspyrConfigDataBS.find('s', {"id": "Options.VocalsVisualLag"}).decode_contents()
+
+# Audio buffer length.
+audioBuffLen = aspyrConfigDataBS.find('s', {"id": "Audio.BuffLen"}).decode_contents()
+
+# Resolution width.
+resWidth = aspyrConfigDataBS.find('s', {"id": "Video.Width"}).decode_contents()
+
+# Resolution height.
+resHeight = aspyrConfigDataBS.find('s', {"id": "Video.Height"}).decode_contents()
+
+# Reset our working directory.
+reset_working_directory()
 
 # Parse command line arguments (if running at the command line).
 arg_cmd_parse()
@@ -2048,6 +2201,7 @@ AUTO_LAUNCH_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/auto_l
 BAND_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/band_icon.png")))
 DEBUG_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/debug_icon.png")))
 CREDITS_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/credits_icon.png")))
+CREDITS_TABLE_IMAGE = ImageTk.PhotoImage(Image.open(resource_path("res/credits_table.png")))
 
 INPUT_GUITAR_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/guitar_bass.png")))
 INPUT_DRUMS_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/drums.png")))
@@ -2075,7 +2229,18 @@ wtdeSaveConfigButtonTip = Hovertip(wtdeSaveConfigButton, "Save your configuratio
 # Update WTDE button.
 wtdeUpdateButton = Button(root, text = "Update WTDE", font = FONT_INFO, width = 25, height = 2, command = wtde_run_updater, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
 wtdeUpdateButton.place(x = 628, y = 10)
-wtdeUpdateButtonTip = Hovertip(wtdeUpdateButton, "Update WTDE to the latest version and verify your installation's integrity.", HOVER_DELAY)
+
+# Are we connected to the internet?
+if (is_connected("https://cdn.discordapp.com/attachments/872794777060515890/1044075617307590666/Updater_Main_1_0_3.zip")):
+    wtdeUpdateButtonTipText = "Update WTDE to the latest version and verify your installation's integrity."
+    stateToUpdateTo = 'normal'
+else:
+    wtdeUpdateButtonTipText = "Can't update WTDE! No internet connection was found."
+    stateToUpdateTo = 'disabled'
+
+# Update button and its tooltip.
+wtdeUpdateButton.config(state = stateToUpdateTo)
+wtdeUpdateButtonTip = Hovertip(wtdeUpdateButton, wtdeUpdateButtonTipText, HOVER_DELAY)
 
 # Open MODS folder.
 wtdeModsFolderButton = Button(root, text = "Open Mods Folder", font = FONT_INFO, width = 25, height = 2, command = open_mods_folder, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
@@ -2187,51 +2352,102 @@ language = StringVar()
 LANGUAGE_SELECT_TIP = "Set the language to be used in-game."
 languages = ["English", "Spanish (Español)", "Italian (Italiano)", "French (Français)", "German (Deutsch)", "Japanese (日本語)", "Korean (한국어)"]
 
-generalLanguageSelectLabel = Label(wtdeOptionsGeneral, text = "Language:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-generalLanguageSelectLabel.grid(row = 4, column = 0, pady = 5)
+generalLanguageSelectLabel = Label(wtdeOptionsGeneral, text = "Language:         ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+generalLanguageSelectLabel.grid(row = 4, column = 0, pady = 5, sticky = 'e')
 generalLanguageSelectLabel = Hovertip(generalLanguageSelectLabel, LANGUAGE_SELECT_TIP, HOVER_DELAY)
 
 generalLanguageSelect = OptionMenu(wtdeOptionsGeneral, language, *languages)
 generalLanguageSelect.config(width = 22, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
 generalLanguageSelect.grid(row = 4, column = 1, pady = 5, sticky = 'w')
-generalLanguageSelect = Hovertip(generalLanguageSelect, LANGUAGE_SELECT_TIP, HOVER_DELAY)
+generalLanguageSelectTip = Hovertip(generalLanguageSelect, LANGUAGE_SELECT_TIP, HOVER_DELAY)
+
+# Audio buffer length setting.
+audioBuffLenOption = StringVar()
+AUDIO_BUFF_LEN_TIP = "The length, in bytes, of the audio buffer used when decoding FMOD Sound Bank streams. Higher is usually better.\n" \
+                     "Modifying this and/or changing your sound output to 44 kHz can cause bad audio output in-game."
+generalAudioBuffLenLabel = Label(wtdeOptionsGeneral, text = "Audio Buffer Length:         ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+generalAudioBuffLenLabel.grid(row = 5, column = 0, pady = 5, sticky = 'e')
+generalAudioBuffLenLabelTip = Hovertip(generalAudioBuffLenLabel, AUDIO_BUFF_LEN_TIP, HOVER_DELAY)
+
+audioBuffLenOptions = ["2048", "4096"]
+generalAudioBuffLen = OptionMenu(wtdeOptionsGeneral, audioBuffLenOption, *audioBuffLenOptions)
+generalAudioBuffLen.config(width = 10, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
+generalAudioBuffLen.grid(row = 5, column = 1, pady = 5, sticky = 'w')
+generalAudioBuffLenTip = Hovertip(generalAudioBuffLen, AUDIO_BUFF_LEN_TIP, HOVER_DELAY)
+
+audioBuffLenOption.set(audioBuffLen)
+
+# Menu option toggles.
+MENU_TOGGLES_TIP = "Turn ON or OFF various different commands on the main menu."
+generalMenuTogglesLabel = Label(wtdeOptionsGeneral, text = "Main Menu Options:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+generalMenuTogglesLabel.grid(row = 1, column = 2, padx = 40, pady = 5, sticky = 'w')
+generalMenuTogglesLabelTip = Hovertip(generalMenuTogglesLabel, MENU_TOGGLES_TIP, HOVER_DELAY)
+
+# Use Career option.
+useCareerOption = StringVar()
+USE_CAREER_TIP = "Show or hide the Career option."
+generalUseCareerOption = Checkbutton(wtdeOptionsGeneral, text = "  Career", variable = useCareerOption, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+generalUseCareerOption.grid(row = 2, column = 2, padx = 40, pady = 5, sticky = 'w')
+generalUseCareerOptionTip = Hovertip(generalUseCareerOption, USE_CAREER_TIP, HOVER_DELAY)
+
+# Use Quickplay option.
+useQuickplayOption = StringVar()
+USE_QUICKPLAY_TIP = "Show or hide the Quickplay option."
+generalUseQuickplayOption = Checkbutton(wtdeOptionsGeneral, text = "  Quickplay", variable = useQuickplayOption, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+generalUseQuickplayOption.grid(row = 3, column = 2, padx = 40, pady = 5, sticky = 'w')
+generalUseQuickplayOptionTip = Hovertip(generalUseQuickplayOption, USE_QUICKPLAY_TIP, HOVER_DELAY)
+
+# Use Head to Head option.
+useHeadToHeadOption = StringVar()
+USE_HTH_TIP = "Show or hide the Head to Head option."
+generalUseHeadToHeadOption = Checkbutton(wtdeOptionsGeneral, text = "  Head to Head", variable = useHeadToHeadOption, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+generalUseHeadToHeadOption.grid(row = 4, column = 2, padx = 40, pady = 5, sticky = 'w')
+generalUseHeadToHeadOptionTip = Hovertip(generalUseHeadToHeadOption, USE_HTH_TIP, HOVER_DELAY)
+
+# Use Online option.
+useOnlineOption = StringVar()
+USE_ONLINE_TIP = "Show or hide the Online option."
+generalUseOnlineOption = Checkbutton(wtdeOptionsGeneral, text = "  Online", variable = useOnlineOption, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+generalUseOnlineOption.grid(row = 5, column = 2, padx = 40, pady = 5, sticky = 'w')
+generalUseOnlineOptionTip = Hovertip(generalUseOnlineOption, USE_ONLINE_TIP, HOVER_DELAY)
+
+# Use Music Studio option.
+useMusicStudioOption = StringVar()
+USE_MUSIC_STUDIO_TIP = "Show or hide the Music Studio option."
+generalUseMusicStudioOption = Checkbutton(wtdeOptionsGeneral, text = "  Music Studio", variable = useMusicStudioOption, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+generalUseMusicStudioOption.grid(row = 6, column = 2, padx = 40, pady = 5, sticky = 'w')
+generalUseMusicStudioOptionTip = Hovertip(generalUseMusicStudioOption, USE_MUSIC_STUDIO_TIP, HOVER_DELAY)
+
+# Use Rock Star Creator option.
+useCAROption = StringVar()
+USE_CAR_TIP = "Show or hide the Rock Star Creator option."
+generalUseCAROption = Checkbutton(wtdeOptionsGeneral, text = "  Rock Star Creator", variable = useCAROption, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+generalUseCAROption.grid(row = 7, column = 2, padx = 40, pady = 5, sticky = 'w')
+generalUseCAROptionTip = Hovertip(generalUseCAROption, USE_CAR_TIP, HOVER_DELAY)
+
+# Use Options option.
+useOptionsOption = StringVar()
+USE_OPTIONS_TIP = "Show or hide the Options option."
+generalUseOptionsOption = Checkbutton(wtdeOptionsGeneral, text = "  Options", variable = useOptionsOption, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+generalUseOptionsOption.grid(row = 8, column = 2, padx = 40, pady = 5, sticky = 'w')
+generalUseOptionsOptionTip = Hovertip(generalUseOptionsOption, USE_OPTIONS_TIP, HOVER_DELAY)
+
+# Use Exit option.
+useQuitOption = StringVar()
+USE_QUIT_TIP = "Show or hide the Exit option."
+generalUseQuitOption = Checkbutton(wtdeOptionsGeneral, text = "  Exit", variable = useQuitOption, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
+generalUseQuitOption.grid(row = 9, column = 2, padx = 40, pady = 5, sticky = 'w')
+generalUseQuitOptionTip = Hovertip(generalUseQuitOption, USE_QUIT_TIP, HOVER_DELAY)
 
 # ====================================================================== #
 #                            INPUT SETTINGS TAB                          #
 # ====================================================================== #
 # This section primarily deals with the AspyrConfig.xml file in the user's Local AppData folder for keyboard mapping editing.
-oldWorkDir = OS.getcwd()
-OS.chdir(wtde_find_appdata())
 
 # Constants used for drawing the labels and entry boxes.
 INPUT_FIELD_LABEL_PADX = 0
 INPUT_FIELD_LABEL_PADY = 4
 INPUT_MAPPING_ENTRY_WIDTH = 20
-
-# Open the XML file and read its data.
-with (open("AspyrConfig.xml", 'rb')) as xml: aspyrConfigData = xml.read()
-
-# Run BS4 on this data.
-aspyrConfigDataBS = BeautifulSoup(aspyrConfigData, 'xml', from_encoding = 'utf-8')
-
-# Find tag "s", but then we'll filter it into the keyboard information.
-aspyrConfigDataS = aspyrConfigDataBS.find_all('s')
-
-# Get the keyboard mapping string for the menu navigation.
-keyMenuStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Menu"})
-keyMenuString = keyMenuStringXML.decode_contents()
-
-# Get the keyboard mapping string for the guitar controls.
-keyGuitarStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Guitar"})
-keyGuitarString = keyGuitarStringXML.decode_contents()
-
-# Get the keyboard mapping string for the drum controls.
-keyDrumStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Drum"})
-keyDrumString = keyDrumStringXML.decode_contents()
-
-# Get the keyboard mapping string for the mic controls.
-keyVocalStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Mic"})
-keyVocalString = keyVocalStringXML.decode_contents()
 
 # Input settings tab information.
 TAB_INFO_INPUT = "Input Settings: Modify your keyboard controls and microphone settings.\nHover over any option to see what it does!"
@@ -2251,9 +2467,6 @@ KEY_INPUT_TIP = "Set the keyboard controls when playing.\n\n" \
 # ============================================= #
 #                  GUITAR INPUTS                #
 # ============================================= #
-reset_working_directory()
-
-
 inputKeyGuitarLabel = Label(wtdeOptionsInput, text = " Guitar & Bass Keyboard Controls:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', image = INPUT_GUITAR_ICON, compound = 'left')
 inputKeyGuitarLabel.grid(row = 1, column = 0, columnspan = 2, padx = INPUT_FIELD_LABEL_PADX, pady = INPUT_FIELD_LABEL_PADY, sticky = 'w')
 inputKeyGuitarLabelTip = Hovertip(inputKeyGuitarLabel, KEY_INPUT_TIP, HOVER_DELAY)
@@ -2911,56 +3124,58 @@ MIC_SELECT_TIP = "Select the microphone you want to use for vocal play in-game.\
                  "to rename it in the Sound settings in Windows."
 
 inputMicListLabel = Label(wtdeOptionsInput, text = "Microphone: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
-inputMicListLabel.grid(row = 16, column = 0, pady = 35)
+inputMicListLabel.grid(row = 16, column = 0, pady = 4)
 inputMicListLabelTip = Hovertip(inputMicListLabel, MIC_SELECT_TIP, HOVER_DELAY)
 
 inputMicList = OptionMenu(wtdeOptionsInput, micDevice, *micDeviceList)
 inputMicList.config(width = 30, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
-inputMicList.grid(row = 16, column = 1, pady = 35, columnspan = 2, sticky = 'w')
+inputMicList.grid(row = 16, column = 1, pady = 5, columnspan = 2, sticky = 'w')
 inputMicListTip = Hovertip(inputMicList, MIC_SELECT_TIP, HOVER_DELAY)
 
 # Vocal audio delay amount.
-MIC_DELAY_TIP = "Set the vocal audio delay.\n\n" \
-                "In other words, this physically moves the notes on the vocal highway by\n" \
-                "the given interval, in milliseconds.\n\n" \
-                "If the notes are coming too early, increase this value.\n" \
-                "If the notes are coming too late, decrease this value."
-inputMicDelayLabel = Label(wtdeOptionsInput, text = "Mic Audio Delay: ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
-inputMicDelayLabel.grid(row = 16, column = 3, pady = 20, sticky = 'e')
-inputMicDelayLabelTip = Hovertip(inputMicDelayLabel, MIC_DELAY_TIP, HOVER_DELAY)
+MIC_AUDIO_DELAY_TIP = "Set the vocal audio delay.\n\n" \
+                      "In other words, this physically moves the notes on the vocal highway by\n" \
+                      "the given interval, in milliseconds.\n\n" \
+                      "If the notes are coming too early, increase this value.\n" \
+                      "If the notes are coming too late, decrease this value."
+inputMicDelayLabel = Label(wtdeOptionsInput, text = "Mic Audio Delay:    ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
+inputMicDelayLabel.grid(row = 16, column = 3, pady = 4, sticky = 'e')
+inputMicDelayLabelTip = Hovertip(inputMicDelayLabel, MIC_AUDIO_DELAY_TIP, HOVER_DELAY)
 
 inputMicDelayEntry = Entry(wtdeOptionsInput, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 10)
-inputMicDelayEntry.grid(row = 16, column = 4, pady = 20, sticky = 'w')
-inputMicDelayEntryTip = Hovertip(inputMicDelayEntry, MIC_DELAY_TIP, HOVER_DELAY)
+inputMicDelayEntry.grid(row = 16, column = 4, pady = 4, sticky = 'w')
+inputMicDelayEntryTip = Hovertip(inputMicDelayEntry, MIC_AUDIO_DELAY_TIP, HOVER_DELAY)
+
+# Vocal visual delay amount.
+MIC_VIDEO_DELAY_TIP = "Set the vocal video delay.\n\n" \
+                      "In other words, this physically moves the notes on the vocal highway by\n" \
+                      "the given interval, in milliseconds.\n\n" \
+                      "If the notes are coming too early, increase this value.\n" \
+                      "If the notes are coming too late, decrease this value."
+inputMicVideoDelayLabel = Label(wtdeOptionsInput, text = "Mic Video Delay:    ", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
+inputMicVideoDelayLabel.grid(row = 17, column = 3, pady = 4, sticky = 'e')
+inputMicVideoDelayLabelTip = Hovertip(inputMicVideoDelayLabel, MIC_VIDEO_DELAY_TIP, HOVER_DELAY)
+
+inputMicVideoDelayEntry = Entry(wtdeOptionsInput, bg = BUTTON_BG, fg = BUTTON_FG, font = FONT_INFO, width = 10)
+inputMicVideoDelayEntry.grid(row = 17, column = 4, pady = 4, sticky = 'w')
+inputMicVideoDelayEntryTip = Hovertip(inputMicVideoDelayEntry, MIC_VIDEO_DELAY_TIP, HOVER_DELAY)
+
+# Use recommended mic values.
+USE_RECOMMENDED_TIP = "Set your Mic calibration to the recommended values."
+inputMicUseRecommended = Button(wtdeOptionsInput, text = "Use Recommended Calibration", font = FONT_INFO_DROPDOWN, width = 30, height = 1, command = lambda: mic_set_calibration(-80, -315), bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG)
+inputMicUseRecommended.grid(row = 18, column = 3, columnspan = 2, pady = 5)
+inputMicUseRecommendedTip = Hovertip(inputMicUseRecommended, USE_RECOMMENDED_TIP, HOVER_DELAY)
 
 # Use input hack.
 inputHack = StringVar()
 INPUT_HACK_TIP = "Enable or disable the input hack."
 inputUseInputHack = Checkbutton(wtdeOptionsInput, text = f"  Use Input Hack", variable = inputHack, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left', activebackground = BG_COLOR, activeforeground = FG_COLOR, selectcolor = "#000000")
-inputUseInputHack.grid(row = 16, column = 5, pady = 5, sticky = 'w')
+inputUseInputHack.grid(row = 16, column = 5, pady = 4, sticky = 'w')
 inputUseInputHackTip = Hovertip(inputUseInputHack, INPUT_HACK_TIP, HOVER_DELAY)
 
 # ====================================================================== #
 #                          GRAPHICS SETTINGS TAB                         #
 # ====================================================================== #
-# Read the AspyrConfig for the settings held there.
-# Open the XML file and read its data.
-with (open(f"{wtde_find_appdata()}\\AspyrConfig.xml", 'rb')) as xml: aspyrConfigData = xml.read()
-
-# Run BS4 on this data.
-aspyrConfigDataBS = BeautifulSoup(aspyrConfigData, 'xml')
-
-# Find tag "s", but then we'll filter it into the keyboard information.
-aspyrConfigDataS = aspyrConfigDataBS.find_all('s')
-
-# Get the keyboard mapping string for the menu navigation.
-resWidthXML = aspyrConfigDataBS.find('s', {"id": "Video.Width"})
-resWidth = resWidthXML.decode_contents()
-
-# Get the keyboard mapping string for the menu navigation.
-resHeightXML = aspyrConfigDataBS.find('s', {"id": "Video.Height"})
-resHeight = resHeightXML.decode_contents()
-
 # Make sure we're in the INI directory.
 OS.chdir(wtde_find_config())
 config.read("GHWTDE.ini")
@@ -3368,6 +3583,32 @@ bandPreferredDrummerHighwayEntryTip = Hovertip(bandPreferredDrummerHighwayEntry,
 # Get the preferred bassist already in the config.
 bandPreferredDrummerHighwayEntry.insert(0, config.get("Band", "PreferredDrummerHighway"))
 
+# Guitar and bass strum animations.
+strumAnimOptions = ["GHWT (Default)", "Guitar Hero: Metallica"]
+
+STRUM_ANIM_TIP = "Set the preferred guitar or bass strum animations for the characters."
+
+guitarStrumAnim = StringVar()
+bassStrumAnim = StringVar()
+
+bandPreferredGuitarStrumAnimsLabel = Label(wtdeOptionsBand, text = "         Guitar Strum Animations:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
+bandPreferredGuitarStrumAnimsLabel.grid(row = 6, column = 0, padx = 10, pady = 5, sticky = 'e')
+bandPreferredGuitarStrumAnimsLabelTip = Hovertip(bandPreferredGuitarStrumAnimsLabel, STRUM_ANIM_TIP, HOVER_DELAY)
+
+bandPreferredGuitarStrumAnims = OptionMenu(wtdeOptionsBand, guitarStrumAnim, *strumAnimOptions)
+bandPreferredGuitarStrumAnims.config(width = 20, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
+bandPreferredGuitarStrumAnims.grid(row = 6, column = 1, pady = 5)
+bandPreferredGuitarStrumAnimsTip = Hovertip(bandPreferredGuitarStrumAnims, STRUM_ANIM_TIP, HOVER_DELAY)
+
+bandPreferredBassStrumAnimsLabel = Label(wtdeOptionsBand, text = "           Bass Strum Animations:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'right')
+bandPreferredBassStrumAnimsLabel.grid(row = 7, column = 0, padx = 10, pady = 5, sticky = 'e')
+bandPreferredBassStrumAnimsLabelTip = Hovertip(bandPreferredBassStrumAnimsLabel, STRUM_ANIM_TIP, HOVER_DELAY)
+
+bandPreferredBassStrumAnims = OptionMenu(wtdeOptionsBand, bassStrumAnim, *strumAnimOptions)
+bandPreferredBassStrumAnims.config(width = 20, bg = BUTTON_BG, fg = BUTTON_FG, activebackground = BUTTON_ACTIVE_BG, activeforeground = BUTTON_ACTIVE_FG, font = FONT_INFO_DROPDOWN, highlightbackground = BUTTON_ACTIVE_BG, highlightcolor = BUTTON_ACTIVE_FG, justify = 'left')
+bandPreferredBassStrumAnims.grid(row = 7, column = 1, pady = 5)
+bandPreferredBassStrumAnimsTip = Hovertip(bandPreferredBassStrumAnims, STRUM_ANIM_TIP, HOVER_DELAY)
+
 # ====================================================================== #
 #                        AUTO LAUNCH SETTINGS TAB                        #
 # ====================================================================== #
@@ -3674,27 +3915,25 @@ fixFSBObjectsOptionTip = Hovertip(fixFSBObjectsOption, FIX_FSB_OBJECTS_TIP, HOVE
 #                               CREDITS TAB                              #
 # ====================================================================== #
 # Logo image of WTDE.
-creditsLogoLabel = Label(wtdeOptionsCredits, image = WTDE_LOGO, bg = BG_COLOR, fg = FG_COLOR)
-creditsLogoLabel.pack()
+creditsLogoLabel = Label(wtdeOptionsCredits, image = WTDE_LOGO, bg = BG_COLOR, fg = FG_COLOR, justify = 'center')
+creditsLogoLabel.pack(fill = 'x')
 
 # Credits text.
-CREDITS_TAB_TEXT = "GH World Tour: Definitive Edition Launcher++ by IMF24\n\n" \
-                   "GHWT: DE Developed by Fretworks, EST. 2021\n\n" \
-                   "🧪 ✨ WTDE Developers ✨ 🧪\n" \
-                   "Zedek the Plague Doctor \u2122         Dodylectable               donnaken15              Oktoberfest\n" \
-                   "         Nevermind                   WonkyTonkBotty            AngelLeyend            PikminGuts92\n" \
-                   "            RazQ                               Uzis                        IMF24                  Dragon3989\n" \
-                   "             Viran5                         Akiba Komori                   ftpjif                   huckleberrypie\n" \
-                   "          Aibot                              asseye                   CactusJosh                  FoxJudy\n" \
-                   "     JimmyEatWaffles                 xxblackkat66                 king91six                 MexicanPB\n" \
-                   "          NaviRivers                      RankGH159                   realexo                    realexoticri\n" \
-                   "               StrangerX01                thardwardy\n\n" \
-                   "A special thanks to our development testers and of course, all of you, the players, modders, content creators, and everything in between!\n\n" \
-                   "Making your Guitar Hero World Tour experience better, one update at a time!\n\n" \
-                   "GHWT: DE and Fretworks are not associated with Activision, Neversoft, or RedOctane in any way, shape, or form.\n" \
-                   "GHWT: DE is and always will be a non-profit fan-made project."
-creditsTextLabel = Label(wtdeOptionsCredits, text = CREDITS_TAB_TEXT, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO)
-creditsTextLabel.pack()
+CREDITS_TAB_TEXT_1 = f"GH World Tour: Definitive Edition Launcher++ by IMF24 - Version {VERSION}\n\n" \
+                      "GHWT: DE Developed by Fretworks, EST. 2021\n\n" \
+                      "🧪 ✨ WTDE Developers ✨ 🧪"
+creditsText1Label = Label(wtdeOptionsCredits, text = CREDITS_TAB_TEXT_1, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'center')
+creditsText1Label.pack(fill = 'x')
+
+creditsTableLabel = Label(wtdeOptionsCredits, image = CREDITS_TABLE_IMAGE, bg = BG_COLOR, fg = FG_COLOR, justify = 'center')
+creditsTableLabel.pack(fill = 'x')
+
+CREDITS_TAB_TEXT_2 = "A special thanks to our development testers and of course, all of you, the players, modders, content creators, and everything in between!\n\n" \
+                     "Making your Guitar Hero World Tour experience better, one update at a time!\n\n" \
+                     "GHWT: DE and Fretworks are not associated with Activision, Neversoft, or RedOctane in any way, shape, or form.\n" \
+                     "GHWT: DE is and always will be a non-profit fan-made project."
+creditsText2Label = Label(wtdeOptionsCredits, text = CREDITS_TAB_TEXT_2, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'center')
+creditsText2Label.pack(fill = 'x')
 
 # ====================================================================== #
 #                              ADD THE TABS                              #
