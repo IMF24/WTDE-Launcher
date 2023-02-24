@@ -756,7 +756,6 @@ def wtde_load_config() -> None:
 
     # ===================== AUTO LAUNCH ===================== #
     enableAutoLaunch.set(config.get("AutoLaunch", "Enabled"))
-    auto_launch_status()
 
     hideHUDAuto.set(config.get("AutoLaunch", "HideHUD"))
 
@@ -798,6 +797,9 @@ def wtde_load_config() -> None:
     rawLoad.set(config.get("AutoLaunch", "RawLoad"))
 
     songTime.set(config.get("AutoLaunch", "RawLoad"))
+
+    # Update auto launch status.
+    auto_launch_status()
 
     # ===================== DEBUG ===================== #
     fixNoteLimit.set(config.get("Debug", "FixNoteLimit"))
@@ -2299,7 +2301,7 @@ root.title(f"GHWT: Definitive Edition Launcher++ - V{VERSION}")
 root.geometry(f"1280x768+{get_screen_resolution()[0] // 6}+{get_screen_resolution()[1] // 8}")
 root.iconbitmap(resource_path("res/icon.ico"))
 root.config(bg = BG_COLOR)
-root.resizable(False, False)
+root.resizable(True, True)
 root.transient()
 root.focus_force()
 
