@@ -12,10 +12,116 @@ This is a temporary file stored on the computer, and is deleted after the launch
             <b>GHWT: DE News</b>
         </span>      
     </p>
-
     <p>
         <span style="font-size: 11px;">
             What's new in the realm of Guitar Hero World Tour: Definitive Edition releases? Find out here!
+        </span>
+    </p>
+
+    <!-- May 25, 2023 - Mod Loader Rewrite PSA -->
+    <h5>May 25, 2023 - Mod Loader Rewrite PSA</h5>
+    <p>
+        <span style="font-size: 11px;">
+            <i>Author: Zedek the Plague Doctor ™</i>
+            The mod loader is in the process of being <b>completely rewritten</b> from scratch! This will take some time (not a ton) but will provide benefits like:
+            <br><br>
+
+            <h6><b>Much faster mod loading</b></h6>
+            - Mods should (hopefully) load a lot faster!
+            <br>
+            - GHWTDE.dll and the game will now speak back and forth as little as possible
+            <br>
+            - Logic changes in the update loop to hopefully make the process smoother
+            <br><br>
+
+            <h6><b>ScriptMod improvements</b></h6>
+            - .qb files in ScriptMods can now be loaded recursively!
+            <br>
+            - DATA/MODS/MyMod/LevelA/LevelB/CodeFile.qb.xen works!
+            <br>
+            - .qb files no longer need to be named the same as the folder they are in
+            <br>
+            - _Load functions in the .qb file will be prefixed with the name of the .qb file (see above)
+            <br><br>
+
+            <h6><b>Cleaner Backend</b></h6>
+            - Cleaner DLL source code allows for easy addition of future mod types
+            <br><br>
+
+            <h6><b>Mod Limit</b></h6>
+            - Mod loading uses <b>dynamic</b> values and is no longer restricted to a static list
+            <br>
+            - Theoretically infinite mod count (no longer restricted to 30,000 or so)
+            <br><br>
+
+            <b>Stay tuned!</b>
+            <br><br>
+
+            <b>NO, nothing will change with installing mods or the way YOU interact with mods. This is an engine cleanup and will only improve your experience!</b>
+        </span>
+    </p>
+
+    <!-- May 16, 2023 - V1.1.0.8 Released! -->
+    <h5>May 16, 2023 - V1.1.0.8 Released!</h5>
+    <p>
+        <span style="font-size: 11px;">
+            <i>Author: Zedek the Plague Doctor ™</i>
+            📦 GHWT:DE 1.1.0.8 released - GHOT:D / GH3 guitars, launcher fixes, venue cams, more! 📦 
+            <br>
+            - Yopsito / Akiba: Ported gigantic handful of guitars from GH3 / GHOT:D
+            <br>
+            - Oktoberfest: Added .hkc, .scn, and .tex files to a large handful of venues
+            <br>
+            - Oktoberfest: Added Guitar Hero: Aerosmith loading screen
+            <br>
+            - IMF24: Added more options to launcher
+            <br>
+            - IMF24: Added new Manage Saves dialog to launcher
+            <br>
+            - IMF24: Debug log write location changed in launcher
+            <br>
+            - Akiba: Improved orbit cams on GHWT venues
+            <br>
+            - Akiba: Fix GH5, WoR, BH cams on Vantallica venues
+            <br>
+            - Akiba: Drumstick fixes for GH5Drums skeleton type
+            <br>
+            - Akiba: Start node fix for non-GBSD VH mocap
+            <br>
+            - Zedek: Remove check for z_londonvh pak, this is not a valid zone
+            <br>
+            - Zedek: Remove redundant loop anim paks ending in _f
+            <br>
+            - Zedek: Added CreateFileA debugging, very deep debug that will warn when a file failed to open
+            <br>
+            - Zedek: Added CreateFileErrorLevel for [Logger]
+        </span>
+    </p>
+
+    <!-- May 3, 2023 - V1.1.0.7 Released! Free Play, Highways, and More! -->
+    <h5>May 3, 2023 - V1.1.0.7 Released! Free Play, Highways, and More!</h5>
+    <p>
+        <span style="font-size: 11px;">
+            <i>Author: Zedek the Plague Doctor ™</i>
+            📦 GHWT:DE 1.1.0.7 released - Free play, highways, more! 📦 
+            <br>
+            - Zedek: Add Free Play mode, allows for characters, songs, etc. to be unlocked by default
+            <br>
+            - Zedek: Add new poster-styled save / load menu
+            <br>
+            - Zedek: Add missing highways from GH:A, GH:M, GH:SH, GH:VH (From Mickelräven / Raccoon_333)
+            <br>
+            - Zedek: New materials for Warrior Tesla (from Nevermind)
+            <br>
+            - Zedek: Add dark vignettes to GH1 highways for visibility (Mickelräven)
+            <br>
+            - Zedek: Fix typos on some character bios
+            <br>
+            - Akiba: Add actual cameras to Hypersphere venue
+            <br>
+            - Akiba: Revert previous drum commit, might fix some Lars goofs
+            <br>
+            - IMF24: Lots of launcher fixes and patches
         </span>
     </p>
 
@@ -1164,5 +1270,4 @@ This is a temporary file stored on the computer, and is deleted after the launch
             🛠️  Remember to check out the SDK: <a href="https://gitgud.io/fretworks/guitar-hero-sdk">Guitar Hero SDK</a>
         </span>
     </p>
-    
 </html>
