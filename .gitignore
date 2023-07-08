@@ -1,3 +1,7 @@
 # Ignore spec files and dist folder
 *.spec
 dist/
+__pycache__/
+Updater.exe
+libcurl.dll
+Updater.ini
