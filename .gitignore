@@ -1,5 +1,5 @@
-# Ignore spec files and dist folder
 *.spec
+build/
 dist/
 __pycache__/
 Updater.exe
