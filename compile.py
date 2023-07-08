@@ -2,7 +2,6 @@ from launcher_constants import VERSION
 from cmd_colors import *
 import os as OS
 import sys as SYS
-import time as TIME
 
 arguments = SYS.argv
 
@@ -21,3 +20,6 @@ if (OS.path.exists(specFile)): OS.remove(specFile)
 print(f"{GREEN}At long last, all done!")
 
 input(f"{LIGHT_BLUE}? {WHITE}Press ENTER to exit the EXE builder. ")
+
+try: OS.system('cls')
+except: OS.system('clear')

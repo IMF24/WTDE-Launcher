@@ -17,6 +17,12 @@ GHWT: DE LAUNCHER++ BY IMF24
 ----------------------------
 A completely redesigned launcher for GH World Tour: Definitive Edition, based off of Uzis's original launcher.
 """
+# DEBUG: Print the debug header. For personal use in debugging the program!
+from cmd_colors import *
+print(f"{RED}-----------------------------------------------{WHITE}")
+print(f"{LIGHT_RED}WTDE LAUNCHER++ DEBUG CONSOLE{WHITE}")
+print(f"{RED}-----------------------------------------------{WHITE}")
+
 # Import required modules.
 from tkinter import *
 from tkinter import ttk as TTK, messagebox as MSG, filedialog as FD
@@ -45,7 +51,10 @@ verify_updater_config()
 # Save WTDE config settings.
 def wtde_save_config(run: bool = False) -> None:
     """ Using BS4 and ConfigParser, saves all configuration settings from the launcher's widgets into both GHWTDE.ini and AspyrConfig.xml as needed. """
+    print(f"{YELLOW}Saving GHWTDE.ini and AspyrConfig.xml...{WHITE}")
+
     if (autoLaunchEnabled.get() == '1'):
+        print(f"{YELLOW}Warning: Auto launch enabled, asking user to back up save data{WHITE}")
         AUTO_ENABLED_ASK_BACKUP = "You have Auto Launch functionality enabled. Due to this, you might risk losing your save data.\n" \
                                   "Do you want to create a backup of your save data?"
         
@@ -58,6 +67,7 @@ def wtde_save_config(run: bool = False) -> None:
     OS.chdir(wtde_find_config())
     config.clear()
     config.read("GHWTDE.ini")
+    print(f"{YELLOW}Saving GHWTDE.ini...{WHITE}")
 
     # ==================================
     # General Settings
@@ -199,6 +209,7 @@ def wtde_save_config(run: bool = False) -> None:
 
     # Write all changes to our GHWTDE.ini file.
     with (open("GHWTDE.ini", 'w')) as cnf: config.write(cnf)
+    print(f"{GREEN}All INI settings have been saved to GHWTDE.ini!{WHITE}")
 
     # ====================================================================
     # AspyrConfig Settings
@@ -206,6 +217,7 @@ def wtde_save_config(run: bool = False) -> None:
     # Read our AspyrConfig.xml.
     OS.chdir(aspyr_get_config())
     with (open("AspyrConfig.xml", 'rb')) as xml: aspyrConfigDataXML = xml.read()
+    print(f"{YELLOW}Saving AspyrConfig.xml...{WHITE}")
 
     # Run BS4 on the XML data.
     aspyrConfigDataBS = BeautifulSoup(aspyrConfigDataXML, 'xml', from_encoding = 'utf-8')
@@ -240,7 +252,7 @@ def wtde_save_config(run: bool = False) -> None:
     keyGuitarStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Guitar"})
     keyGuitarStringXML.string = aspyr_key_encode(GUITAR_INPUT_WIDGETS, GUITAR_INPUT_BINDINGS)
 
-    print(aspyr_key_encode(GUITAR_INPUT_WIDGETS, GUITAR_INPUT_BINDINGS))
+    print(f"Compiled guitar input mapping string: {keyGuitarStringXML.string}")
 
     # ================================== DRUM INPUTS ================================== #
     DRUMS_INPUT_WIDGETS = [InputSettings.inputKeyDrumsRedEntry, InputSettings.inputKeyDrumsYellowEntry, InputSettings.inputKeyDrumsBlueEntry,
@@ -253,6 +265,8 @@ def wtde_save_config(run: bool = False) -> None:
     keyDrumStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Drum"})
     keyDrumStringXML.string = aspyr_key_encode(DRUMS_INPUT_WIDGETS, DRUMS_INPUT_BINDINGS)
 
+    print(f"Compiled drum input mapping string: {keyDrumStringXML.string}")
+
     # ================================== MIC INPUTS ================================== #
     MIC_INPUT_WIDGETS = [InputSettings.inputKeyMicGreenEntry, InputSettings.inputKeyMicRedEntry, InputSettings.inputKeyMicYellowEntry,
                          InputSettings.inputKeyMicBlueEntry, InputSettings.inputKeyMicOrangeEntry, InputSettings.inputKeyMicStartEntry,
@@ -263,6 +277,8 @@ def wtde_save_config(run: bool = False) -> None:
 
     keyMicStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Mic"})
     keyMicStringXML.string = aspyr_key_encode(MIC_INPUT_WIDGETS, MIC_INPUT_BINDINGS) + "MIC_VOL_DOWN 273 329 "
+
+    print(f"Compiled drum input mapping string: {keyMicStringXML.string}")
 
     # ================================== MENU INPUTS ================================== #
     MENU_INPUT_WIDGETS = [InputSettings.inputKeyMenuGreenEntry, InputSettings.inputKeyMenuRedEntry, InputSettings.inputKeyMenuYellowEntry,
@@ -275,6 +291,8 @@ def wtde_save_config(run: bool = False) -> None:
 
     keyMenuStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Menu"})
     keyMenuStringXML.string = aspyr_key_encode(MENU_INPUT_WIDGETS, MENU_INPUT_BINDINGS)
+
+    print(f"Compiled menu input mapping string: {keyMenuStringXML.string}")
 
     micVisualDelayXML = aspyrConfigDataBS.find('s', {"id": "Options.VocalsVisualLag"})
     micVisualDelayXML.string = InputSettings.inputMicSettingsVDelayEntry.get()
@@ -298,12 +316,15 @@ def wtde_save_config(run: bool = False) -> None:
 
     # Write all changes to our AspyrConfig.xml file.
     with (open("AspyrConfig.xml", 'w', encoding = "utf-8")) as xml: xml.write(str(aspyrConfigDataBS))
+    print(f"{GREEN}All XML settings have been saved to AspyrConfig.xml!{WHITE}")
 
     # Reset our working directory directory.
     reset_working_directory()
 
     # If the 'run' argument was enabled, close the launcher and run GHWT: DE.
     if (run):
+        print("Asked to run WTDE! Exiting launcher execution and running GHWT_Definitive.exe...")
+
         # Destroy the window.
         root.destroy()
 
@@ -313,6 +334,9 @@ def wtde_save_config(run: bool = False) -> None:
 
         # Run the game.
         OS.system(".\\GHWT_Definitive.exe")
+
+    else:
+        print("Not running GHWT_Definitive.exe, save complete")
 
 # Load WTDE config settings.
 def wtde_load_config() -> None:
@@ -576,6 +600,7 @@ def wtde_load_config() -> None:
 def wtde_run_updater() -> None:
     """ Runs the updater program for WTDE. Aborts execution if the updater is not present, but allows the user to download the updater files. """
     debug_add_entry("[WTDE Updater] Attempting to update WTDE...", 1)
+    print(f"{YELLOW}Attempting to update WTDE...{WHITE}")
 
     # Is the user connected to the internet?
     if (is_connected("https://ghwt.de")):
@@ -584,18 +609,23 @@ def wtde_run_updater() -> None:
         if (OS.path.exists("Updater.exe")):
             if (not MSG.askyesno("Update WTDE?", "Are you sure you want to update your mod to the latest version? This will close the launcher.")):
                 debug_add_entry("[WTDE Updater] Aborted by user; Cancelling...", 1)
+                print(f"{RED}User aborted the update!{WHITE}")
                 return False
             
             if (MSG.askyesno("Save Config before Closing?", "Do you want to save your configuration settings before closing the launcher and updating?")): wtde_save_config()
 
             root.destroy()
+            print(f"{YELLOW}Running Updater.exe...{WHITE}")
             OS.startfile("Updater.exe")
 
             debug_add_entry("[WTDE Updater] Updater was found and ran successfully!", 1)
-            
+
+            print(f"{GREEN}We successfully updated WTDE! Aborting further execution...{WHITE}")
+
             exit()
         else:
             debug_add_entry("[WTDE Updater] WTDE Updater not downloaded!", 1)
+            print(f"{RED}CRITICAL: No Updater.exe found, the user should download it!{WHITE}")
             
             # If the updater isn't downloaded, ask the user if they want to download it.
             if (MSG.askyesno("Download Updater?", "The WTDE updater program was not found in your\ngame folder. Do you want to download it?")):
@@ -630,6 +660,7 @@ def wtde_check_for_updates(ignore_config: bool = False) -> None:
 
     if (not ignore_config) and (config.get('Launcher', 'CheckForUpdates') == '0'):
         reset_working_directory()
+        print(f"{RED}CRITICAL: Ignoring auto-update checker...{WHITE}")
         config.clear()
         return
 
@@ -637,6 +668,8 @@ def wtde_check_for_updates(ignore_config: bool = False) -> None:
     reset_working_directory()
     config.clear()
     config.read('Updater.ini')
+
+    print(f"{YELLOW}Checking for updates...{WHITE}")
 
     # Get the MD5 hash of the user's tb.pab.xen file.
     userMD5 = HASH.md5(open(f"{config.get('Updater', 'GameDirectory')}\\DATA\\PAK\\tb.pab.xen", 'rb').read()).hexdigest()
@@ -664,13 +697,17 @@ def wtde_check_for_updates(ignore_config: bool = False) -> None:
 
     # If the hashes don't match, assume the user is out of date.
     if (userMD5 != repoMD5):
+        print(f"{YELLOW}Warning: Hash mismatch, probably out of date!{WHITE}")
+
         AUTO_UPDATE_MSG =  "A new version is available for download!\n" \
                           f"The latest version is {WTDE_LATEST_VERSION}.\n\n" \
                            "Do you want to update to the latest version?"
         
         if (MSG.askyesno("Update WTDE?", AUTO_UPDATE_MSG)): wtde_run_updater()
 
-    else: MSG.showinfo("Already Up to Date", "Your mod is up to date!")
+    else:
+        print(f"{GREEN}MD5 hashes match, all good!{WHITE}")
+        MSG.showinfo("Already Up to Date", "Your mod is up to date!")
 
 # Update Resolution when Use Native Res is checked.
 def native_res_update() -> None:
@@ -763,6 +800,9 @@ def listen_key(entry: Entry) -> None:
 
     # Use the on-screen keyboard.
     else:
+        # DEBUG: Prints a message saying we're using the on-screen keyboard.
+        print("Using on-screen keyboard, set up the window now!")
+
         # Set value to update with.
         def key_return_value(string: str) -> None:
             """ Return the string for a key press. """
@@ -771,6 +811,9 @@ def listen_key(entry: Entry) -> None:
 
             # Update the given Entry widget.
             entry.insert('end', valueToUpdateWith)
+
+            # DEBUG: Prints a message to the console detailing what key was pressed.
+            print(f"The user selected the {string} key")
             onScreenKeyboardRoot.destroy()
 
         # Make the window.

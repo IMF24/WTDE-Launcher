@@ -9,6 +9,7 @@ from PIL import Image, ImageTk
 from tktooltip import ToolTip
 from launcher_constants import *
 from launcher_exceptions import *
+from cmd_colors import *
 import os as OS
 import sys as SYS
 import stat as STAT
@@ -73,8 +74,7 @@ def save_debug(use: bool = True, filename: str = "debug_launcher") -> str:
         if (not OS.path.exists("Logs")): OS.mkdir("Logs")
 
         OS.chdir("Logs")
-
-        
+  
         try:
             print("Debug logging enabled; writing debug log file.")
 
@@ -118,6 +118,7 @@ def debug_add_entry(entry: str, indent: int = 0) -> None:
 def reset_working_directory() -> None:
     """ Resets our current working directory to the default when execution began. """
     OS.chdir(OWD)
+    print(f"Reset our working directory to {OWD}")
 
 # Relative path function.
 def resource_path(relative_path: str) -> str:
@@ -150,6 +151,7 @@ def resource_path(relative_path: str) -> str:
         base_path = OS.path.abspath(".")
 
     # Join the paths together!
+    print(f"path is {OS.path.join(base_path, relative_path)}")
     return OS.path.join(base_path, relative_path)
 
 # Verify if Updater.ini is present in the original working directory.
@@ -158,6 +160,7 @@ def verify_updater_config() -> None:
     reset_working_directory()
 
     if (not OS.path.exists("Updater.ini")):
+        print(f"{RED}CRITICAL: NO UPDATER.INI; THIS IS BAD\n{WHITE}Creating new Updater.ini...")
         debug_add_entry("[!!! - No Updater/Directory Config] CRITICAL: NO UPDATER.INI; THIS IS BAD -- Creating new Updater.ini...")
 
         config.write(open("Updater.ini", 'w'))
@@ -165,6 +168,7 @@ def verify_updater_config() -> None:
         config.read("Updater.ini")
 
         if (not OS.path.exists("GHWT.exe")):
+            print(f"{YELLOW}Warning: GHWT.exe wasn't found here, requesting user to locate it{WHITE}")
             MSG.showerror("GHWT Path Not Defined", "This folder did not contain GHWT.exe!\n\nNavigate to the folder that contains GHWT.exe.")
 
             wtdeDir = FD.askdirectory()
@@ -185,6 +189,7 @@ def verify_updater_config() -> None:
     
     try:
         config.get('Updater', 'GameDirectory').replace("/", "\\").index("C:\\Program Files")
+        print(f"{RED}CRITICAL: Game found in Program Files folder, THINGS WILL BREAK{WHITE}")
         MSG.showwarning("Permissions Warning", "The launcher found GHWT installed in one of the Program Files directories. Due to this, certain aspects of the launcher may not function as intended. To resolve this, either run the launcher as an administrator or move the GHWT install to a different location.")
     
     # Good, we aren't in Program Files...
@@ -241,6 +246,7 @@ def mic_name_get_list() -> list[str]:
         for (item) in (micList):
             if (item == msmName): micList.remove(msmName)
 
+    print(f"List of supported mic devices: {micList}")
     return micList
 
 # Set mic calibration.
@@ -1965,6 +1971,8 @@ def wtde_ask_install_mods() -> None:
                 # Now let's do ZIP files.
                 if (len(modZIPQueueList) > 0):
                     for (mod) in (modZIPQueueList):
+                        print(f"Current mod: {mod}")
+
                         modFolderName = mod.split("/")[-1]
                         modFolderName = str(modFolderName)
 
@@ -1975,9 +1983,10 @@ def wtde_ask_install_mods() -> None:
                             if (modFolderName.index(".zip")): modFolderName = modFolderName.split(".zip")[0]
 
                         except Exception as excep:
+                            print(f"{RED}Error installing ZIP mod {mod}: {excep}{WHITE}")
                             debug_add_entry(f"[Mod Installer] ERROR IN MOD INSTALL: {excep}", 2)
 
-                        print(modFolderName)
+                        print(f"modFolderName: {modFolderName}")
 
                         # Copy the ZIP file.
                         newZIP = SHUT.copy(mod, copyDir)
@@ -2009,7 +2018,7 @@ def wtde_ask_install_mods() -> None:
                                 print(file)
                                 # Have we found a character or instrument mod INI?
                                 if (file) in ["character.ini", "instrument.ini"]:
-                                    print("Character or instrument mod found; move its contents")
+                                    print("Character or instrument mod found; move its contents (doing for compatibility)")
                                     isCharInst = True
                                     outFolder = dir.split('\\')[-1]
 
@@ -2037,6 +2046,7 @@ def wtde_ask_install_mods() -> None:
                                 OS.rmdir(newZIPPath)
 
                             except OSError as oserr:
+                                print(f"{RED}OSError installing mod {mod}: {oserr}{WHITE}")
                                 debug_add_entry(f"[Mod Installer] Error in mod install: {oserr}", 2)
 
                                 for (item) in (OS.listdir(newZIPPath)):
@@ -2048,6 +2058,7 @@ def wtde_ask_install_mods() -> None:
                                         elif (OS.path.isdir(filePath)): SHUT.rmtree(filePath)
 
                                     except Exception as excep:
+                                        print(f"{RED}Error deleting directory: {excep}{WHITE}")
                                         debug_add_entry(f"[Mod Installer] Error deleting directory: {excep}", 2)
 
                                 OS.rmdir(newZIPPath)
@@ -2057,9 +2068,13 @@ def wtde_ask_install_mods() -> None:
                             print(f"temp folder: {tempFolderName}")
                             print(f"real folder: {realFolderName}")
                             try:
+                                print("Attempting to rename temp folder to real folder name...")
                                 OS.rename(tempFolderName, realFolderName)
 
                             except:
+                                print("Failed to do that; Must have been an existing, non-empty directory, or something went wrong, trying to move files")
+                                print("Attempting to clear non-empty existing directory, then copying files...")
+
                                 debug_add_entry("[Mod Installer] Must have been an existing, non-empty directory, or something went wrong, trying to move files")
 
                                 # Remove everything out of the directory.
@@ -2071,18 +2086,23 @@ def wtde_ask_install_mods() -> None:
 
                         # Make sure our directory is correct.
                         OS.chdir(copyDir)
+                        print(f"Currently in {copyDir}")
                             
                         # Update the progress information.
+                        print("Updating Progressbar widget...")
                         modsInstalled += 1
                         progressValue = (modsInstalled / (modQueueSize)) * 100
                         installProgressBar['value'] = progressValue
                         installProgressPercent.config(text = f"{round(progressValue)}%")
+
+                        print(f"Mod install is currently {round(progressValue)}% done")
 
                         modInstallRoot.update_idletasks()
                         TIME.sleep(0.25)
 
                 # Mods have been installed.
                 modInstallRoot.update_idletasks()
+                print(f"{GREEN}All queued mods have been installed!{WHITE}")
                 MSG.showinfo("Mod Install Complete!", "All queued mods installed successfully!")    
                 wtde_clear_install_queue(False)
 
@@ -2093,13 +2113,17 @@ def wtde_ask_install_mods() -> None:
     # Clear mod queue.
     def wtde_clear_install_queue(ask: bool = True) -> None:
         """ Clear the mod install queue. """
+        print("Asked to clear mod install queue!")
         if (ask == False) or (((len(modQueueList) + len(modZIPQueueList)) > 0) and (MSG.askyesno("Clear Mod Queue", "Are you sure you want to clear the mod queue? This cannot be undone!"))):
+            print("Clearing global lists and clearing Text widget...")
             modQueueList.clear()
             modZIPQueueList.clear()
 
             modQueue.config(state = 'normal')
             modQueue.delete('1.0', END)
             modQueue.config(state = 'disabled')
+
+            print("Disabling certain widgets...")
 
             installQueuedMods.config(state = 'disabled')
 
@@ -2116,10 +2140,11 @@ def wtde_ask_install_mods() -> None:
 
     # Cancel window.
     def exit_protocol():
+        print("Entered exit protocol for modInstallRoot")
         if (len(modQueueList) > 0):
-
             if (MSG.askyesno("Are You Sure?", "Are you sure you want to abort mod installation? This will clear out your entire mod queue!")): 
                 reset_working_directory()
+                print("Leaving Mod Installer, we're done here!")
                 modInstallRoot.destroy()
             
             else: modInstallRoot.focus_force()
@@ -2318,7 +2343,11 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
                     try:
                         config.clear()
 
+                        print(f"in dir: {dir}")
+
                         config.read(f"{dir}\\{file}")
+
+                        print(f"Reading config file {dir}\\{file}")
 
                         modType = ""
 
@@ -2334,13 +2363,17 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
                             case 'Mod.ini':             modType = "Script"
                             case _:                     modType = "Other/Unknown"
 
+                        print(f"Detected mod type: {modType}")
+
                         match (modType):
                             case "Song":
+                                print("Found a song mod! Checking if its checksum has been duplicated...")
                                 newChecksum = config.get('SongInfo', 'Checksum')
 
                                 if (len(songModInfo) > 0):
                                     for (mod) in (songModInfo):
                                         if (mod[0] == newChecksum):
+                                            print(f"{YELLOW}Warning: Checksum duplicate found, will show duplicate manager if enabled{WHITE}")
                                             duplicateChecksumsFound = True
                                             mod.append(dir)
                                             break
@@ -2349,19 +2382,26 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
                                 
                                 else: songModInfo.append([newChecksum, dir])
 
-                                # DEBUG: Print this list.
-                                print(f"length of songModInfo: {len(songModInfo)}")
-
                             case "Venue":
+                                print("Found a venue mod! Attempting to add it to the global venue selector...")
+
                                 try:
                                     venueModInfo.append([f"Mod: {config.get('VenueInfo', 'Name')}", config.get('VenueInfo', 'PakPrefix')])
+                                    print(f"Venue mod {config.get('VenueInfo', 'Name')} registered!")
+
                                 except Exception as excep:
+                                    print(f"{RED}Failed to add venue mod to global mod listing due to error: {excep}{WHITE}")
                                     debug_add_entry(f"[Mod Reader] Error adding venue mod to global list: {excep}", 1)
 
                             case "Gems":
+                                print("Found a gem mod! Attempting to add it to the global gem mod selector...")
+
                                 try:
                                     gemModInfo.append([f"Mod: {config.get('GemInfo', 'Name')}", config.get('GemInfo', 'Filename')])
+                                    print(f"Gem mod {config.get('GemInfo', 'Name')} registered!")
+
                                 except Exception as excep:
+                                    print(f"{RED}Failed to add gem mod to global mod listing due to error: {excep}{WHITE}")
                                     debug_add_entry(f"[Mod Reader] Error adding gem mod to global list: {excep}", 1)
 
                         try: modName = config.get('ModInfo', 'Name')
@@ -2390,6 +2430,8 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
     # DEBUG: Print mod info list.
     # print(modInfoList)
     
+    # DEBUG: Print the length of songModInfo and the boolean value of duplicateChecksumsFound.
+    print(f"length of songModInfo: {len(songModInfo)}")
     print(f"duplicateChecksumsFound: {duplicateChecksumsFound}")
 
     # if (duplicateChecksumsFound) and (errors) and (READ_DUPLICATE_CHECKSUMS == '1'):
@@ -2540,22 +2582,31 @@ def duplicate_checksum_manager() -> None:
         for (x) in (dupedSongChecksumPathList.curselection()): selectedFolder = dupedSongChecksumPathList.get(x)
 
         if (not selectedFolder):
+            print("No folder selected! Returning to window...")
             dupedSongManagerRoot.focus_force()
             return
+
+        print(f"We have selected the following folder: {selectedFolder}")
 
         OS.chdir(MODS_FOLDER_PATH)
 
         if (MSG.askyesno("Are You Sure?", f"Are you sure you want to delete the following path? This cannot be undone!\n\n{selectedFolder}")):
             try:
+                print(f"{YELLOW}Attempting to remove folder {selectedFolder}...{WHITE}")
+
                 SHUT.rmtree(selectedFolder, on_rm_error)
 
                 TIME.sleep(0.25)
 
                 OS.remove(selectedFolder.split("\\")[1])
 
+                print(f"{GREEN}We got rid of the folder successfully!{WHITE}")
+
                 MSG.showinfo("Mod Deleted", "Mod was successfully deleted.")
 
             except Exception as excep:
+                print(f"{RED}Error deleting mod: {excep}{WHITE}")
+
                 debug_add_entry(f"[Duplicate Checksum Manager] Error deleting mod: {excep}", 2)
                 MSG.showerror("Error Deleting Mod", f"An error occurred when deleting this folder:\n\n{excep}")
                 
@@ -2585,6 +2636,7 @@ def duplicate_checksum_manager() -> None:
 
         OS.chdir(MODS_FOLDER_PATH)
 
+        print(f"Opening {selectedFolder} in file explorer")
         OS.startfile(selectedFolder)
 
         reset_working_directory()  
@@ -2592,6 +2644,7 @@ def duplicate_checksum_manager() -> None:
     # Exit routine. Maybe this solves background errors?
     def exit_routine():
         """ Exit routine for the Duplicate Checksum Manager. """
+        print("Invoking exit routine for dupedSongManagerRoot")
         try: dupedSongManagerRoot.destroy()
         except Exception as excep: debug_add_entry(f"[Duplicate Checksum Manager] An error occurred invoking WM_DELETE_WINDOW: {excep}", 2)
 
