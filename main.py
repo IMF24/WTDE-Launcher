@@ -1,18 +1,22 @@
 # ================================================================================================================= #
+#   __          _________ _____  ______       _              _    _ _   _  _____ _    _ ______ _____                #
+#   \ \        / /__   __|  __ \|  ____|     | |        /\  | |  | | \ | |/ ____| |  | |  ____|  __ \  _     _      #
+#    \ \  /\  / /   | |  | |  | | |__        | |       /  \ | |  | |  \| | |    | |__| | |__  | |__) || |_ _| |_    #
+#     \ \/  \/ /    | |  | |  | |  __|       | |      / /\ \| |  | | . ` | |    |  __  |  __| |  _  /_   _|_   _|   #
+#      \  /\  /     | |  | |__| | |____      | |____ / ____ \ |__| | |\  | |____| |  | | |____| | \ \ |_|   |_|     #
+#       \/  \/      |_|  |_____/|______|     |______/_/    \_\____/|_| \_|\_____|_|  |_|______|_|  \_\              #
 #                                                                                                                   #
-#    __          _________ _____  ______     _              _    _ _   _  _____ _    _ ______ _____                 #
-#    \ \        / /__   __|  __ \|  ____|   | |        /\  | |  | | \ | |/ ____| |  | |  ____|  __ \  _     _       #
-#     \ \  /\  / /   | |  | |  | | |__      | |       /  \ | |  | |  \| | |    | |__| | |__  | |__) || |_ _| |_     #
-#      \ \/  \/ /    | |  | |  | |  __|     | |      / /\ \| |  | | . ` | |    |  __  |  __| |  _  /_   _|_   _|    #
-#       \  /\  /     | |  | |__| | |____    | |____ / ____ \ |__| | |\  | |____| |  | | |____| | \ \ |_|   |_|      #
-#        \/  \/      |_|  |_____/|______|   |______/_/    \_\____/|_| \_|\_____|_|  |_|______|_|  \_\               #
-#                                                                                                                   #
-#                             GH World Tour: Definitive Edition Launcher++ Version 2.0                              #
+#                              GH World Tour: Definitive Edition Launcher++ Version 2.2                             #
 #                                                                                                                   #
 #          Coded by IMF24                Guitar Hero World Tour: Definitive Edition by Fretworks EST. 2021          #
 #                                                                                                                   #
 #                                    Updater Coded by Zedek the Plague Doctor ™                                     #
 # ================================================================================================================= #
+"""
+GHWT: DE LAUNCHER++ BY IMF24
+----------------------------
+A completely redesigned launcher for GH World Tour: Definitive Edition, based off of Uzis's original launcher.
+"""
 # Import required modules.
 from tkinter import *
 from tkinter import ttk as TTK, messagebox as MSG, filedialog as FD
@@ -25,6 +29,7 @@ from PIL import Image, ImageTk
 import webbrowser as WEB
 import os as OS
 import sys as SYS
+import hashlib as HASH
 
 debug_add_entry("[init] All modules imported!")
 
@@ -59,10 +64,13 @@ def wtde_save_config(run: bool = False) -> None:
     # ==================================
     config.set("Config", "RichPresence", GeneralSettings.richPresence.get())
     config.set("Config", "AllowHolidays", GeneralSettings.allowHolidays.get())
+    config.set("Audio", "MuteStreams", GeneralSettings.muteStreams.get())
     config.set("Audio", "WhammyPitchShift", GeneralSettings.whammyPitchShift.get())
     config.set("Config", "SongSpecificIntros", GeneralSettings.songSpecificIntros.get())
     config.set("Config", "Holiday", holiday_name('checksum', GeneralSettings.holiday.get()))
     config.set("Config", "Language", language_name('checksum', GeneralSettings.language.get()))
+    config.set("Launcher", "CheckForUpdates", GeneralSettings.checkForUpdates.get())
+    config.set("Config", "StatusHandler", GeneralSettings.statusHandler.get())
 
     # Main Menu Toggles
     config.set("Config", "UseCareerOption", GeneralSettings.useCareerOption.get())
@@ -77,42 +85,50 @@ def wtde_save_config(run: bool = False) -> None:
     # ==================================
     # Input Settings
     # ==================================
-    config.set("Audio", "MicDevice", InputSettings.micDevice.get())
+    if (not InputSettings.micDevice.get() == "None"): config.set("Audio", "MicDevice", InputSettings.micDevice.get())
+    else: config.set("Audio", "MicDevice", "")
     config.set("Debug", "DisableInputHack", InputSettings.disableInputHack.get())
     config.set("Audio", "VocalAdjustment", InputSettings.inputMicSettingsADelayEntry.get())
 
     # ==================================
     # Graphics Settings
     # ==================================
-    config.set("Graphics", "UseNativeRes", GraphicsSettings.useNativeRes.get())
-    config.set("Graphics", "DisableVSync", GraphicsSettings.disableVSync.get())
-    
-    if (GraphicsSettings.fpsLimit.get() != "Unlimited"): config.set("Graphics", "FPSLimit", GraphicsSettings.fpsLimit.get().split(" ")[0])
-    else: config.set("Graphics", "FPSLimit", "0")
+    config.set("Graphics", "UseNativeRes", GraphicsSettings.GraphicsSettings_General.useNativeRes.get())
+    config.set("Graphics", "DisableVSync", GraphicsSettings.GraphicsSettings_General.disableVSync.get())
+    config.set("Graphics", "FPSLimit", GraphicsSettings.GraphicsSettings_General.fpsLimit.get())
+    config.set("Graphics", "HitSparks", GraphicsSettings.GraphicsSettings_Gameplay.hitSparks.get())
+    config.set("Graphics", "DisableDOF", GraphicsSettings.GraphicsSettings_Advanced.disableDOF.get())
+    config.set("Graphics", "WindowedMode", GraphicsSettings.GraphicsSettings_General.windowedMode.get())
+    config.set("Graphics", "Borderless", GraphicsSettings.GraphicsSettings_General.borderless.get())
+    config.set("Graphics", "DisableBloom", GraphicsSettings.GraphicsSettings_Advanced.disableBloom.get())
+    config.set("Graphics", "ColorFilters", GraphicsSettings.GraphicsSettings_Advanced.colorFilters.get())
+    # config.set("Graphics", "AntiAliasing", GraphicsSettings.antiAliasing.get())
+    config.set("Graphics", "RenderParticles", GraphicsSettings.GraphicsSettings_Advanced.renderParticles.get())
+    config.set("Graphics", "RenderGeoms", GraphicsSettings.GraphicsSettings_Advanced.renderGeoms.get())
+    config.set("Graphics", "RenderInstances", GraphicsSettings.GraphicsSettings_Advanced.renderInstances.get())
+    config.set("Graphics", "DrawProjectors", GraphicsSettings.GraphicsSettings_Advanced.drawProjectors.get())
+    config.set("Graphics", "Render2D", GraphicsSettings.GraphicsSettings_Advanced.render2D.get())
+    config.set("Graphics", "RenderScreenFX", GraphicsSettings.GraphicsSettings_Advanced.renderScreenFX.get())
+    config.set("Graphics", "BlackStage", GraphicsSettings.GraphicsSettings_Gameplay.blackStage.get())
+    config.set("Graphics", "HideBand", GraphicsSettings.GraphicsSettings_Gameplay.hideBand.get())
+    config.set("Graphics", "HideInstruments", GraphicsSettings.GraphicsSettings_Gameplay.hideInstruments.get())
+    config.set("Graphics", "ApplyBandName", GraphicsSettings.GraphicsSettings_Advanced.applyBandName.get())
+    config.set("Graphics", "ApplyBandLogo", GraphicsSettings.GraphicsSettings_Advanced.applyBandLogo.get())
 
-    config.set("Graphics", "HitSparks", GraphicsSettings.hitSparks.get())
-    config.set("Graphics", "DisableDOF", GraphicsSettings.disableDOF.get())
-    config.set("Graphics", "WindowedMode", GraphicsSettings.windowedMode.get())
-    config.set("Graphics", "Borderless", GraphicsSettings.borderless.get())
-    config.set("Graphics", "DisableBloom", GraphicsSettings.disableBloom.get())
-    config.set("Graphics", "ColorFilters", GraphicsSettings.colorFilters.get())
-    config.set("Graphics", "AntiAliasing", GraphicsSettings.antiAliasing.get())
-    config.set("Graphics", "RenderParticles", GraphicsSettings.renderParticles.get())
-    config.set("Graphics", "RenderGeoms", GraphicsSettings.renderGeoms.get())
-    config.set("Graphics", "RenderInstances", GraphicsSettings.renderInstances.get())
-    config.set("Graphics", "DrawProjectors", GraphicsSettings.drawProjectors.get())
-    config.set("Graphics", "Render2D", GraphicsSettings.render2D.get())
-    config.set("Graphics", "RenderScreenFX", GraphicsSettings.renderScreenFX.get())
-    config.set("Graphics", "BlackStage", GraphicsSettings.blackStage.get())
-    config.set("Graphics", "HideBand", GraphicsSettings.hideBand.get())
-    config.set("Graphics", "HideInstruments", GraphicsSettings.hideInstruments.get())
-    config.set("Graphics", "ApplyBandName", GraphicsSettings.applyBandName.get())
-    config.set("Graphics", "ApplyBandLogo", GraphicsSettings.applyBandLogo.get())
-
-    config.set("Graphics", "GemTheme", note_info('checksum', 'style', GraphicsSettings.gemTheme.get()))
-    config.set("Graphics", "GemColors", note_info('checksum', 'theme', GraphicsSettings.gemColors.get()))
-    config.set("Graphics", "SongIntroStyle", intro_style('checksum', GraphicsSettings.songIntroStyle.get()))
-    config.set("Graphics", "DefaultTODProfile", tod_profile('checksum', GraphicsSettings.defaultTODProfile.get()))
+    config.set("Graphics", "GemTheme", note_info('checksum', 'style', GraphicsSettings.GraphicsSettings_Interface.gemTheme.get()))
+    config.set("Graphics", "GemColors", note_info('checksum', 'theme', GraphicsSettings.GraphicsSettings_Interface.gemColors.get()))
+    config.set("Graphics", "SongIntroStyle", intro_style('checksum', GraphicsSettings.GraphicsSettings_Interface.songIntroStyle.get()))
+    config.set("Graphics", "DefaultTODProfile", tod_profile('checksum', GraphicsSettings.GraphicsSettings_Advanced.defaultTODProfile.get()))
+    config.set("Graphics", "LoadingTheme", loading_theme('checksum', GraphicsSettings.GraphicsSettings_Interface.loadingTheme.get()))
+    config.set("Graphics", "HelperPillTheme", user_helper('checksum', GraphicsSettings.GraphicsSettings_Interface.helperPillTheme.get()))
+    config.set("Graphics", "HUDTheme", hud_theme('checksum', GraphicsSettings.GraphicsSettings_Interface.hudTheme.get()))
+    config.set("Graphics", "TapTrailTheme", tap_trail('checksum', GraphicsSettings.GraphicsSettings_Interface.tapTrailTheme.get()))
+    config.set("Graphics", "HitFlameTheme", hit_flame('checksum', GraphicsSettings.GraphicsSettings_Interface.hitFlameTheme.get()))
+    config.set("Graphics", "SustainFX", GraphicsSettings.GraphicsSettings_Interface.sustainFX.get())
+    config.set("Graphics", "DOFQuality", dof_quality('checksum', GraphicsSettings.GraphicsSettings_Advanced.dofQuality.get()))
+    config.set("Graphics", "DOFBlur", str(float(GraphicsSettings.GraphicsSettings_Advanced.dofBlur.get())))
+    config.set("Graphics", "FlareStyle", flare_style('checksum', GraphicsSettings.GraphicsSettings_Advanced.flareStyle.get()))
+    config.set("Config", "EnableCamPulse", GraphicsSettings.GraphicsSettings_Advanced.enableCamPulse.get())
 
     # ==================================
     # Band Settings
@@ -121,14 +137,14 @@ def wtde_save_config(run: bool = False) -> None:
     config.set("Band", "PreferredGuitaristHighway", BandSettings.bandPrefGuitaristHwy.get())
 
     config.set("Band", "PreferredBassist", BandSettings.bandPrefBassist.get())
-    config.set("Band", "PreferredBassist", BandSettings.bandPrefBassistHwy.get())
+    config.set("Band", "PreferredBassistHighway", BandSettings.bandPrefBassistHwy.get())
 
     config.set("Band", "PreferredDrummer", BandSettings.bandPrefDrummer.get())
     config.set("Band", "PreferredDrummerHighway", BandSettings.bandPrefDrummerHwy.get())
 
     config.set("Band", "PreferredSinger", BandSettings.bandPrefSinger.get())
 
-    config.set("Band", "PreferredStage", auto_save_venue(BandSettings.bandPrefStage.get()))
+    config.set("Band", "PreferredStage", auto_save_venue(BandSettings.preferredStage.get()))
 
     config.set("Band", "GuitarStrumAnim", strum_anim('checksum', BandSettings.guitarStrumAnim.get()))
     config.set("Band", "BassStrumAnim", strum_anim('checksum', BandSettings.bassStrumAnim.get()))
@@ -174,6 +190,12 @@ def wtde_save_config(run: bool = False) -> None:
     config.set("Debug", "ExtraOptimizedSaves", DebugSettings.extraOptimizedSaves.get())
     config.set("Debug", "DebugSaves", DebugSettings.debugSaves.get())
     config.set("Logger", "ShowWarnings", DebugSettings.showWarnings.get())
+    config.set("Debug", "FixFastTextures", DebugSettings.fixFastTextures.get())
+    config.set("Debug", "BindWarningShown", DebugSettings.bindWarningShown.get())
+    config.set("Debug", "QuickDebug", DebugSettings.quickDebug.get())
+    config.set("Logger", "PrintLoadedAssets", DebugSettings.printLoadedAssets.get())
+    config.set("Logger", "PrintCreateFile", DebugSettings.printCreateFile.get())
+    config.set("Debug", "CASNoticeShown", DebugSettings.casNoticeShown.get())
 
     # Write all changes to our GHWTDE.ini file.
     with (open("GHWTDE.ini", 'w')) as cnf: config.write(cnf)
@@ -218,6 +240,8 @@ def wtde_save_config(run: bool = False) -> None:
     keyGuitarStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Guitar"})
     keyGuitarStringXML.string = aspyr_key_encode(GUITAR_INPUT_WIDGETS, GUITAR_INPUT_BINDINGS)
 
+    print(aspyr_key_encode(GUITAR_INPUT_WIDGETS, GUITAR_INPUT_BINDINGS))
+
     # ================================== DRUM INPUTS ================================== #
     DRUMS_INPUT_WIDGETS = [InputSettings.inputKeyDrumsRedEntry, InputSettings.inputKeyDrumsYellowEntry, InputSettings.inputKeyDrumsBlueEntry,
                            InputSettings.inputKeyDrumsOrangeEntry, InputSettings.inputKeyDrumsGreenEntry, InputSettings.inputKeyDrumsKickEntry,
@@ -252,15 +276,18 @@ def wtde_save_config(run: bool = False) -> None:
     keyMenuStringXML = aspyrConfigDataBS.find('s', {"id": "Keyboard_Menu"})
     keyMenuStringXML.string = aspyr_key_encode(MENU_INPUT_WIDGETS, MENU_INPUT_BINDINGS)
 
+    micVisualDelayXML = aspyrConfigDataBS.find('s', {"id": "Options.VocalsVisualLag"})
+    micVisualDelayXML.string = InputSettings.inputMicSettingsVDelayEntry.get()
+
     # ==================================
     # Graphics Settings
     # ==================================
     graphicsResWXML = aspyrConfigDataBS.find('s', {"id": "Video.Width"})
     graphicsResHXML = aspyrConfigDataBS.find('s', {"id": "Video.Height"})
 
-    if (GraphicsSettings.useNativeRes.get() == "0"):
-        graphicsResWXML.string = GraphicsSettings.graphicsResWEntry.get()
-        graphicsResHXML.string = GraphicsSettings.graphicsResHEntry.get()
+    if (GraphicsSettings.GraphicsSettings_General.useNativeRes.get() == "0"):
+        graphicsResWXML.string = GraphicsSettings.GraphicsSettings_General.graphicsResWEntry.get()
+        graphicsResHXML.string = GraphicsSettings.GraphicsSettings_General.graphicsResHEntry.get()
 
     else:
         graphicsResWXML.string = str(get_screen_resolution()[0])
@@ -289,7 +316,24 @@ def wtde_save_config(run: bool = False) -> None:
 
 # Load WTDE config settings.
 def wtde_load_config() -> None:
-    """ Using BS4 and ConfigParser, imports all configuration settings from GHWTDE.ini and AspyrConfig.xml. """
+    """ Using BS4 and ConfigParser, imports all configuration settings from GHWTDE.ini and AspyrConfig.xml.
+    Also contains functionality for reloading all config settings when requested."""
+    
+    # Delete contents of all entry widgets.
+    for (slave) in (InputSettings.inputFrameWidgets.grid_slaves()):
+        if (isinstance(slave, TTK.Entry)): slave.delete(0, END)
+    
+    for (slave) in (graphicsGeneralSettings.grid_slaves()):
+        if (isinstance(slave, TTK.Entry)): slave.delete(0, END)
+
+    for (slave) in (wtdeOptionsBand.grid_slaves()):
+        if (isinstance(slave, TTK.Entry)): slave.delete(0, END)
+
+    for (slave) in (wtdeOptionsAutoLaunch.grid_slaves()):
+        if (isinstance(slave, TTK.Entry)): slave.delete(0, END)
+
+    INIEditor.load_ini_data(INIEditor.iniEditorText)
+
     # ====================================================================
     # GHWTDE.ini Settings
     # ====================================================================
@@ -297,15 +341,26 @@ def wtde_load_config() -> None:
     OS.chdir(wtde_find_config())
     config.read("GHWTDE.ini")
 
+    allowResize = int(config.get('Launcher', 'AllowWindowResize'))
+
+    match (allowResize):
+        case 0:     resizeWindow = False
+        case 1:     resizeWindow = True
+
+    root.resizable(resizeWindow, resizeWindow)
+
     # ==================================
     # General Settings
     # ==================================
     GeneralSettings.richPresence.set(config.get("Config", "RichPresence"))
     GeneralSettings.allowHolidays.set(config.get("Config", "AllowHolidays"))
+    GeneralSettings.muteStreams.set(config.get("Audio", "MuteStreams"))
     GeneralSettings.whammyPitchShift.set(config.get("Audio", "WhammyPitchShift"))
     GeneralSettings.songSpecificIntros.set(config.get("Config", "SongSpecificIntros"))
     GeneralSettings.language.set(language_name('option', config.get("Config", "Language")))
     GeneralSettings.holiday.set(holiday_name('option', config.get("Config", "Holiday")))
+    GeneralSettings.checkForUpdates.set(config.get("Launcher", "CheckForUpdates"))
+    GeneralSettings.statusHandler.set(config.get("Config", "StatusHandler"))
 
     GeneralSettings.useCareerOption.set(config.get("Config", "UseCareerOption"))
     GeneralSettings.useQuickplayOption.set(config.get("Config", "UseQuickplayOption"))
@@ -324,32 +379,43 @@ def wtde_load_config() -> None:
     # ==================================
     # Graphics Settings
     # ==================================
-    GraphicsSettings.useNativeRes.set(config.get('Graphics', 'UseNativeRes'))
-    GraphicsSettings.disableVSync.set(config.get('Graphics', 'DisableVSync'))
+    GraphicsSettings.GraphicsSettings_General.useNativeRes.set(config.get('Graphics', 'UseNativeRes'))
+    GraphicsSettings.GraphicsSettings_General.disableVSync.set(config.get('Graphics', 'DisableVSync'))
+    GraphicsSettings.GraphicsSettings_General.fpsLimit.set(config.get('Graphics', 'FPSLimit'))
     fps_limit_update()
-    GraphicsSettings.hitSparks.set(config.get('Graphics', 'HitSparks'))
-    GraphicsSettings.disableDOF.set(config.get('Graphics', 'DisableDOF'))
-    GraphicsSettings.windowedMode.set(config.get('Graphics', 'WindowedMode'))
-    GraphicsSettings.borderless.set(config.get('Graphics', 'Borderless'))
-    GraphicsSettings.disableBloom.set(config.get('Graphics', 'DisableBloom'))
-    GraphicsSettings.colorFilters.set(config.get('Graphics', 'ColorFilters'))
-    GraphicsSettings.antiAliasing.set(config.get('Graphics', 'AntiAliasing'))
-    GraphicsSettings.renderParticles.set(config.get('Graphics', 'RenderParticles'))
-    GraphicsSettings.renderGeoms.set(config.get('Graphics', 'RenderGeoms'))
-    GraphicsSettings.renderInstances.set(config.get('Graphics', 'RenderInstances'))
-    GraphicsSettings.drawProjectors.set(config.get('Graphics', 'DrawProjectors'))
-    GraphicsSettings.render2D.set(config.get('Graphics', 'Render2D'))
-    GraphicsSettings.renderScreenFX.set(config.get('Graphics', 'RenderScreenFX'))
-    GraphicsSettings.blackStage.set(config.get('Graphics', 'BlackStage'))
-    GraphicsSettings.hideBand.set(config.get('Graphics', 'HideBand'))
-    GraphicsSettings.hideInstruments.set(config.get('Graphics', 'HideInstruments'))
-    GraphicsSettings.applyBandName.set(config.get('Graphics', 'ApplyBandName'))
-    GraphicsSettings.applyBandLogo.set(config.get('Graphics', 'ApplyBandLogo'))
+    GraphicsSettings.GraphicsSettings_Gameplay.hitSparks.set(config.get('Graphics', 'HitSparks'))
+    GraphicsSettings.GraphicsSettings_Advanced.disableDOF.set(config.get('Graphics', 'DisableDOF'))
+    GraphicsSettings.GraphicsSettings_General.windowedMode.set(config.get('Graphics', 'WindowedMode'))
+    GraphicsSettings.GraphicsSettings_General.borderless.set(config.get('Graphics', 'Borderless'))
+    GraphicsSettings.GraphicsSettings_Advanced.disableBloom.set(config.get('Graphics', 'DisableBloom'))
+    GraphicsSettings.GraphicsSettings_Advanced.colorFilters.set(config.get('Graphics', 'ColorFilters'))
+    # GraphicsSettings.antiAliasing.set(config.get('Graphics', 'AntiAliasing'))
+    GraphicsSettings.GraphicsSettings_Advanced.renderParticles.set(config.get('Graphics', 'RenderParticles'))
+    GraphicsSettings.GraphicsSettings_Advanced.renderGeoms.set(config.get('Graphics', 'RenderGeoms'))
+    GraphicsSettings.GraphicsSettings_Advanced.renderInstances.set(config.get('Graphics', 'RenderInstances'))
+    GraphicsSettings.GraphicsSettings_Advanced.drawProjectors.set(config.get('Graphics', 'DrawProjectors'))
+    GraphicsSettings.GraphicsSettings_Advanced.render2D.set(config.get('Graphics', 'Render2D'))
+    GraphicsSettings.GraphicsSettings_Advanced.renderScreenFX.set(config.get('Graphics', 'RenderScreenFX'))
+    GraphicsSettings.GraphicsSettings_Gameplay.blackStage.set(config.get('Graphics', 'BlackStage'))
+    GraphicsSettings.GraphicsSettings_Gameplay.hideBand.set(config.get('Graphics', 'HideBand'))
+    GraphicsSettings.GraphicsSettings_Gameplay.hideInstruments.set(config.get('Graphics', 'HideInstruments'))
+    GraphicsSettings.GraphicsSettings_Advanced.applyBandName.set(config.get('Graphics', 'ApplyBandName'))
+    GraphicsSettings.GraphicsSettings_Advanced.applyBandLogo.set(config.get('Graphics', 'ApplyBandLogo'))
 
-    GraphicsSettings.gemTheme.set(note_info('option', 'style', config.get('Graphics', 'GemTheme')))
-    GraphicsSettings.gemColors.set(note_info('option', 'theme', config.get('Graphics', 'GemColors')))
-    GraphicsSettings.songIntroStyle.set(intro_style('option', config.get('Graphics', 'SongIntroStyle')))
-    GraphicsSettings.defaultTODProfile.set(tod_profile('option', config.get('Graphics', 'DefaultTODProfile')))
+    GraphicsSettings.GraphicsSettings_Interface.gemTheme.set(note_info('option', 'style', config.get('Graphics', 'GemTheme')))
+    GraphicsSettings.GraphicsSettings_Interface.gemColors.set(note_info('option', 'theme', config.get('Graphics', 'GemColors')))
+    GraphicsSettings.GraphicsSettings_Interface.songIntroStyle.set(intro_style('option', config.get('Graphics', 'SongIntroStyle')))
+    GraphicsSettings.GraphicsSettings_Advanced.defaultTODProfile.set(tod_profile('option', config.get('Graphics', 'DefaultTODProfile')))
+    GraphicsSettings.GraphicsSettings_Interface.loadingTheme.set(loading_theme('option', config.get('Graphics', 'LoadingTheme')))
+    GraphicsSettings.GraphicsSettings_Interface.helperPillTheme.set(user_helper('option', config.get('Graphics', 'HelperPillTheme')))
+    GraphicsSettings.GraphicsSettings_Interface.hudTheme.set(hud_theme('option', config.get('Graphics', 'HUDTheme')))
+    GraphicsSettings.GraphicsSettings_Interface.tapTrailTheme.set(tap_trail('option', config.get('Graphics', 'TapTrailTheme')))
+    GraphicsSettings.GraphicsSettings_Interface.hitFlameTheme.set(hit_flame('option', config.get('Graphics', 'HitFlameTheme')))
+    GraphicsSettings.GraphicsSettings_Interface.sustainFX.set(config.get("Graphics", "SustainFX"))
+    GraphicsSettings.GraphicsSettings_Advanced.dofQuality.set(dof_quality('option', config.get("Graphics", "DOFQuality")))
+    GraphicsSettings.GraphicsSettings_Advanced.dofBlur.set(config.get('Graphics', 'DOFBlur'))
+    GraphicsSettings.GraphicsSettings_Advanced.flareStyle.set(flare_style('option', config.get('Graphics', 'FlareStyle')))
+    GraphicsSettings.GraphicsSettings_Advanced.enableCamPulse.set(config.get('Config', 'EnableCamPulse'))
 
     # ==================================
     # Band Settings
@@ -365,7 +431,7 @@ def wtde_load_config() -> None:
     
     BandSettings.bandPrefSinger.insert(0, config.get('Band', 'PreferredSinger'))
     
-    BandSettings.bandPrefStage.insert(0, auto_get_venue(config.get('Band', 'PreferredStage')))
+    BandSettings.preferredStage.set(auto_get_venue(config.get('Band', 'PreferredStage')))
 
     BandSettings.guitarStrumAnim.set(strum_anim('option', config.get('Band', 'GuitarStrumAnim')))
     BandSettings.bassStrumAnim.set(strum_anim('option', config.get('Band', 'BassStrumAnim')))
@@ -374,7 +440,8 @@ def wtde_load_config() -> None:
     # Auto Launch Settings
     # ==================================
     autoLaunchEnabled.set(config.get('AutoLaunch', 'Enabled'))
-    AutoLaunch.auto_update_status()
+
+    AutoLaunch.AutoLaunch_General.autoHideHUD.set(config.get('AutoLaunch', 'HideHUD'))
 
     AutoLaunch.AutoLaunch_General.autoVenue.set(auto_get_venue(config.get('AutoLaunch', 'Venue')))
 
@@ -384,6 +451,11 @@ def wtde_load_config() -> None:
     AutoLaunch.AutoLaunch_General.autoP2Bot.set(config.get('AutoLaunch', 'Bot2'))
     AutoLaunch.AutoLaunch_General.autoP3Bot.set(config.get('AutoLaunch', 'Bot3'))
     AutoLaunch.AutoLaunch_General.autoP4Bot.set(config.get('AutoLaunch', 'Bot4'))
+
+    AutoLaunch.AutoLaunch_Advanced.autoRawLoad.set(config.get('AutoLaunch', 'RawLoad'))
+    AutoLaunch.AutoLaunch_Advanced.autoSongTime.set(config.get('AutoLaunch', 'SongTime'))
+
+    AutoLaunch.auto_update_status()
 
     # ==================================
     # Debug Settings
@@ -398,6 +470,12 @@ def wtde_load_config() -> None:
     DebugSettings.extraOptimizedSaves.set(config.get('Debug', 'ExtraOptimizedSaves'))
     DebugSettings.debugSaves.set(config.get('Debug', 'DebugSaves'))
     DebugSettings.showWarnings.set(config.get('Logger', 'ShowWarnings'))
+    DebugSettings.fixFastTextures.set(config.get('Debug', 'FixFastTextures'))
+    DebugSettings.bindWarningShown.set(config.get('Debug', 'BindWarningShown'))
+    DebugSettings.quickDebug.set(config.get('Debug', 'QuickDebug'))
+    DebugSettings.printLoadedAssets.set(config.get('Logger', 'PrintLoadedAssets'))
+    DebugSettings.printCreateFile.set(config.get('Logger', 'PrintCreateFile'))
+    DebugSettings.casNoticeShown.set(config.get('Debug', 'CASNoticeShown'))
 
     # ====================================================================
     # AspyrConfig Settings
@@ -408,7 +486,7 @@ def wtde_load_config() -> None:
     # Input Settings
     # ==================================
     # Mic Video Delay
-    InputSettings.inputMicSettingsVDelayEntry.insert(0, aspyr_get_string("Options.VocalsVisualLag"))
+    InputSettings.inputMicSettingsVDelayEntry.insert(0, aspyr_get_string("Options.VocalsVisualLag", fallbackValue = "-315"))
 
     # Use Input Hack
     InputSettings.disableInputHack.set(config.get('Debug', 'DisableInputHack'))
@@ -483,46 +561,615 @@ def wtde_load_config() -> None:
     # Graphics Settings
     # ==================================
     # Resolution
-    GraphicsSettings.graphicsResHEntry.insert(0, aspyr_get_string("Video.Height"))
-    GraphicsSettings.graphicsResWEntry.insert(0, aspyr_get_string("Video.Width"))
+    GraphicsSettings.GraphicsSettings_General.graphicsResHEntry.insert(0, aspyr_get_string("Video.Height"))
+    GraphicsSettings.GraphicsSettings_General.graphicsResWEntry.insert(0, aspyr_get_string("Video.Width"))
     native_res_update()
+
+    reset_controller_input_update()
 
 # ===========================================================================================================
 # Script-Specific Functions
 # 
 # These are functions that would otherwise not work in the scope of the launcher_functions module.
 # ===========================================================================================================
+# Update to the latest version.
+def wtde_run_updater() -> None:
+    """ Runs the updater program for WTDE. Aborts execution if the updater is not present, but allows the user to download the updater files. """
+    debug_add_entry("[WTDE Updater] Attempting to update WTDE...", 1)
+
+    # Is the user connected to the internet?
+    if (is_connected("https://ghwt.de")):
+        reset_working_directory()
+
+        if (OS.path.exists("Updater.exe")):
+            if (not MSG.askyesno("Update WTDE?", "Are you sure you want to update your mod to the latest version? This will close the launcher.")):
+                debug_add_entry("[WTDE Updater] Aborted by user; Cancelling...", 1)
+                return False
+            
+            if (MSG.askyesno("Save Config before Closing?", "Do you want to save your configuration settings before closing the launcher and updating?")): wtde_save_config()
+
+            root.destroy()
+            OS.startfile("Updater.exe")
+
+            debug_add_entry("[WTDE Updater] Updater was found and ran successfully!", 1)
+            
+            exit()
+        else:
+            debug_add_entry("[WTDE Updater] WTDE Updater not downloaded!", 1)
+            
+            # If the updater isn't downloaded, ask the user if they want to download it.
+            if (MSG.askyesno("Download Updater?", "The WTDE updater program was not found in your\ngame folder. Do you want to download it?")):
+                debug_add_entry("Downloading files...", 1)
+
+                # Download the updater files: Updater.exe and libcurl.dll.
+                updaterDir = "https://ghwt.de/meta/Updater.exe"
+                libcurlDir = "https://ghwt.de/meta/libcurl.dll"
+
+                exeContent = REQ.get(updaterDir, allow_redirects = True)
+                dllContent = REQ.get(libcurlDir, allow_redirects = True)
+
+                open("Updater.exe", 'wb').write(exeContent.content)
+                open("libcurl.dll", 'wb').write(dllContent.content)
+
+                debug_add_entry("[WTDE Updater] WTDE Updater successfully downloaded and set up!", 1)
+
+                MSG.showinfo("Successfully Downloaded!", "The WTDE updater program was successfully downloaded! Select this button again to update your mod to the latest version.\n\nIf pressing this button again shows that the program was not downloaded, check your anti-virus settings and allow Updater.exe on this device.")
+            
+    else:
+        MSG.showerror("No Internet Connection", "We can't update your mod because you are not currently connected to the internet. Please check your internet connection, then try again.")
+        
+        debug_add_entry("[WTDE Updater] UPDATE ERROR!!! --- No internet connection!", 1)
+
+# Check for updates to GHWT: DE.
+def wtde_check_for_updates(ignore_config: bool = False) -> None:
+    """ Attempt to check for updates to GHWT: DE. """
+    # Was the auto update feature disabled?
+    OS.chdir(wtde_find_config())
+    config.clear()
+    config.read("GHWTDE.ini")
+
+    if (not ignore_config) and (config.get('Launcher', 'CheckForUpdates') == '0'):
+        reset_working_directory()
+        config.clear()
+        return
+
+    # Reset config cache and working directory.
+    reset_working_directory()
+    config.clear()
+    config.read('Updater.ini')
+
+    # Get the MD5 hash of the user's tb.pab.xen file.
+    userMD5 = HASH.md5(open(f"{config.get('Updater', 'GameDirectory')}\\DATA\\PAK\\tb.pab.xen", 'rb').read()).hexdigest()
+
+    # Now get the MD5 hash of the same file on the public repo.
+    hashListPublicContent = str(REQ.get(HASH_LIST).content).split("\\n")
+    hashFound = False
+    for (string) in (hashListPublicContent):
+        # We found the hash for tb.pab!
+        if (hashFound):
+            repoMD5 = string
+            break
+
+        # Is this file tb.pab?
+        try:
+            string.index("tb.pab.xen")
+            hashFound = True
+
+        # Not tb.pab, try again!
+        except: continue
+
+    # Now we have our hashes!
+    print(f"user's MD5 hash: {userMD5}")
+    print(f"repo's MD5 hash: {repoMD5}")
+
+    # If the hashes don't match, assume the user is out of date.
+    if (userMD5 != repoMD5):
+        AUTO_UPDATE_MSG =  "A new version is available for download!\n" \
+                          f"The latest version is {WTDE_LATEST_VERSION}.\n\n" \
+                           "Do you want to update to the latest version?"
+        
+        if (MSG.askyesno("Update WTDE?", AUTO_UPDATE_MSG)): wtde_run_updater()
+
+    else: MSG.showinfo("Already Up to Date", "Your mod is up to date!")
+
 # Update Resolution when Use Native Res is checked.
 def native_res_update() -> None:
     """ Update the Resolution widgets when the Use Native Res Checkbutton is turned ON or OFF. """
     # Update the widgets.
-    if (GraphicsSettings.useNativeRes.get() == '1'): status = 'disabled'
+    if (GraphicsSettings.GraphicsSettings_General.useNativeRes.get() == '1'): status = 'disabled'
     else: status = 'normal'
-    widgetList = [GraphicsSettings.graphicsResLabel, GraphicsSettings.graphicsResXLabel, GraphicsSettings.graphicsResWEntry, GraphicsSettings.graphicsResHEntry]
+    widgetList = [GraphicsSettings.GraphicsSettings_General.graphicsResLabel, GraphicsSettings.GraphicsSettings_General.graphicsResXLabel, GraphicsSettings.GraphicsSettings_General.graphicsResWEntry, GraphicsSettings.GraphicsSettings_General.graphicsResHEntry]
     for (widget) in (widgetList): widget.config(state = status)
 
 # Update FPS Limit when Use Vertical Sync is checked.
 def fps_limit_update() -> None:
     """ Update the FPS Limit widgets when the Use Vertical Sync Checkbutton is turned ON or OFF. """
     # Update the widgets.
-    if (GraphicsSettings.disableVSync.get() == '1'): status = 'normal'
+    if (GraphicsSettings.GraphicsSettings_General.disableVSync.get() == '1'): status = 'normal'
     else: status = 'disabled'
-    widgetList = [GraphicsSettings.graphicsFPSLabel, GraphicsSettings.graphicsFPSOptions]
+    widgetList = [GraphicsSettings.GraphicsSettings_General.graphicsFPSLabel, GraphicsSettings.GraphicsSettings_General.graphicsFPSLimitValue]
     for (widget) in (widgetList): widget.config(state = status)
+
+# Delete GHWTDEInput.ini file from config folder.
+def wtde_reset_controller_input(ask: bool = True) -> None:
+    """ Resets the controller input config (deletes GHWTDEInput.ini). """
+    configFound = False
+    OS.chdir(wtde_find_config())
+    if (OS.path.exists("GHWTDEInput.ini")): configFound = True
+
+    if (configFound) and (MSG.askyesno("Are You Sure?", "Are you sure you want to reset the mappings for all controllers?")): OS.remove("GHWTDEInput.ini")
+
+    reset_controller_input_update()
+
+    reset_working_directory()
+
+# Update Reset Input Mapping button.
+def reset_controller_input_update() -> None:
+    """ Update the active or disabled status of the Reset Input Mapping button. """
+    OS.chdir(wtde_find_config())
+    if (OS.path.exists("GHWTDEInput.ini")): InputSettings.inputResetInputMapping.config(state = 'normal')
+    else: InputSettings.inputResetInputMapping.config(state = 'disabled')
+    reset_working_directory()
+
+# Listens for a given key.
+def listen_key(entry: Entry) -> None:
+    """
+    Waits for a key press, records it, and populates the given `Entry` widget with the recorded key. The widget in focus will be granted to the given Entry widget at the end of execution.
+    
+    Arguments
+    ---------
+    - `varToUpdate`: `tkinter.Entry` >> A Tkinter `Entry` widget to update with the returned string.
+
+    Returns
+    -------
+    `None` >> Doesn't return anything.
+    """
+    # Is the user asking for a recorded key press or an on-screen keyboard?
+    if (inputRecordKeyPress.get()):
+        # Listen for a key press.
+        while (True):
+            keyPressed = KEY.read_key()
+            if (keyPressed):
+                keyPressed = str(keyPressed).title()
+
+                # DEBUG: Prints a message to the console detailing what key was pressed.
+                print(f"The following key was pressed: {keyPressed}")
+
+                # Run this through a conversion to a one word phrase.
+                match (keyPressed):
+                    case "Shift":               keyPressed = "LShift"
+                    case "Alt":                 keyPressed = "LAlt"
+                    case "Ctrl":                keyPressed = "LCtrl"
+                    case "Right Alt":           keyPressed = "RAlt"
+                    case "Right Shift":         keyPressed = "RShift"
+                    case "Insert":              keyPressed = "Ins"
+                    case "Delete":              keyPressed = "Del"
+                    case "Page Up":             keyPressed = "PgUp"
+                    case "Page Down":           keyPressed = "PgDn"
+                    case "Num Lock":            keyPressed = "NumLck"
+                    case "Caps Lock":           keyPressed = "Caps"
+                    case "Scroll Lock":         keyPressed = "ScrLck"
+                    case "Backspace":           keyPressed = "BckSpc"
+                    case "`":                   keyPressed = "Accent"
+
+                valueToUpdateWith = str(keyPressed)
+
+                if (len(entry.get()) > 0): valueToUpdateWith = " " + valueToUpdateWith
+
+                # Update the given Entry widget.
+                entry.insert('end', valueToUpdateWith)
+
+                break
+
+    # Use the on-screen keyboard.
+    else:
+        # Set value to update with.
+        def key_return_value(string: str) -> None:
+            """ Return the string for a key press. """
+            valueToUpdateWith = string
+            if (len(entry.get()) > 0): valueToUpdateWith = " " + string
+
+            # Update the given Entry widget.
+            entry.insert('end', valueToUpdateWith)
+            onScreenKeyboardRoot.destroy()
+
+        # Make the window.
+        onScreenKeyboardRoot = Tk()
+        onScreenKeyboardRoot.geometry(f"1280x320+{get_screen_resolution()[0] // 6}+{get_screen_resolution()[1] // 8}")
+        onScreenKeyboardRoot.title("Input Settings: Select Keyboard Input")
+        onScreenKeyboardRoot.iconbitmap(resource_path('res/icons/keyboard.ico'))
+        onScreenKeyboardRoot.config(bg = '#FFFFFF')
+        onScreenKeyboardRoot.resizable(False, False)
+
+        TTK.Style(onScreenKeyboardRoot).configure("TButton", background = '#FFFFFF')
+
+        # Add the header label.
+        infoHeader = Label(onScreenKeyboardRoot, text = "Select Keyboard Input: Select the keyboard key to add to the list of bindings for this input.", bg = '#FFFFFF', fg = '#000000', font = FONT_INFO_HEADER)
+        infoHeader.grid(row = 0, column = 0, sticky = 'w')
+
+        # Keyboard button size values.
+        WIDTH_KEY_VALUE = 4
+        HEIGHT_KEY_VALUE = 6
+        PAD_KEY_VALUE = 2
+        
+        # Row 1: The function keys and other various keys.
+        class Row1_FunctionKeys():
+            """ Top row function keys. """
+            functionRowKeysFrame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            functionRowKeysFrame.grid(row = 1, column = 0, pady = 5, sticky = 'w')
+
+            functionRowKeyEsc = TTK.Button(functionRowKeysFrame, text = "Esc", width = 4, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Esc'))
+            functionRowKeyEsc.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            functionRowSpacer1 = Label(functionRowKeysFrame, text = "", width = 5, bg = '#FFFFFF')
+            functionRowSpacer1.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            functionRowKeyF1 = TTK.Button(functionRowKeysFrame, text = "F1", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F1'))
+            functionRowKeyF1.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+            functionRowKeyF2 = TTK.Button(functionRowKeysFrame, text = "F2", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F2'))
+            functionRowKeyF2.grid(row = 0, column = 3, padx = PAD_KEY_VALUE)
+            functionRowKeyF3 = TTK.Button(functionRowKeysFrame, text = "F3", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F3'))
+            functionRowKeyF3.grid(row = 0, column = 4, padx = PAD_KEY_VALUE)
+            functionRowKeyF4 = TTK.Button(functionRowKeysFrame, text = "F4", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F4'))
+            functionRowKeyF4.grid(row = 0, column = 5, padx = PAD_KEY_VALUE)
+            functionRowSpacer2 = Label(functionRowKeysFrame, text = "", width = 2, bg = '#FFFFFF')
+            functionRowSpacer2.grid(row = 0, column = 6, padx = PAD_KEY_VALUE)
+            functionRowKeyF5 = TTK.Button(functionRowKeysFrame, text = "F5", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F5'))
+            functionRowKeyF5.grid(row = 0, column = 7, padx = PAD_KEY_VALUE)
+            functionRowKeyF6 = TTK.Button(functionRowKeysFrame, text = "F6", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F6'))
+            functionRowKeyF6.grid(row = 0, column = 8, padx = PAD_KEY_VALUE)
+            functionRowKeyF7 = TTK.Button(functionRowKeysFrame, text = "F7", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F7'))
+            functionRowKeyF7.grid(row = 0, column = 9, padx = PAD_KEY_VALUE)
+            functionRowKeyF8 = TTK.Button(functionRowKeysFrame, text = "F8", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F8'))
+            functionRowKeyF8.grid(row = 0, column = 10, padx = PAD_KEY_VALUE)
+            functionRowSpacer3 = Label(functionRowKeysFrame, text = "", width = 2, bg = '#FFFFFF')
+            functionRowSpacer3.grid(row = 0, column = 11, padx = PAD_KEY_VALUE)
+            functionRowKeyF9 = TTK.Button(functionRowKeysFrame, text = "F9", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F9'))
+            functionRowKeyF9.grid(row = 0, column = 12, padx = PAD_KEY_VALUE)
+            functionRowKeyF10 = TTK.Button(functionRowKeysFrame, text = "F10", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F10'))
+            functionRowKeyF10.grid(row = 0, column = 13, padx = PAD_KEY_VALUE)
+            functionRowKeyF11 = TTK.Button(functionRowKeysFrame, text = "F11", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F11'))
+            functionRowKeyF11.grid(row = 0, column = 14, padx = PAD_KEY_VALUE)
+            functionRowKeyF12 = TTK.Button(functionRowKeysFrame, text = "F12", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F12'))
+            functionRowKeyF12.grid(row = 0, column = 15, padx = PAD_KEY_VALUE)
+
+            topRowControlKeysFrame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            topRowControlKeysFrame.grid(row = 1, column = 1, pady = 5, padx = 10, sticky = 'w')
+
+            topRowControlKeyPrint = TTK.Button(topRowControlKeysFrame, text = "PtSc", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('PrScr'))
+            topRowControlKeyPrint.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            topRowControlKeyScroll = TTK.Button(topRowControlKeysFrame, text = "ScLk", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('ScrLck'))
+            topRowControlKeyScroll.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            topRowControlKeyPause = TTK.Button(topRowControlKeysFrame, text = "Pau", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Pause'))
+            topRowControlKeyPause.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+
+        # Row 2: Row of keys on the first row -- `123 row.
+        class Row2_TopRowKeys():
+            """ Top row key widgets. """
+            topRowKeysFrame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            topRowKeysFrame.grid(row = 2, column = 0, sticky = 'w')
+
+            topRowKeyTilde = TTK.Button(topRowKeysFrame, text = "`", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Accent'))
+            topRowKeyTilde.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            topRowKey1 = TTK.Button(topRowKeysFrame, text = "1", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('1'))
+            topRowKey1.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            topRowKey2 = TTK.Button(topRowKeysFrame, text = "2", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('2'))
+            topRowKey2.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+            topRowKey3 = TTK.Button(topRowKeysFrame, text = "3", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('3'))
+            topRowKey3.grid(row = 0, column = 3, padx = PAD_KEY_VALUE)
+            topRowKey4 = TTK.Button(topRowKeysFrame, text = "4", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('4'))
+            topRowKey4.grid(row = 0, column = 4, padx = PAD_KEY_VALUE)
+            topRowKey5 = TTK.Button(topRowKeysFrame, text = "5", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('5'))
+            topRowKey5.grid(row = 0, column = 5, padx = PAD_KEY_VALUE)
+            topRowKey6 = TTK.Button(topRowKeysFrame, text = "6", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('6'))
+            topRowKey6.grid(row = 0, column = 6, padx = PAD_KEY_VALUE)
+            topRowKey7 = TTK.Button(topRowKeysFrame, text = "7", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('7'))
+            topRowKey7.grid(row = 0, column = 7, padx = PAD_KEY_VALUE)
+            topRowKey8 = TTK.Button(topRowKeysFrame, text = "8", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('8'))
+            topRowKey8.grid(row = 0, column = 8, padx = PAD_KEY_VALUE)
+            topRowKey9 = TTK.Button(topRowKeysFrame, text = "9", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('9'))
+            topRowKey9.grid(row = 0, column = 9, padx = PAD_KEY_VALUE)
+            topRowKey0 = TTK.Button(topRowKeysFrame, text = "0", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('0'))
+            topRowKey0.grid(row = 0, column = 10, padx = PAD_KEY_VALUE)
+            topRowKeyDash = TTK.Button(topRowKeysFrame, text = "-", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('-'))
+            topRowKeyDash.grid(row = 0, column = 11, padx = PAD_KEY_VALUE)
+            topRowKeyEqual = TTK.Button(topRowKeysFrame, text = "=", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('='))
+            topRowKeyEqual.grid(row = 0, column = 12, padx = PAD_KEY_VALUE)
+            topRowKeyBackspace = TTK.Button(topRowKeysFrame, text = "Backspace", width = 12, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('BckSpc'))
+            topRowKeyBackspace.grid(row = 0, column = 13, padx = PAD_KEY_VALUE)
+
+            homeRow1ControlKeysFrame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            homeRow1ControlKeysFrame.grid(row = 2, column = 1, padx = 10, sticky = 'w')
+
+            homeRow1ControlKeyInsert = TTK.Button(homeRow1ControlKeysFrame, text = "Ins", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Ins'))
+            homeRow1ControlKeyInsert.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            homeRow1ControlKeyHome = TTK.Button(homeRow1ControlKeysFrame, text = "Hm.", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Home'))
+            homeRow1ControlKeyHome.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            homeRow1ControlKeyPageUp = TTK.Button(homeRow1ControlKeysFrame, text = "PUp", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('PgUp'))
+            homeRow1ControlKeyPageUp.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+
+            numPadKeys1Frame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            numPadKeys1Frame.grid(row = 1, column = 2, rowspan = 6, sticky = 'w')
+
+            numPadKeys1KeyNumLock = TTK.Button(numPadKeys1Frame, text = "NLk", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('NumLck'))
+            numPadKeys1KeyNumLock.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            numPadKeys1KeySlash = TTK.Button(numPadKeys1Frame, text = "/", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num/'))
+            numPadKeys1KeySlash.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            numPadKeys1KeyStar = TTK.Button(numPadKeys1Frame, text = "*", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num*'))
+            numPadKeys1KeyStar.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+            numPadKeys1KeyDash = TTK.Button(numPadKeys1Frame, text = "-", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num-'))
+            numPadKeys1KeyDash.grid(row = 0, column = 3, padx = PAD_KEY_VALUE)
+
+            numPadKeys1KeyNum7 = TTK.Button(numPadKeys1Frame, text = "7", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num7'))
+            numPadKeys1KeyNum7.grid(row = 1, column = 0, padx = PAD_KEY_VALUE, pady = 5)
+            numPadKeys1KeyNum8 = TTK.Button(numPadKeys1Frame, text = "8", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num8'))
+            numPadKeys1KeyNum8.grid(row = 1, column = 1, padx = PAD_KEY_VALUE, pady = 5)
+            numPadKeys1KeyNum9 = TTK.Button(numPadKeys1Frame, text = "9", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num9'))
+            numPadKeys1KeyNum9.grid(row = 1, column = 2, padx = PAD_KEY_VALUE, pady = 5)
+            numPadKeys1KeyPlus = TTK.Button(numPadKeys1Frame, text = "+", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num+'))
+            numPadKeys1KeyPlus.grid(row = 1, column = 3, rowspan = 2, padx = PAD_KEY_VALUE, pady = 5)
+
+            numPadKeys1KeyNum4 = TTK.Button(numPadKeys1Frame, text = "4", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num4'))
+            numPadKeys1KeyNum4.grid(row = 2, column = 0, padx = PAD_KEY_VALUE)
+            numPadKeys1KeyNum5 = TTK.Button(numPadKeys1Frame, text = "5", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num5'))
+            numPadKeys1KeyNum5.grid(row = 2, column = 1, padx = PAD_KEY_VALUE)
+            numPadKeys1KeyNum6 = TTK.Button(numPadKeys1Frame, text = "6", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num6'))
+            numPadKeys1KeyNum6.grid(row = 2, column = 2, padx = PAD_KEY_VALUE)
+
+            numPadKeys1KeyNum1 = TTK.Button(numPadKeys1Frame, text = "1", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num1'))
+            numPadKeys1KeyNum1.grid(row = 3, column = 0, padx = PAD_KEY_VALUE, pady = 5)
+            numPadKeys1KeyNum2 = TTK.Button(numPadKeys1Frame, text = "2", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num2'))
+            numPadKeys1KeyNum2.grid(row = 3, column = 1, padx = PAD_KEY_VALUE, pady = 5)
+            numPadKeys1KeyNum3 = TTK.Button(numPadKeys1Frame, text = "3", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num3'))
+            numPadKeys1KeyNum3.grid(row = 3, column = 2, padx = PAD_KEY_VALUE, pady = 5)
+            numPadKeys1KeyEnter = TTK.Button(numPadKeys1Frame, text = "\u23CE", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('NumEnt'))
+            numPadKeys1KeyEnter.grid(row = 3, column = 3, rowspan = 2, padx = PAD_KEY_VALUE, pady = 5)
+
+            numPadKeys1KeyNum0 = TTK.Button(numPadKeys1Frame, text = "0", padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Num0'))
+            numPadKeys1KeyNum0.grid(row = 4, column = 0, columnspan = 2, padx = PAD_KEY_VALUE)
+            numPadKeys1KeyDelete = TTK.Button(numPadKeys1Frame, text = "Del", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('NumDel'))
+            numPadKeys1KeyDelete.grid(row = 4, column = 2, padx = PAD_KEY_VALUE)
+     
+        # Row 3: Row of keys on the second row - QWERTY row.
+        class Row3_MiddleRow1Keys():
+            """ Middle row 1 key widgets. """
+            middleRowKeysFrame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            middleRowKeysFrame.grid(row = 3, column = 0, pady = 5, sticky = 'w')
+
+            middleRowKeyTab = TTK.Button(middleRowKeysFrame, text = "Tab", width = 8, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Tab'))
+            middleRowKeyTab.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            middleRowKeyQ = TTK.Button(middleRowKeysFrame, text = "Q", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Q'))
+            middleRowKeyQ.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            middleRowKeyW = TTK.Button(middleRowKeysFrame, text = "W", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('W'))
+            middleRowKeyW.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+            middleRowKeyE = TTK.Button(middleRowKeysFrame, text = "E", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('E'))
+            middleRowKeyE.grid(row = 0, column = 3, padx = PAD_KEY_VALUE)
+            middleRowKeyR = TTK.Button(middleRowKeysFrame, text = "R", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('R'))
+            middleRowKeyR.grid(row = 0, column = 4, padx = PAD_KEY_VALUE)
+            middleRowKeyT = TTK.Button(middleRowKeysFrame, text = "T", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('T'))
+            middleRowKeyT.grid(row = 0, column = 5, padx = PAD_KEY_VALUE)
+            middleRowKeyY = TTK.Button(middleRowKeysFrame, text = "Y", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Y'))
+            middleRowKeyY.grid(row = 0, column = 6, padx = PAD_KEY_VALUE)
+            middleRowKeyU = TTK.Button(middleRowKeysFrame, text = "U", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('U'))
+            middleRowKeyU.grid(row = 0, column = 7, padx = PAD_KEY_VALUE)
+            middleRowKeyI = TTK.Button(middleRowKeysFrame, text = "I", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('I'))
+            middleRowKeyI.grid(row = 0, column = 8, padx = PAD_KEY_VALUE)
+            middleRowKeyO = TTK.Button(middleRowKeysFrame, text = "O", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('O'))
+            middleRowKeyO.grid(row = 0, column = 9, padx = PAD_KEY_VALUE)
+            middleRowKeyP = TTK.Button(middleRowKeysFrame, text = "P", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('P'))
+            middleRowKeyP.grid(row = 0, column = 10, padx = PAD_KEY_VALUE)
+            middleRowKeyLSB = TTK.Button(middleRowKeysFrame, text = "[", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('['))
+            middleRowKeyLSB.grid(row = 0, column = 11, padx = PAD_KEY_VALUE)
+            middleRowKeyRSB = TTK.Button(middleRowKeysFrame, text = "]", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value(']'))
+            middleRowKeyRSB.grid(row = 0, column = 12, padx = PAD_KEY_VALUE)
+            middleRowKeyBSlash = TTK.Button(middleRowKeysFrame, text = "\\", width = 8, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('\\'))
+            middleRowKeyBSlash.grid(row = 0, column = 13, padx = PAD_KEY_VALUE)
+
+            homeRow2ControlKeysFrame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            homeRow2ControlKeysFrame.grid(row = 3, column = 1, pady = 5, padx = 10, sticky = 'w')
+
+            homeRow2ControlKeyDelete = TTK.Button(homeRow2ControlKeysFrame, text = "Del", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Del'))
+            homeRow2ControlKeyDelete.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            homeRow2ControlKeyEnd = TTK.Button(homeRow2ControlKeysFrame, text = "End", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('End'))
+            homeRow2ControlKeyEnd.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            homeRow2ControlKeyPageDown = TTK.Button(homeRow2ControlKeysFrame, text = "PDn", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('PgDn'))
+            homeRow2ControlKeyPageDown.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+
+        # Row 4: Row of keys on the third row - ASDFGH row.
+        class Row4_MiddleRow2Keys():
+            """ Middle row 2 key widgets. """
+            lowerMiddleRowKeysFrame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            lowerMiddleRowKeysFrame.grid(row = 4, column = 0, sticky = 'w')
+
+            middleRowKeyCaps = TTK.Button(lowerMiddleRowKeysFrame, text = "Caps Lock", width = 11, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Caps'))
+            middleRowKeyCaps.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            middleRowKeyA = TTK.Button(lowerMiddleRowKeysFrame, text = "A", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('A'))
+            middleRowKeyA.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            middleRowKeyS = TTK.Button(lowerMiddleRowKeysFrame, text = "S", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('S'))
+            middleRowKeyS.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+            middleRowKeyD = TTK.Button(lowerMiddleRowKeysFrame, text = "D", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('D'))
+            middleRowKeyD.grid(row = 0, column = 3, padx = PAD_KEY_VALUE)
+            middleRowKeyF = TTK.Button(lowerMiddleRowKeysFrame, text = "F", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('F'))
+            middleRowKeyF.grid(row = 0, column = 4, padx = PAD_KEY_VALUE)
+            middleRowKeyG = TTK.Button(lowerMiddleRowKeysFrame, text = "G", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('G'))
+            middleRowKeyG.grid(row = 0, column = 5, padx = PAD_KEY_VALUE)
+            middleRowKeyH = TTK.Button(lowerMiddleRowKeysFrame, text = "H", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('H'))
+            middleRowKeyH.grid(row = 0, column = 6, padx = PAD_KEY_VALUE)
+            middleRowKeyJ = TTK.Button(lowerMiddleRowKeysFrame, text = "J", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('J'))
+            middleRowKeyJ.grid(row = 0, column = 7, padx = PAD_KEY_VALUE)
+            middleRowKeyK = TTK.Button(lowerMiddleRowKeysFrame, text = "K", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('K'))
+            middleRowKeyK.grid(row = 0, column = 8, padx = PAD_KEY_VALUE)
+            middleRowKeyL = TTK.Button(lowerMiddleRowKeysFrame, text = "L", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('L'))
+            middleRowKeyL.grid(row = 0, column = 9, padx = PAD_KEY_VALUE)
+            middleRowKeyColon = TTK.Button(lowerMiddleRowKeysFrame, text = ";", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value(';'))
+            middleRowKeyColon.grid(row = 0, column = 10, padx = PAD_KEY_VALUE)
+            middleRowKeyQuote = TTK.Button(lowerMiddleRowKeysFrame, text = "'", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('\''))
+            middleRowKeyQuote.grid(row = 0, column = 11, padx = PAD_KEY_VALUE)
+            middleRowKeyEnter = TTK.Button(lowerMiddleRowKeysFrame, text = "Enter", width = 13, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Enter'))
+            middleRowKeyEnter.grid(row = 0, column = 12, padx = PAD_KEY_VALUE)
+
+            arrowKeys1Frame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            arrowKeys1Frame.grid(row = 5, column = 1, padx = 10, sticky = 'w')
+
+            arrowKeys1Spacer = Label(arrowKeys1Frame, bg = '#FFFFFF', text = "      ", width = 6)
+            arrowKeys1Spacer.grid(row = 0, column = 0)
+            arrowKeys1KeyUp = TTK.Button(arrowKeys1Frame, text = "\u25B2", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Up'))
+            arrowKeys1KeyUp.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+
+        # Row 5: Row of keys on the fourth row - ZXCVBN row.
+        class Row5_BottomRowKeys():
+            """ Bottom row key widgets. """
+            bottomRowKeysFrame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            bottomRowKeysFrame.grid(row = 5, column = 0, pady = 5, sticky = 'w')
+ 
+            bottomRowKeyLShift = TTK.Button(bottomRowKeysFrame, text = "Left Shift", width = 14, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('LShift'))
+            bottomRowKeyLShift.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            bottomRowKeyZ = TTK.Button(bottomRowKeysFrame, text = "Z", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Z'))
+            bottomRowKeyZ.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            bottomRowKeyX = TTK.Button(bottomRowKeysFrame, text = "X", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('X'))
+            bottomRowKeyX.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+            bottomRowKeyC = TTK.Button(bottomRowKeysFrame, text = "C", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('C'))
+            bottomRowKeyC.grid(row = 0, column = 3, padx = PAD_KEY_VALUE)
+            bottomRowKeyV = TTK.Button(bottomRowKeysFrame, text = "V", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('V'))
+            bottomRowKeyV.grid(row = 0, column = 4, padx = PAD_KEY_VALUE)
+            bottomRowKeyB = TTK.Button(bottomRowKeysFrame, text = "B", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('B'))
+            bottomRowKeyB.grid(row = 0, column = 5, padx = PAD_KEY_VALUE)
+            bottomRowKeyN = TTK.Button(bottomRowKeysFrame, text = "N", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('N'))
+            bottomRowKeyN.grid(row = 0, column = 6, padx = PAD_KEY_VALUE)
+            bottomRowKeyM = TTK.Button(bottomRowKeysFrame, text = "M", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('M'))
+            bottomRowKeyM.grid(row = 0, column = 7, padx = PAD_KEY_VALUE)
+            bottomRowKeyLAB = TTK.Button(bottomRowKeysFrame, text = ",", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value(','))
+            bottomRowKeyLAB.grid(row = 0, column = 8, padx = PAD_KEY_VALUE)
+            bottomRowKeyRAB = TTK.Button(bottomRowKeysFrame, text = ".", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('.'))
+            bottomRowKeyRAB.grid(row = 0, column = 9, padx = PAD_KEY_VALUE)
+            bottomRowKeyQuestion = TTK.Button(bottomRowKeysFrame, text = "/", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('/'))
+            bottomRowKeyQuestion.grid(row = 0, column = 10, padx = PAD_KEY_VALUE)
+            bottomRowKeyRShift = TTK.Button(bottomRowKeysFrame, text = "Right Shift", width = 18, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('LShift'))
+            bottomRowKeyRShift.grid(row = 0, column = 11, padx = PAD_KEY_VALUE)
+
+            arrowKeys2Frame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            arrowKeys2Frame.grid(row = 6, column = 1, pady = 5, padx = 10, sticky = 'w')
+
+            arrowKeys2KeyLeft = TTK.Button(arrowKeys2Frame, text = "\u25C0", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Left'))
+            arrowKeys2KeyLeft.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            arrowKeys2KeyDown = TTK.Button(arrowKeys2Frame, text = "\u25BC", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Down'))
+            arrowKeys2KeyDown.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            arrowKeys2KeyRight = TTK.Button(arrowKeys2Frame, text = "\u25B6", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Right'))
+            arrowKeys2KeyRight.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+
+        # Row 6: Space keys and other keys.
+        class Row6_SpaceRowKeys():
+            """ Space row key widgets. """
+            spaceRowKeysFrame = Frame(onScreenKeyboardRoot, bg = '#FFFFFF')
+            spaceRowKeysFrame.grid(row = 6, column = 0, sticky = 'w')
+
+            spaceRowKeysLCtrl = TTK.Button(spaceRowKeysFrame, text = "Ctrl", width = 6, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('LCtrl'))
+            spaceRowKeysLCtrl.grid(row = 0, column = 0, padx = PAD_KEY_VALUE)
+            spaceRowKeysWin = TTK.Button(spaceRowKeysFrame, text = "Win", width = 6, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Win'))
+            spaceRowKeysWin.grid(row = 0, column = 1, padx = PAD_KEY_VALUE)
+            spaceRowKeysWin.config(state = 'disabled')
+            spaceRowKeysLAlt = TTK.Button(spaceRowKeysFrame, text = "Alt", width = 6, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('LAlt'))
+            spaceRowKeysLAlt.grid(row = 0, column = 2, padx = PAD_KEY_VALUE)
+            spaceRowKeysSpaceBar = TTK.Button(spaceRowKeysFrame, text = "  ", width = 46, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Space'))
+            spaceRowKeysSpaceBar.grid(row = 0, column = 3, padx = PAD_KEY_VALUE)
+            spaceRowKeysRAlt = TTK.Button(spaceRowKeysFrame, text = "Alt", width = 6, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('RAlt'))
+            spaceRowKeysRAlt.grid(row = 0, column = 4, padx = PAD_KEY_VALUE)
+            spaceRowKeysFunction = TTK.Button(spaceRowKeysFrame, text = "Fn", width = 6, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('Fn'))
+            spaceRowKeysFunction.config(state = 'disabled')
+            spaceRowKeysFunction.grid(row = 0, column = 5, padx = PAD_KEY_VALUE)
+            spaceRowKeysContext = TTK.Button(spaceRowKeysFrame, text = "[=]", width = 6, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('[=]'))
+            spaceRowKeysContext.config(state = 'disabled')
+            spaceRowKeysContext.grid(row = 0, column = 6, padx = PAD_KEY_VALUE)
+            spaceRowKeysRCtrl = TTK.Button(spaceRowKeysFrame, text = "Ctrl", width = 6, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value('RCtrl'))
+            spaceRowKeysRCtrl.grid(row = 0, column = 7, padx = PAD_KEY_VALUE)
+
+        mouseButtonsLabel = Label(onScreenKeyboardRoot, text = "Mouse Buttons:", bg = '#FFFFFF', fg = '#000000', font = FONT_INFO_HEADER)
+        mouseButtonsLabel.grid(row = 1, column = 4, padx = 10)
+
+        mouseButtonLeft = TTK.Button(onScreenKeyboardRoot, text = "LMB", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value("LMB"))
+        mouseButtonLeft.place(x = 1100, y = 80)
+
+        mouseButtonMiddle = TTK.Button(onScreenKeyboardRoot, text = "MB", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value("MMB"))
+        mouseButtonMiddle.place(x = 1150, y = 60)
+
+        mouseButtonRight = TTK.Button(onScreenKeyboardRoot, text = "RMB", width = WIDTH_KEY_VALUE, padding = HEIGHT_KEY_VALUE, command = lambda: key_return_value("RMB"))
+        mouseButtonRight.place(x = 1200, y = 80)
+
+        currentBoundInputs = Label(onScreenKeyboardRoot, text = f"Current Bound Inputs: {entry.get()}", bg = '#FFFFFF', fg = '#000000', font = FONT_INFO_HEADER)
+        currentBoundInputs.grid(row = 7, column = 0, sticky = 'w')
+
+        cancelDialogBox = TTK.Button(onScreenKeyboardRoot, text = 'Cancel', width = 10, command = onScreenKeyboardRoot.destroy)
+        cancelDialogBox.place(x = 1202, y = 290)
+
+        # Enter main loop.
+        onScreenKeyboardRoot.focus_force()
+        onScreenKeyboardRoot.mainloop()
+
+# Note info function.
+def note_info(mode: str, gemProperty: str, value: str) -> str:
+    """
+    Takes a note style checksum or option name and turns it into an option name or checksum.
+    
+    Arguments
+    ---------
+    - `mode`: `str` >> This can be either `option` or `checksum`. This determines the value that will be returned. If `mode` is set to `option`, it will return an option
+    name. If this is `checksum`, this will return a checksum.
+    - `gemProperty`: `str` >> The type note information to return. This can either be `style` or `theme`.
+    - `value`: `str` >> The value to convert. If `mode` is:
+      - `option`, then put a checksum in the `value` parameter.
+      - `checksum`, then put an option name in the `value` parameter.
+
+    Returns
+    -------
+    `str` >> Returns either an option name or a checksum.
+    """
+    match (gemProperty.lower()):
+        case 'style':
+            match (mode):
+                case 'option':
+                    for (optionName, dataValue) in (NOTE_STYLES):
+                        if (value == dataValue):
+                            return optionName
+                    else:
+                        dataValue = config.get("Graphics", "GemTheme")
+                        if (dataValue != ""): return dataValue
+                        else: return NOTE_STYLES[0][0]
+
+                case 'checksum':
+                    for (optionName, dataValue) in (NOTE_STYLES):
+                        if (value == optionName):
+                            return dataValue
+                    else:
+                        dataValue = GraphicsSettings.gemTheme.get()
+                        if (GraphicsSettings.gemTheme.get() != ""):
+                            return dataValue
+                        else: return NOTE_STYLES[0][0]
+                    
+        case 'theme' | 'color':
+            match (mode):
+                case 'option':
+                    for (optionName, dataValue) in (NOTE_THEMES):
+                        if (value == dataValue): return optionName
+                    else: return NOTE_THEMES[0][0]
+
+                case 'checksum':
+                    for (optionName, dataValue) in (NOTE_THEMES):
+                        if (value == optionName): return dataValue
+                    else: return NOTE_THEMES[0][1]
 
 # ===========================================================================================================
 # Root Window Setup
 # 
 # Sets up the root window of the GHWT: DE Launcher++.
 # ===========================================================================================================
+# Show the splash screen before we create the actual window.
+intro_splash()
+
 # Set up root window.
 debug_add_entry("[init] Setting up Tk widget root...")
 
 root = Tk()
 root.title(TITLE)
 root.iconbitmap(resource_path("res/icon.ico"))
-root.geometry(f"1080x738+{get_screen_resolution()[0] // 5}+{get_screen_resolution()[1] // 8}")
-root.resizable(False, False)
+root.geometry(f"1080x718+{get_screen_resolution()[0] // 5}+{get_screen_resolution()[1] // 8}")
 
 debug_add_entry("[init] Tk widget root set up!")
 debug_add_entry("!!!--- ENTERING TK SETUP ---!!!")
@@ -573,6 +1220,9 @@ class ImageConst():
     DEBUG_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/debug_icon.png")))
     debug_add_entry(f"(const) DEBUG_ICON has relative path {resource_path('res/icons/debug_icon.png')}", 1)
 
+    INI_EDITOR_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/ini_editor_icon.png")))
+    debug_add_entry(f"(const) INI_EDITOR_ICON has relative path {resource_path('res/icons/ini_editor_icon.png')}", 1)
+
     CREDITS_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/credits_icon.png")))
     debug_add_entry(f"(const) CREDITS_ICON has relative path {resource_path('res/icons/credits_icon.png')}", 1)
 
@@ -608,9 +1258,20 @@ class ImageConst():
     INSTALL_MODS_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/mods/install_mods.ico")))
     debug_add_entry(f"(const) INSTALL_MODS_ICON has relative path {resource_path('res/menuicons/mods/install_mods.ico')}", 1)
 
+    DUPE_CHECKSUM_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/mods/copy.ico")))
+    debug_add_entry(f"(const) DUPE_CHECKSUM_ICON has relative path {resource_path('res/menuicons/mods/copy.ico')}", 1)
+
+    MANAGE_RSC_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/file/rsc_manager.ico")))
+
     # ====================================== GAME MENU ICONS ====================================== #
     RUN_WTDE_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/game/play.ico")))
     debug_add_entry(f"(const) RUN_WTDE_ICON has relative path {resource_path('res/menuicons/game/play.ico')}", 1)
+
+    # ====================================== GRAPHICS TABS ICONS ====================================== #
+    GRAPHICS_GENERAL_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/graphics_general.png")))
+    GRAPHICS_GAMEPLAY_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/graphics_gameplay.png")))
+    GRAPHICS_INTERFACE_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/graphics_interface.png")))
+    GRAPHICS_ADVANCED_ICON = ImageTk.PhotoImage(Image.open(resource_path("res/icons/graphics_advanced.png")))
 
 # Widget canvas.
 debug_add_entry("Adding Canvas widget widgetCanvas...", 1)
@@ -624,7 +1285,7 @@ widgetCanvas.create_image(4, 4, image = ImageConst.WTDE_LOGO_ICON, anchor = 'nw'
 
 # Credits text and latest WTDE version information.
 CREDITS_TEXT = "Made by IMF24, WTDE by Fretworks, Updater by Zedek the Plague Doctor \u2122"
-VERSION_TEXT = f"Version {VERSION} || WTDE Latest Version: {wtde_latest_version()}"
+VERSION_TEXT = f"Version {VERSION} || WTDE Latest Version: {WTDE_LATEST_VERSION}"
 
 # Add these strings as text onto the canvas.
 widgetCanvas.create_text(18, 724, text = CREDITS_TEXT, fill = FG_COLOR, font = FONT_INFO_FOOTER, justify = 'left', anchor = 'sw')
@@ -651,35 +1312,45 @@ TTK.Style().configure("TEntry", background = BG_COLOR)
 wtdeStartGame = TTK.Button(root, text = "Save & Run WTDE", width = 25, padding = 10, command = lambda: wtde_save_config(True))
 wtdeStartGame.place(x = 4, y = 185)
 
+# Save configuration.
 wtdeSaveConfig = TTK.Button(root, text = "Save Configuration", width = 25, padding = 10, command = wtde_save_config)
 wtdeSaveConfig.place(x = 4, y = 235)
 
+# Reload configuration.
+wtdeReloadConfig = TTK.Button(root, text = "Reload Configuration", width = 25, padding = 10, command = wtde_load_config)
+wtdeReloadConfig.place(x = 4, y = 285)
+
 # Are we connected to the internet?
 if (is_connected("https://cdn.discordapp.com/attachments/872794777060515890/1044075617307590666/Updater_Main_1_0_3.zip")):
-    wtdeUpdateButtonTipText = "Update WTDE to the latest version and verify your installation's integrity."
+    wtdeUpdateButtonTipText = "Check for updates to WTDE."
     stateToUpdateTo = 'normal'
 else:
     wtdeUpdateButtonTipText = "Can't update WTDE! No internet connection was found."
     stateToUpdateTo = 'disabled'
 
-wtdeUpdateGame = TTK.Button(root, text = "Update WTDE", width = 25, padding = 10, command = wtde_run_updater, state = stateToUpdateTo)
-wtdeUpdateGame.place(x = 4, y = 285)
+# Update WTDE to the latest version.
+wtdeUpdateGame = TTK.Button(root, text = "Check for Updates", width = 25, padding = 10, command = lambda: wtde_check_for_updates(True), state = stateToUpdateTo)
+wtdeUpdateGame.place(x = 4, y = 335)
 
+# Open the user's mods folder.
 wtdeOpenMods = TTK.Button(root, text = "Open Mods Folder", width = 25, padding = 10, command = open_mods_folder)
-wtdeOpenMods.place(x = 4, y = 335)
+wtdeOpenMods.place(x = 4, y = 385)
 
+# Make a shortcut to GHWT: DE on the desktop.
 wtdeMakeShortcut = TTK.Button(root, text = "Make Desktop Shortcut", width = 25, padding = 10, command = wtde_create_lnk)
-wtdeMakeShortcut.place(x = 4, y = 385)
+wtdeMakeShortcut.place(x = 4, y = 435)
 
-wtdeBackUpSave = TTK.Button(root, text = "Back Up Save", width = 25, padding = 10, command = wtde_backup_save)
-wtdeBackUpSave.place(x = 4, y = 435)
+# Manage save files.
+wtdeBackUpSave = TTK.Button(root, text = "Manage Saves", width = 25, padding = 10, command = wtde_manage_saves)
+wtdeBackUpSave.place(x = 4, y = 485)
 
 ToolTip(wtdeStartGame, msg = "Save your configuration settings and launch GHWT: DE.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 ToolTip(wtdeSaveConfig, msg = "Save your configuration settings.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+ToolTip(wtdeReloadConfig, msg = "Refresh your configuration settings.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 ToolTip(wtdeUpdateGame, msg = wtdeUpdateButtonTipText, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 ToolTip(wtdeOpenMods, msg = "Open your Mods folder.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 ToolTip(wtdeMakeShortcut, msg = "Makes a shortcut to GHWT: DE on the desktop.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-ToolTip(wtdeBackUpSave, msg = "Makes a backup of your GHWT: DE save file, with the date and time of backup in the file name.\n\nAll save data backups can be found in the Save Backups folder in your save & config file folder.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+ToolTip(wtdeBackUpSave, msg = "Manage any and all save files for GHWT: DE.\n\nIf you had any backed up save data, all save data backups can be found in the Save Backups folder in your save & config file folder.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
 # ===========================================================================================================
 # Tab Frame Setup
@@ -697,6 +1368,7 @@ wtdeOptionsGraphics = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = 
 wtdeOptionsBand = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 wtdeOptionsAutoLaunch = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 wtdeOptionsDebug = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
+wtdeOptionsINIEdit = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 wtdeOptionsCredits = Frame(wtdeOptionsRoot, width = TAB_WINDOW_WIDTH, height = TAB_WINDOW_HEIGHT, bg = BG_COLOR)
 
 # Pack tab frames into the notebook.
@@ -708,12 +1380,13 @@ wtdeOptionsGraphics.pack(fill = 'both', expand = 1)
 wtdeOptionsBand.pack(fill = 'both', expand = 1)
 wtdeOptionsAutoLaunch.pack(fill = 'both', expand = 1)
 wtdeOptionsDebug.pack(fill = 'both', expand = 1)
+wtdeOptionsINIEdit.pack(fill = 'both', expand = 1)
 wtdeOptionsCredits.pack(fill = 'both', expand = 1)
 
 debug_add_entry("Adding frames as tabs...", 1)
 
 # Add the tabs into the notebook.
-wtdeOptionsRoot.add(wtdeOptionsNews, text = " GHWT: DE News", image = ImageConst.NEWS_ICON, compound = 'left')
+wtdeOptionsRoot.add(wtdeOptionsNews, text = " News", image = ImageConst.NEWS_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsMods, text = " Mods", image = ImageConst.MODS_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsGeneral, text = " General", image = ImageConst.GENERAL_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsInput, text = " Input", image = ImageConst.INPUT_ICON, compound = 'left')
@@ -721,9 +1394,10 @@ wtdeOptionsRoot.add(wtdeOptionsGraphics, text = " Graphics", image = ImageConst.
 wtdeOptionsRoot.add(wtdeOptionsBand, text = " Band", image = ImageConst.BAND_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsAutoLaunch, text = " Auto Launch", image = ImageConst.AUTO_LAUNCH_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsDebug, text = " Debug", image = ImageConst.DEBUG_ICON, compound = 'left')
+wtdeOptionsRoot.add(wtdeOptionsINIEdit, text = " INI Editor", image = ImageConst.INI_EDITOR_ICON, compound = 'left')
 wtdeOptionsRoot.add(wtdeOptionsCredits, text = " Credits", image = ImageConst.CREDITS_ICON, compound = 'left')
 
-debug_add_entry("ttk.Notebook widget wtdeOptionsRoot created and 9 child tabs were added!", 1)
+debug_add_entry("ttk.Notebook widget wtdeOptionsRoot created and 10 child tabs were added!", 1)
 
 # ===========================================================================================================
 # Menu Stuff
@@ -741,6 +1415,9 @@ class MenuClass():
     fileMenu.add_command(label = " Save Configuration", image = ImageConst.SAVE_CONFIG_ICON, compound = 'left', command = wtde_save_config)
     fileMenu.add_command(label = " Save Config and Run WTDE", image = ImageConst.SAVE_RUN_ICON, compound = 'left', command = lambda: wtde_save_config(True))
     fileMenu.add_separator()
+    fileMenu.add_command(label = " Manage Saves...", image = ImageConst.SAVE_CONFIG_ICON, compound = 'left', command = wtde_manage_saves)
+    fileMenu.add_command(label = " Manage Rock Star Creator (CAR) Characters...", image = ImageConst.MANAGE_RSC_ICON, compound = 'left', command = wtde_manage_rsc)
+    fileMenu.add_separator()
     fileMenu.add_command(label = " Exit", image = ImageConst.EXIT_PROGRAM_ICON, compound = 'left', command = root.destroy)
 
     # ======= MODS MENU ======= #
@@ -748,6 +1425,7 @@ class MenuClass():
     modsMenu.add_command(label = " Open Mods Folder", image = ImageConst.OPEN_MODS_FOLDER_ICON, compound = 'left', command = open_mods_folder)
     modsMenu.add_separator()
     modsMenu.add_command(label = " Install Mods...", image = ImageConst.INSTALL_MODS_ICON, compound = 'left', command = wtde_ask_install_mods)
+    modsMenu.add_command(label = " Duplicate Checksum Manager...", image = ImageConst.DUPE_CHECKSUM_ICON, compound = 'left', command = duplicate_checksum_manager)
 
     # ======= GAME MENU ======= #
     gameMenu = Menu(topMenu, tearoff = False, activebackground = MENU_HOVER, activeforeground = '#000000')
@@ -828,13 +1506,13 @@ class ModsSettings():
     modManagerCommandsFrame = Frame(wtdeOptionsMods, bg = BG_COLOR, relief = 'flat')
     modManagerCommandsFrame.pack(fill = 'x', pady = 5)
 
-    # Install Mod
-    modManagerInstallMod = TTK.Button(modManagerCommandsFrame, text = "Install Mods", width = 20, takefocus = False, command = wtde_ask_install_mods)
+    # Install Mods
+    modManagerInstallMod = TTK.Button(modManagerCommandsFrame, text = "Install Mods...", width = 20, takefocus = False, command = wtde_ask_install_mods)
     modManagerInstallMod.grid(row = 0, column = 0, padx = 5)
     ToolTip(modManagerInstallMod, msg = "Install mods into GHWT: DE.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Refresh Mods List
-    modManagerRefresh = TTK.Button(modManagerCommandsFrame, text = "Refresh List", width = 20, takefocus = False, command = lambda: wtde_get_mods(root, ModsSettings.modTree, ModsSettings.modManagerStatus))
+    modManagerRefresh = TTK.Button(modManagerCommandsFrame, text = "Refresh List", width = 20, takefocus = False, command = lambda: wtde_get_mods(root, modTree, modManagerStatus))
     modManagerRefresh.grid(row = 0, column = 1, padx = 5)
     ToolTip(modManagerRefresh, msg = "Refresh the list of installed mods.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
@@ -843,11 +1521,12 @@ class ModsSettings():
     modManagerFrame.pack(fill = 'both', expand = 1)
 
     # Create our table of information.
+    global modTree
     modTree = TTK.Treeview(modManagerFrame)
 
     # Add columns to the tree view.
     modTree['columns'] = ("Mod Name", "Author", "Type", "Version", "Description")
-    modTree.column("#0", width = 0, minwidth = 0, stretch = 'no')
+    modTree.column("#0", width = 0, minwidth = 0, stretch = NO)
     modTree.column("Mod Name", anchor = 'w', width = 180, minwidth = 25)
     modTree.column("Author", anchor = 'w', width = 120, minwidth = 25)
     modTree.column("Type", anchor = 'w', width = 90, minwidth = 25)
@@ -870,14 +1549,11 @@ class ModsSettings():
     modTreeYBar.pack(side = 'right', fill = 'y')
 
     modTree.config(yscrollcommand = modTreeYBar.set)
-    modTree.bind('<Configure>')
 
     # Status label.
+    global modManagerStatus
     modManagerStatus = Label(wtdeOptionsMods, text = "Mods loaded", relief = 'sunken', anchor = 'w', bd = 1)
     modManagerStatus.pack(fill = 'x', anchor = 'n')
-
-    # Load all mod data into the tree.
-    wtde_get_mods(root, modTree, modManagerStatus)
 
 # Execute tab code.
 ModsSettings()
@@ -927,18 +1603,25 @@ class GeneralSettings():
     generalAllowHolidays.grid(row = 2, column = 0, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalAllowHolidays, msg = ALLOW_HOLIDAYS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
+    # Mute Split Tracks Upon Miss
+    muteStreams = StringVar()
+    SONG_SPECIFIC_INTROS_TIP = "Turn ON or OFF muting of instrument tracks upon notes being missed. If enabled, when a note is missed, its respective track will be muted until another note is hit."
+    generalMuteStreams = TTK.Checkbutton(wtdeOptionsGeneral, text = "Mute Split Tracks Upon Miss", variable = muteStreams, onvalue = '1', offvalue = '0')
+    generalMuteStreams.grid(row = 3, column = 0, padx = 20, pady = 5, sticky = 'w')
+    ToolTip(generalMuteStreams, msg = SONG_SPECIFIC_INTROS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
     # Whammy Pitch Shift
     whammyPitchShift = StringVar()
     WHAMMY_PITCH_SHIFT_TIP = "Turn ON or OFF whammy effects. If this is OFF, audio distortion by whammy will be disabled."
     generalWhammyPitchShift = TTK.Checkbutton(wtdeOptionsGeneral, text = "Whammy Pitch Shift", variable = whammyPitchShift, onvalue = '1', offvalue = '0')
-    generalWhammyPitchShift.grid(row = 3, column = 0, padx = 20, pady = 5, sticky = 'w')
+    generalWhammyPitchShift.grid(row = 4, column = 0, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalWhammyPitchShift, msg = WHAMMY_PITCH_SHIFT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Use Song Specific Intros
     songSpecificIntros = StringVar()
     SONG_SPECIFIC_INTROS_TIP = "Allow certain intro animations to play for certain songs, primarily for celebrity songs."
     generalSongSpecificIntros = TTK.Checkbutton(wtdeOptionsGeneral, text = "Use Song Specific Intros", variable = songSpecificIntros, onvalue = '1', offvalue = '0')
-    generalSongSpecificIntros.grid(row = 4, column = 0, padx = 20, pady = 5, sticky = 'w')
+    generalSongSpecificIntros.grid(row = 5, column = 0, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalSongSpecificIntros, msg = SONG_SPECIFIC_INTROS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Language
@@ -946,11 +1629,11 @@ class GeneralSettings():
     LANGUAGE_SELECT_TIP = "Set the language to be used in-game."
 
     generalLanguageSelectLabel = Label(wtdeOptionsGeneral, text = "Language:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    generalLanguageSelectLabel.grid(row = 5, column = 0, padx = 20, pady = 5, sticky = 'w')
+    generalLanguageSelectLabel.grid(row = 6, column = 0, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalLanguageSelectLabel, msg = LANGUAGE_SELECT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     generalLanguageSelect = TTK.OptionMenu(wtdeOptionsGeneral, language, *[""] + [lang[0] for lang in LANGUAGES])
-    generalLanguageSelect.grid(row = 5, column = 1, padx = 20, pady = 5, sticky = 'w')
+    generalLanguageSelect.grid(row = 6, column = 1, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalLanguageSelect, msg = LANGUAGE_SELECT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Audio Buffer Length
@@ -959,11 +1642,11 @@ class GeneralSettings():
                         "Modifying this and/or changing your sound output to 44.1 kHz can cause bad audio output in-game."
 
     generalAudioBuffLenLabel = Label(wtdeOptionsGeneral, text = "Audio Buffer Length:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    generalAudioBuffLenLabel.grid(row = 6, column = 0, padx = 20, pady = 5, sticky = 'w')
+    generalAudioBuffLenLabel.grid(row = 7, column = 0, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalAudioBuffLenLabel, msg = AUDIO_BUFF_LEN_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     generalAudioBuffLen = TTK.OptionMenu(wtdeOptionsGeneral, audioBuffLen, *AUDIO_BUFFLENS)
-    generalAudioBuffLen.grid(row = 6, column = 1, padx = 20, pady = 5, sticky = 'w')
+    generalAudioBuffLen.grid(row = 7, column = 1, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalAudioBuffLen, msg = AUDIO_BUFF_LEN_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Auto Login
@@ -971,11 +1654,11 @@ class GeneralSettings():
     AUTO_LOGIN_TIP = "Set if you want the game to automatically log you in to the online servers upon startup."
 
     generalAutoLoginLabel = Label(wtdeOptionsGeneral, text = "Auto Login:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    generalAutoLoginLabel.grid(row = 7, column = 0, padx = 20, pady = 5, sticky = 'w')
+    generalAutoLoginLabel.grid(row = 8, column = 0, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalAutoLoginLabel, msg = AUTO_LOGIN_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     generalAutoLogin = TTK.OptionMenu(wtdeOptionsGeneral, autoLogin, *AUTO_LOGIN_OPTIONS)
-    generalAutoLogin.grid(row = 7, column = 1, padx = 20, pady = 5, sticky = 'w')
+    generalAutoLogin.grid(row = 8, column = 1, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalAutoLogin, msg = AUTO_LOGIN_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Holiday Theme
@@ -983,12 +1666,32 @@ class GeneralSettings():
     FORCE_HOLIDAY_THEME = "Set if you want the game to force a certain holiday theme."
 
     generalHolidayForceLabel = Label(wtdeOptionsGeneral, text = "Holiday Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    generalHolidayForceLabel.grid(row = 8, column = 0, padx = 20, pady = 5, sticky = 'w')
+    generalHolidayForceLabel.grid(row = 9, column = 0, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalHolidayForceLabel, msg = FORCE_HOLIDAY_THEME, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     generalHolidayForce = TTK.OptionMenu(wtdeOptionsGeneral, holiday, *[""] + [theme[0] for theme in HOLIDAYS])
-    generalHolidayForce.grid(row = 8, column = 1, padx = 20, pady = 5, sticky = 'w')
+    generalHolidayForce.grid(row = 9, column = 1, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalHolidayForce, msg = FORCE_HOLIDAY_THEME, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Edit Friends List
+    EDIT_FRIEND_LIST_TIP = "Edit the list of friends you have online."
+    generalEditFriendList = TTK.Button(wtdeOptionsGeneral, text = "Edit Friends List...", width = 35, command = aspyr_edit_friends)
+    generalEditFriendList.grid(row = 10, column = 0, columnspan = 2, pady = 5)
+    ToolTip(generalEditFriendList, msg = EDIT_FRIEND_LIST_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Auto Check For Updates
+    checkForUpdates = StringVar()
+    AUTO_UPDATE_CHECK_TIP = "Enable or disable the functionality to check for updates to WTDE when the launcher starts up."
+    generalCFU = TTK.Checkbutton(wtdeOptionsGeneral, text = "Auto Check For Updates", variable = checkForUpdates, onvalue = '1', offvalue = '0', command = lambda: warn_auto_update_deselect(GeneralSettings.checkForUpdates))
+    generalCFU.grid(row = 11, column = 0, padx = 20, pady = 5, sticky = 'w')
+    ToolTip(generalCFU, msg = AUTO_UPDATE_CHECK_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Write Streamer Files
+    statusHandler = StringVar()
+    STATUS_HANDLER_TIP = "When enabled, this will export to the Logs folder various text files for streamers to use containing various information, such as the song currently playing, artist, venue, etc."
+    generalStatusHandler = TTK.Checkbutton(wtdeOptionsGeneral, text = "Write Streamer Files", variable = statusHandler, onvalue = '1', offvalue = '0', command = lambda: warn_auto_update_deselect(GeneralSettings.checkForUpdates))
+    generalStatusHandler.grid(row = 12, column = 0, padx = 20, pady = 5, sticky = 'w')
+    ToolTip(generalStatusHandler, msg = STATUS_HANDLER_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # ===========================================================================================================
     # Main Menu Toggles
@@ -1074,6 +1777,23 @@ class InputSettings():
     INPUT_SETTINGS_TITLE_TEXT = "Input Settings: Modify your keyboard controls and microphone settings.\nHover over any option to see what it does!"
     inputTitleLabel = Label(wtdeOptionsInput, text = INPUT_SETTINGS_TITLE_TEXT, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO_HEADER, justify = 'left', anchor = 'w')
     inputTitleLabel.pack(fill = 'x', anchor = 'nw')
+
+    INPUT_SETTINGS_AUTO_STRUM_WARN = "Note: Auto strum is NOT supported when using the keyboard."
+    inputNoAutoStrumLabel = Label(wtdeOptionsInput, text = INPUT_SETTINGS_AUTO_STRUM_WARN, bg = BG_COLOR, fg = "#FFFF00", font = ('Segoe UI', 10, BOLD), justify = 'left', anchor = 'w')
+    inputNoAutoStrumLabel.pack(fill = 'x', anchor = 'nw')
+
+    # Turn ON or OFF recorded key presses.
+    USE_KEY_PRESS_TIP = "Switch between recording key presses or using an on-screen keyboard to select an input to bind.\n\n" \
+                        "When the \"Add\" button is clicked:\n" \
+                        "  •  If this is ON, this will record the last key you pressed and add it to the respective input field.\n" \
+                        "  •  If this is OFF, an on-screen keyboard will appear, allowing you to select a key from it, and\n" \
+                        "     add it as a binding to the respective input field."
+    global inputRecordKeyPress
+    inputRecordKeyPress = BooleanVar()
+    inputRecordKeyPressOption = TTK.Checkbutton(wtdeOptionsInput, text = "Use Recorded Key Press for Rebinding", variable = inputRecordKeyPress, onvalue = True, offvalue = False)
+    inputRecordKeyPressOption.pack(padx = 20, pady = 5, anchor = 'nw', fill = 'x')
+    inputRecordKeyPress.set(True)
+    ToolTip(inputRecordKeyPressOption, msg = USE_KEY_PRESS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Add divider.
     # TTK.Separator(wtdeOptionsInput).pack(fill = 'x')
@@ -1339,7 +2059,7 @@ class InputSettings():
     ToolTip(inputKeyGuitarRightDelete, msg = CLEAR_INPUTS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # ================== SPACER ================== #
-    inputKeySpacer = Label(inputFrameWidgets, bg = BG_COLOR, text = "  ")
+    inputKeySpacer = Label(inputFrameWidgets, bg = BG_COLOR, text = "        ")
     inputKeySpacer.grid(row = 0, column = 4)
 
     # ===========================================================================================================
@@ -1969,12 +2689,12 @@ class InputSettings():
 
     # Use Input Hack
     disableInputHack = StringVar()
-    INPUT_HACK_TIP = "Enable or disable the input hack.\n\n" \
-                     "In its essence, this makes all plugged in controllers behave as if they were an XInput device.\n\n" \
-                     "If this is ON, controllers that disconnect mid-game will reconnect and still be usable, but the Bind Controllers menu will freeze.\n\n" \
-                     "If this is OFF, the Bind Controllers menu will function properly, but if a controller disconnects mid-game, the game must be restarted for it to be usable again."
-    inputUseInputHack = TTK.Checkbutton(inputFrameWidgets, text = "Use Input Hack", variable = disableInputHack, onvalue = '1', offvalue = '0')
-    inputUseInputHack.grid(row = 33, column = 6, pady = 5, sticky = 'w')
+    INPUT_HACK_TIP = "Enable or disable the input hack and SDL2 controller functionality.\n\n" \
+                     "In its essence, this will deinitialize the SDL2 controller backend functionality and use the vanilla functionality for controllers in-game.\n\n" \
+                     "If this is ON, upon launch, the SDL2 backend will be deinitialized, and the game will use the vanilla controller functionality. In the event controllers should become disconnected, they should continue to function properly if they are reconnected.\n\n" \
+                     "If this is OFF, the controller system will utilize SDL2 controller functionality. If controllers ever disconnect, they will cease to function until the game is restarted."
+    inputUseInputHack = TTK.Checkbutton(inputFrameWidgets, text = "Disable Input Hack", variable = disableInputHack, onvalue = '1', offvalue = '0')
+    inputUseInputHack.grid(row = 33, column = 6, columnspan = 2, pady = 5, sticky = 'w')
     ToolTip(inputUseInputHack, msg = INPUT_HACK_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Mic Audio Delay
@@ -2007,6 +2727,12 @@ class InputSettings():
     inputMicUseRecommended.grid(row = 35, column = 7, columnspan = 2, pady = 5, sticky = 'e')
     ToolTip(inputMicUseRecommended, msg = USE_RECOMMENDED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
+    # Reset Input Mappings
+    RESET_INPUT_MAPS_TIP = "Reset your controller mappings (deletes GHWTDEInput.ini)."
+    inputResetInputMapping = TTK.Button(inputFrameWidgets, text = "Reset Input Mappings", width = 40, command = wtde_reset_controller_input)
+    inputResetInputMapping.grid(row = 34, column = 1, columnspan = 2, pady = 5)
+    ToolTip(inputResetInputMapping, msg = RESET_INPUT_MAPS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
 # Execute tab code.
 InputSettings()
 
@@ -2025,241 +2751,391 @@ class GraphicsSettings():
     # Title text with the purpose of the tab.
     GRAPHICS_SETTINGS_TITLE_TEXT = "Graphics Settings: Set your preferences for graphics in WTDE.\nHover over any option to see what it does!"
     graphicsTitleLabel = Label(wtdeOptionsGraphics, text = GRAPHICS_SETTINGS_TITLE_TEXT, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO_HEADER, justify = 'left', anchor = 'w')
-    graphicsTitleLabel.grid(row = 0, column = 0, columnspan = 999, sticky = 'w')
+    graphicsTitleLabel.pack(fill = 'x')
 
-    # Resolution Width & Height
-    RESOLUTION_TIP = "Set the resolution for the game window."
-    RESOLUTION_W_TIP = "Set the width (in pixels) for the game window."
-    RESOLUTION_H_TIP = "Set the height (in pixels) for the game window."
+    graphicsSettingsTabs = TTK.Notebook(wtdeOptionsGraphics)
+    graphicsSettingsTabs.pack(fill = 'both', expand = 1, pady = 5)
 
-    graphicsResLabel = Label(wtdeOptionsGraphics, text = "Resolution:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    graphicsResLabel.grid(row = 1, column = 0, padx = 20, pady = 5)
-    ToolTip(graphicsResLabel, msg = RESOLUTION_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+    TTK.Style(graphicsSettingsTabs).configure("TNotebook", background = BG_COLOR)
 
-    graphicsResWEntry = TTK.Entry(wtdeOptionsGraphics, width = 10, takefocus = False)
-    graphicsResWEntry.grid(row = 1, column = 1, padx = 5, pady = 5, sticky = 'w')
-    ToolTip(graphicsResWEntry, msg = RESOLUTION_W_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+    global graphicsGeneralSettings
+    graphicsGeneralSettings = Frame(wtdeOptionsGraphics, bg = BG_COLOR)
+    global graphicsGameplaySettings
+    graphicsGameplaySettings = Frame(wtdeOptionsGraphics, bg = BG_COLOR)
+    global graphicsInterfaceSettings
+    graphicsInterfaceSettings = Frame(wtdeOptionsGraphics, bg = BG_COLOR)
+    global graphicsAdvancedSettings
+    graphicsAdvancedSettings = Frame(wtdeOptionsGraphics, bg = BG_COLOR)
 
-    graphicsResXLabel = Label(wtdeOptionsGraphics, text = "X", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'center')
-    graphicsResXLabel.grid(row = 1, column = 2, pady = 5)
-    ToolTip(graphicsResXLabel, msg = RESOLUTION_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+    graphicsGeneralSettings.pack(fill = 'both', expand = 1)
+    graphicsGameplaySettings.pack(fill = 'both', expand = 1)
+    graphicsInterfaceSettings.pack(fill = 'both', expand = 1)
+    graphicsAdvancedSettings.pack(fill = 'both', expand = 1)
 
-    graphicsResHEntry = TTK.Entry(wtdeOptionsGraphics, width = 10, takefocus = False)
-    graphicsResHEntry.grid(row = 1, column = 3, padx = 5, pady = 5, sticky = 'w')
-    ToolTip(graphicsResHEntry, msg = RESOLUTION_H_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+    graphicsSettingsTabs.add(graphicsGeneralSettings, text = "General Options", image = ImageConst.GRAPHICS_GENERAL_ICON, compound = 'left')
+    graphicsSettingsTabs.add(graphicsGameplaySettings, text = "Gameplay Options", image = ImageConst.GRAPHICS_GAMEPLAY_ICON, compound = 'left')
+    graphicsSettingsTabs.add(graphicsInterfaceSettings, text = "Interface Options", image = ImageConst.GRAPHICS_INTERFACE_ICON, compound = 'left')
+    graphicsSettingsTabs.add(graphicsAdvancedSettings, text = "Advanced Graphics", image = ImageConst.GRAPHICS_ADVANCED_ICON, compound = 'left')
+    
+    # General Graphics Settings
+    class GraphicsSettings_General():
+        """ The General tab for the Graphics Settings. """
+        # Resolution Width & Height
+        RESOLUTION_TIP = "Set the resolution for the game window."
+        RESOLUTION_W_TIP = "Set the width (in pixels) for the game window."
+        RESOLUTION_H_TIP = "Set the height (in pixels) for the game window."
 
-    # Use Native Resolution
-    useNativeRes = StringVar()
-    NATIVE_RESOLUTION_TIP = "Use the native resolution of your primary monitor as the resolution the game will run at.\n" \
-                            "If this is ON, the resolution entered in the width and height boxes will be ignored."
-    graphicsUseNativeRes = TTK.Checkbutton(wtdeOptionsGraphics, text = f"Native Monitor Resolution ({get_screen_resolution()[0]} X {get_screen_resolution()[1]})", variable = useNativeRes, onvalue = '1', offvalue = '0', command = native_res_update)
-    graphicsUseNativeRes.grid(row = 2, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsUseNativeRes, msg = NATIVE_RESOLUTION_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        graphicsResLabel = Label(graphicsGeneralSettings, text = "Resolution:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsResLabel.grid(row = 0, column = 0, padx = 20, pady = 5)
+        ToolTip(graphicsResLabel, msg = RESOLUTION_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    # FPS Limit
-    fpsLimit = StringVar()
-    FPS_LIMIT_TIP = "Set the limit for the game's frame rate.\n\n" \
-                    "Setting this value will set the target frame rate that the game will try\n" \
-                    "to run at. Remember that if Vertical Sync (VSync) is turned ON,\n" \
-                    "it will override this and lock the framerate at 60 FPS!"
-    graphicsFPSLabel = Label(wtdeOptionsGraphics, text = "FPS Limit:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    graphicsFPSLabel.grid(row = 3, column = 0, padx = 20, pady = 5)
-    ToolTip(graphicsFPSLabel, msg = FPS_LIMIT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        graphicsResWEntry = TTK.Entry(graphicsGeneralSettings, width = 10, takefocus = False)
+        graphicsResWEntry.grid(row = 0, column = 1, padx = 5, pady = 5, sticky = 'w')
+        ToolTip(graphicsResWEntry, msg = RESOLUTION_W_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    graphicsFPSOptions = TTK.OptionMenu(wtdeOptionsGraphics, fpsLimit, *FPS_LIMITS)
-    graphicsFPSOptions.config(width = 10)
-    graphicsFPSOptions.grid(row = 3, column = 1, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsFPSOptions, msg = FPS_LIMIT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        graphicsResXLabel = Label(graphicsGeneralSettings, text = "X", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'center')
+        graphicsResXLabel.grid(row = 0, column = 2, pady = 5)
+        ToolTip(graphicsResXLabel, msg = RESOLUTION_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    # Use Vertical Sync
-    disableVSync = StringVar()
-    VSYNC_LIMIT_TIP = "Turn ON or OFF vertical sync. If this is ON, it will cap the game at\n" \
-                      "60 FPS, regardless of the set FPS limit. Helps aid screen tearing!"
-    graphicsUseVSync = TTK.Checkbutton(wtdeOptionsGraphics, text = "Use Vertical Sync", variable = disableVSync, onvalue = '0', offvalue = '1', command = fps_limit_update)
-    graphicsUseVSync.grid(row = 4, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsUseVSync, msg = VSYNC_LIMIT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        graphicsResHEntry = TTK.Entry(graphicsGeneralSettings, width = 10, takefocus = False)
+        graphicsResHEntry.grid(row = 0, column = 3, padx = 5, pady = 5, sticky = 'w')
+        ToolTip(graphicsResHEntry, msg = RESOLUTION_H_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    # Hit Sparks
-    hitSparks = StringVar()
-    HIT_SPARKS_TIP = "Turn ON or OFF sparks when notes are hit."
-    graphicsHitSparks = TTK.Checkbutton(wtdeOptionsGraphics, text = "Show Hit Sparks", variable = hitSparks, onvalue = '1', offvalue = '0')
-    graphicsHitSparks.grid(row = 5, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsHitSparks, msg = HIT_SPARKS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        # Use Native Resolution
+        useNativeRes = StringVar()
+        NATIVE_RESOLUTION_TIP = "Use the native resolution of your primary monitor as the resolution the game will run at.\n" \
+                                "If this is ON, the resolution entered in the width and height boxes will be ignored."
+        graphicsUseNativeRes = TTK.Checkbutton(graphicsGeneralSettings, text = f"Native Monitor Resolution ({get_screen_resolution()[0]} X {get_screen_resolution()[1]})", variable = useNativeRes, onvalue = '1', offvalue = '0', command = native_res_update)
+        graphicsUseNativeRes.grid(row = 1, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsUseNativeRes, msg = NATIVE_RESOLUTION_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    # Depth of Field
-    disableDOF = StringVar()
-    USE_DOF_TIP = "Turn ON or OFF depth of field. This makes background elements blurrier than those in the foreground."
-    graphicsDisableDOF = TTK.Checkbutton(wtdeOptionsGraphics, text = "Depth of Field", variable = disableDOF, onvalue = '0', offvalue = '1')
-    graphicsDisableDOF.grid(row = 6, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsDisableDOF, msg = USE_DOF_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        # FPS Limit
+        fpsLimit = StringVar()
+        FPS_LIMIT_TIP = "Set the limit for the game's frame rate.\n\n" \
+                        "Setting this value will set the target frame rate that the game will try\n" \
+                        "to run at. Remember that if Vertical Sync (VSync) is turned ON,\n" \
+                        "it will override this and lock the framerate at 60 FPS!\n\n" \
+                        "For unlimited FPS, set this to 0."
+        graphicsFPSLabel = Label(graphicsGeneralSettings, text = "FPS Limit:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsFPSLabel.grid(row = 2, column = 0, padx = 20, pady = 5)
+        ToolTip(graphicsFPSLabel, msg = FPS_LIMIT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    # Windowed Mode
-    windowedMode = StringVar()
-    WINDOWED_MODE_TIP = "Run the game in windowed mode."
-    graphicsWindowedMode = TTK.Checkbutton(wtdeOptionsGraphics, text = "Windowed Mode", variable = windowedMode, onvalue = '1', offvalue = '0')
-    graphicsWindowedMode.grid(row = 7, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsWindowedMode, msg = WINDOWED_MODE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        graphicsFPSLimitValue = TTK.Entry(graphicsGeneralSettings, width = 10, textvariable = fpsLimit)
+        graphicsFPSLimitValue.grid(row = 2, column = 1, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsFPSLimitValue, msg = FPS_LIMIT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    # Borderless Windowed
-    borderless = StringVar()
-    BORDERLESS_MODE_TIP = "Run the game in borderless windowed mode."
-    graphicsBorderlessWindowed = TTK.Checkbutton(wtdeOptionsGraphics, text = "Borderless Windowed", variable = borderless, onvalue = '1', offvalue = '0')
-    graphicsBorderlessWindowed.grid(row = 8, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsBorderlessWindowed, msg = BORDERLESS_MODE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        # Use Vertical Sync
+        disableVSync = StringVar()
+        VSYNC_LIMIT_TIP = "Turn ON or OFF vertical sync. If this is ON, it will cap the game at\n" \
+                        "60 FPS, regardless of the set FPS limit. Helps aid screen tearing!"
+        graphicsUseVSync = TTK.Checkbutton(graphicsGeneralSettings, text = "Use Vertical Sync", variable = disableVSync, onvalue = '0', offvalue = '1', command = fps_limit_update)
+        graphicsUseVSync.grid(row = 3, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsUseVSync, msg = VSYNC_LIMIT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    # Use Bloom
-    disableBloom = StringVar()
-    BLOOM_FX_TIP = "Turn ON or OFF bloom effects. This adds faint glows around bright elements in the scene."
-    graphicsDisableBloom = TTK.Checkbutton(wtdeOptionsGraphics, text = "Use Bloom", variable = disableBloom, onvalue = '0', offvalue = '1')
-    graphicsDisableBloom.grid(row = 9, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsDisableBloom, msg = BLOOM_FX_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        # Windowed Mode
+        windowedMode = StringVar()
+        WINDOWED_MODE_TIP = "Run the game in windowed mode."
+        graphicsWindowedMode = TTK.Checkbutton(graphicsGeneralSettings, text = "Windowed Mode", variable = windowedMode, onvalue = '1', offvalue = '0')
+        graphicsWindowedMode.grid(row = 4, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsWindowedMode, msg = WINDOWED_MODE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    # Use Color Filters
-    colorFilters = StringVar()
-    COLOR_FILTERS_TIP = "Turn ON or OFF color filters. These are filters primarily used in\n" \
-                        "Guitar Hero: Metallica."
-    graphicsColorFilters = TTK.Checkbutton(wtdeOptionsGraphics, text = "Use Color Filters", variable = colorFilters, onvalue = '1', offvalue = '0')
-    graphicsColorFilters.grid(row = 10, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsColorFilters, msg = COLOR_FILTERS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        # Borderless Windowed
+        borderless = StringVar()
+        BORDERLESS_MODE_TIP = "Run the game in borderless windowed mode."
+        graphicsBorderlessWindowed = TTK.Checkbutton(graphicsGeneralSettings, text = "Borderless Windowed", variable = borderless, onvalue = '1', offvalue = '0')
+        graphicsBorderlessWindowed.grid(row = 5, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsBorderlessWindowed, msg = BORDERLESS_MODE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+    
+    # Gameplay Graphics Settings
+    class GraphicsSettings_Gameplay():
+        """ The Gameplay tab for the Graphics Settings. """
+        # Hit Sparks
+        hitSparks = StringVar()
+        HIT_SPARKS_TIP = "Turn ON or OFF sparks when notes are hit."
+        graphicsHitSparks = TTK.Checkbutton(graphicsGameplaySettings, text = "Show Hit Sparks", variable = hitSparks, onvalue = '1', offvalue = '0')
+        graphicsHitSparks.grid(row = 0, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHitSparks, msg = HIT_SPARKS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Black Stage
+        blackStage = StringVar()
+        BLACK_STAGE_TIP = "Turn ON or OFF black stage. Makes the stage completely black and hides all band members."
+        graphicsBlackStage = TTK.Checkbutton(graphicsGameplaySettings, text = "Hide Stage/Black Stage", variable = blackStage, onvalue = '1', offvalue = '0')
+        graphicsBlackStage.grid(row = 1, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsBlackStage, msg = BLACK_STAGE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Hide Band
+        hideBand = StringVar()
+        HIDE_BAND_TIP = "Show or hide the band."
+        graphicsHideBand = TTK.Checkbutton(graphicsGameplaySettings, text = "Hide Band", variable = hideBand, onvalue = '1', offvalue = '0')
+        graphicsHideBand.grid(row = 2, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHideBand, msg = HIDE_BAND_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Hide Instruments
+        hideInstruments = StringVar()
+        HIDE_INSTRUMENTS_TIP = "Show or hide the band's instruments."
+        graphicsHideInstruments = TTK.Checkbutton(graphicsGameplaySettings, text = "Hide Instruments", variable = hideInstruments, onvalue = '1', offvalue = '0')
+        graphicsHideInstruments.grid(row = 3, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHideInstruments, msg = HIDE_INSTRUMENTS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Interface Graphics Settings
+    class GraphicsSettings_Interface():
+        """ The Interface tab for the Graphics Settings. """
+        # Note (Gem) Style
+        gemTheme = StringVar()
+        NOTE_STYLE_TIP = "Select the style of notes used on the highway."
+        graphicsNoteStyleLabel = Label(graphicsInterfaceSettings, text = "Note (Gem) Style:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsNoteStyleLabel.grid(row = 0, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsNoteStyleLabel, msg = NOTE_STYLE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsNoteStyle = TTK.OptionMenu(graphicsInterfaceSettings, gemTheme, *[""] + [name[0] for name in NOTE_STYLES])
+        graphicsNoteStyle.config(width = 25)
+        graphicsNoteStyle.grid(row = 0, column = 1, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsNoteStyle, msg = NOTE_STYLE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Note (Gem) Theme
+        gemColors = StringVar()
+        NOTE_THEME_TIP = "Select the color scheme for the notes on the highway."
+        graphicsNoteThemeLabel = Label(graphicsInterfaceSettings, text = "Note (Gem) Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsNoteThemeLabel.grid(row = 1, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsNoteThemeLabel, msg = NOTE_THEME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsNoteTheme = TTK.OptionMenu(graphicsInterfaceSettings, gemColors, *[""] + [name[0] for name in NOTE_THEMES])
+        graphicsNoteTheme.config(width = 25)
+        graphicsNoteTheme.grid(row = 1, column = 1, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsNoteTheme, msg = NOTE_THEME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Song Intro Style
+        songIntroStyle = StringVar()
+        INTRO_STYLE_TIP = "Select the style of intro shown on the top left corner of the\n" \
+                        "screen at the beginning of songs."
+        graphicsSongIntroStyleLabel = Label(graphicsInterfaceSettings, text = "Song Intro Style:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsSongIntroStyleLabel.grid(row = 2, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsSongIntroStyleLabel, msg = INTRO_STYLE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsSongIntroStyle = TTK.OptionMenu(graphicsInterfaceSettings, songIntroStyle, *[""] + [name[0] for name in INTRO_STYLES])
+        graphicsSongIntroStyle.config(width = 25)
+        graphicsSongIntroStyle.grid(row = 2, column = 1, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsSongIntroStyle, msg = INTRO_STYLE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Load Screen Theme
+        loadingTheme = StringVar()
+        LOAD_SCREEN_TIP = "The type of loading screen you wish to use."
+        graphicsLoadScreenLabel = Label(graphicsInterfaceSettings, text = "Load Screen Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsLoadScreenLabel.grid(row = 3, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsLoadScreenLabel, msg = LOAD_SCREEN_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsLoadScreen = TTK.OptionMenu(graphicsInterfaceSettings, loadingTheme, *[""] + [name[0] for name in LOADING_THEMES])
+        graphicsLoadScreen.config(width = 25)
+        graphicsLoadScreen.grid(row = 3, column = 1, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsLoadScreen, msg = LOAD_SCREEN_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # HUD/Interface Theme
+        hudTheme = StringVar()
+        HUD_THEME_TIP = "The style of the HUD (heads up display; user interface) shown on the screen during songs.\n\n" \
+                        "  •  GH World Tour + (Default): The standard Guitar Hero World Tour HUD, but adds a song\n" \
+                        "      progress bar above the score.\n" \
+                        "  •  GH World Tour: The default Guitar Hero World Tour interface.\n" \
+                        "  •  Guitar Hero Metallica: Uses the HUD layout used in Guitar Hero Metallica, including the\n" \
+                        "      multiplayer HUD layouts, result text when playing vocals, and the star counter!"
+        graphicsHUDThemeLabel = Label(graphicsInterfaceSettings, text = "HUD Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsHUDThemeLabel.grid(row = 4, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHUDThemeLabel, msg = HUD_THEME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsHUDTheme = TTK.OptionMenu(graphicsInterfaceSettings, hudTheme, *[""] + [name[0] for name in HUD_THEMES])
+        graphicsHUDTheme.config(width = 25)
+        graphicsHUDTheme.grid(row = 4, column = 1, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHUDTheme, msg = HUD_THEME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # User Helper Theme
+        helperPillTheme = StringVar()
+        USER_HELPER_TIP = "The style of the helper pills shown on the bottom center of the screen."
+        graphicsUserHelperLabel = Label(graphicsInterfaceSettings, text = "User Helper Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsUserHelperLabel.grid(row = 5, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsUserHelperLabel, msg = USER_HELPER_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsUserHelper = TTK.OptionMenu(graphicsInterfaceSettings, helperPillTheme, *[""] + [name[0] for name in USER_HELPER_THEMES])
+        graphicsUserHelper.config(width = 25)
+        graphicsUserHelper.grid(row = 5, column = 1, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsUserHelper, msg = USER_HELPER_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Tap Trail Theme
+        tapTrailTheme = StringVar()
+        TAP_TRAIL_TIP = "The style of the line that connects between tap notes."
+        graphicsTapTrailLabel = Label(graphicsInterfaceSettings, text = "Tap Trail Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsTapTrailLabel.grid(row = 6, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsTapTrailLabel, msg = TAP_TRAIL_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsTapTrail = TTK.OptionMenu(graphicsInterfaceSettings, tapTrailTheme, *[""] + [name[0] for name in TAP_TRAIL_THEMES])
+        graphicsTapTrail.config(width = 25)
+        graphicsTapTrail.grid(row = 6, column = 1, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsTapTrail, msg = TAP_TRAIL_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Hit Flame Theme
+        hitFlameTheme = StringVar()
+        HIT_FLAME_TIP = "The style of the flame that appears above the strike line when notes are hit successfully. Disabling these might be jarring to some players!"
+        graphicsHitFlameThemeLabel = Label(graphicsInterfaceSettings, text = "Hit Flame Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsHitFlameThemeLabel.grid(row = 7, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHitFlameThemeLabel, msg = HIT_FLAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsHitFlameTheme = TTK.OptionMenu(graphicsInterfaceSettings, hitFlameTheme, *[""] + [name[0] for name in HIT_FLAME_THEMES])
+        graphicsHitFlameTheme.config(width = 25)
+        graphicsHitFlameTheme.grid(row = 7, column = 1, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHitFlameTheme, msg = HIT_FLAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Use Sustain FX
+        sustainFX = StringVar()
+        USE_SUSTAIN_FX_TIP = "Turn ON or OFF the fizzles on the strike line when long notes are held down. Might be jarring to some players!"
+        graphicsSustainFX = TTK.Checkbutton(graphicsInterfaceSettings, text = "Use Sustain FX", variable = sustainFX, onvalue = '1', offvalue = '0')
+        graphicsSustainFX.grid(row = 8, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsSustainFX, msg = USE_SUSTAIN_FX_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Advanced Graphics Settings
+    class GraphicsSettings_Advanced():
+        """ The Advanced tab for the Graphics Settings. """
+        # Depth of Field
+        disableDOF = StringVar()
+        USE_DOF_TIP = "Turn ON or OFF depth of field. This makes background elements blurrier than those in the foreground."
+        graphicsDisableDOF = TTK.Checkbutton(graphicsAdvancedSettings, text = "Depth of Field", variable = disableDOF, onvalue = '0', offvalue = '1')
+        graphicsDisableDOF.grid(row = 0, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsDisableDOF, msg = USE_DOF_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Use Bloom
+        disableBloom = StringVar()
+        BLOOM_FX_TIP = "Turn ON or OFF bloom effects. This adds faint glows around bright elements in the scene."
+        graphicsDisableBloom = TTK.Checkbutton(graphicsAdvancedSettings, text = "Use Bloom", variable = disableBloom, onvalue = '0', offvalue = '1')
+        graphicsDisableBloom.grid(row = 1, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsDisableBloom, msg = BLOOM_FX_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Use Color Filters
+        colorFilters = StringVar()
+        COLOR_FILTERS_TIP = "Turn ON or OFF color filters. These are filters primarily used in\n" \
+                            "Guitar Hero: Metallica."
+        graphicsColorFilters = TTK.Checkbutton(graphicsAdvancedSettings, text = "Use Color Filters", variable = colorFilters, onvalue = '1', offvalue = '0')
+        graphicsColorFilters.grid(row = 2, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsColorFilters, msg = COLOR_FILTERS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Render Particles
+        renderParticles = StringVar()
+        RENDER_PARTICLES_TIP = "Turn ON or OFF rendering of particles. This includes things like fire, sparks, smoke, etc."
+        graphicsRenderParticles = TTK.Checkbutton(graphicsAdvancedSettings, text = "Render Particles", variable = renderParticles, onvalue = '1', offvalue = '0')
+        graphicsRenderParticles.grid(row = 3, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsRenderParticles, msg = RENDER_PARTICLES_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Render Level Geometry
+        renderGeoms = StringVar()
+        RENDER_GEOMETRY_TIP = "Turn ON or OFF rendering of level geometry, except level objects."
+        graphicsRenderGeoms = TTK.Checkbutton(graphicsAdvancedSettings, text = "Render Level Geometry", variable = renderGeoms, onvalue = '1', offvalue = '0')
+        graphicsRenderGeoms.grid(row = 4, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsRenderGeoms, msg = RENDER_GEOMETRY_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Render Instances
+        renderInstances = StringVar()
+        RENDER_INSTANCES_TIP = "Turn ON or OFF rendering of instances. Controls rendering of things like dynamic\n" \
+                            "and level objects. Also includes characters and anything that moves."
+        graphicsRenderInstances = TTK.Checkbutton(graphicsAdvancedSettings, text = "Render Instances", variable = renderInstances, onvalue = '1', offvalue = '0')
+        graphicsRenderInstances.grid(row = 5, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsRenderInstances, msg = RENDER_INSTANCES_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Draw Projectors
+        drawProjectors = StringVar()
+        DRAW_PROJECTORS_TIP = "Turn ON or OFF rendering of projectors. These are things like spotlight projectors that\n" \
+                            "show under characters and cast shadows."
+        graphicsDrawProjectors = TTK.Checkbutton(graphicsAdvancedSettings, text = "Draw Projectors", variable = drawProjectors, onvalue = '1', offvalue = '0')
+        graphicsDrawProjectors.grid(row = 6, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsDrawProjectors, msg = DRAW_PROJECTORS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Render 2D Items
+        render2D = StringVar()
+        RENDER_2D_TIP = "Turn ON or OFF rendering 2D items.\n\n" \
+                        "Note: If this is OFF, this disables rendering of ALL 2D elements, including the HUD and GUI!"
+        graphicsRender2D = TTK.Checkbutton(graphicsAdvancedSettings, text = "Render 2D Items", variable = render2D, onvalue = '1', offvalue = '0')
+        graphicsRender2D.grid(row = 7, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsRender2D, msg = RENDER_2D_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Render Screen FX
+        renderScreenFX = StringVar()
+        RENDER_SCREEN_FX_TIP = "Turn ON or OFF rendering of screen effects, such as bloom, depth of field, saturation, etc."
+        graphicsRenderScreenFX = TTK.Checkbutton(graphicsAdvancedSettings, text = "Render Screen FX", variable = renderScreenFX, onvalue = '1', offvalue = '0')
+        graphicsRenderScreenFX.grid(row = 8, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsRenderScreenFX, msg = RENDER_SCREEN_FX_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Apply Band Name
+        applyBandName = StringVar()
+        APPLY_BAND_NAME_TIP = "Applies the band's name to certain venue elements. Unless there are edge cases\n" \
+                            "where this causes crashes, this should be left enabled."
+        graphicsApplyBandName = TTK.Checkbutton(graphicsAdvancedSettings, text = "Apply Band Name", variable = applyBandName, onvalue = '1', offvalue = '0')
+        graphicsApplyBandName.grid(row = 9, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsApplyBandName, msg = APPLY_BAND_NAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Apply Band Name
+        applyBandLogo = StringVar()
+        APPLY_BAND_LOGO_TIP = "Applies the band's logo textures to certain venue elements. Unless there are edge cases\n" \
+                            "where this causes crashes, this should be left enabled."
+        graphicsApplyBandLogo = TTK.Checkbutton(graphicsAdvancedSettings, text = "Apply Band Logo", variable = applyBandLogo, onvalue = '1', offvalue = '0')
+        graphicsApplyBandLogo.grid(row = 10, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsApplyBandLogo, msg = APPLY_BAND_LOGO_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Enable Camera FOV Pulse (CamPulse)
+        enableCamPulse = StringVar()
+        ENABLE_CAM_PULSE_TIP = "Allows or disallows the camera pulse effect used by some songs."
+        graphicsEnableCamPulse = TTK.Checkbutton(graphicsAdvancedSettings, text = "Enable Camera FOV Pulse (CamPulse)", variable = enableCamPulse, onvalue = '1', offvalue = '0')
+        graphicsEnableCamPulse.grid(row = 11, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsEnableCamPulse, msg = ENABLE_CAM_PULSE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Time of Day Profile
+        defaultTODProfile = StringVar()
+        TOD_PROFILE_TIP = "This sets the default Time of Day profile in-game, which is the default post-processing effects.\n" \
+                        "In its essence, these are basically filter effects on the screen."
+        graphicsTODProfilesLabel = Label(graphicsAdvancedSettings, text = "Time of Day Profile:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsTODProfilesLabel.grid(row = 12, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsTODProfilesLabel, msg = TOD_PROFILE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsTODProfiles = TTK.OptionMenu(graphicsAdvancedSettings, defaultTODProfile, *[""] + [name[0] for name in TOD_PROFILES])
+        graphicsTODProfiles.config(width = 25)
+        graphicsTODProfiles.grid(row = 12, column = 1, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsTODProfiles, msg = TOD_PROFILE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Depth of Field Quality
+        dofQuality = StringVar()
+        DOF_QUALITY_TIP = "The quality level for depth of field effects."
+        graphicsDOFQualityLabel = Label(graphicsAdvancedSettings, text = "Depth of Field Quality:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsDOFQualityLabel.grid(row = 13, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsDOFQualityLabel, msg = DOF_QUALITY_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsDOFQuality = TTK.OptionMenu(graphicsAdvancedSettings, dofQuality, *[""] + [name[0] for name in DOF_QUALITIES])
+        graphicsDOFQuality.config(width = 25)
+        graphicsDOFQuality.grid(row = 13, column = 1, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsDOFQuality, msg = DOF_QUALITY_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Depth of Field Blur
+        dofBlur = StringVar()
+        DOF_BLUR_TIP = "The blurring factor used in depth of field. The higher the value, the more powerful the blur."
+        graphicsDOFBlurLabel = Label(graphicsAdvancedSettings, text = "Depth of Field Blur:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsDOFBlurLabel.grid(row = 14, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsDOFBlurLabel, msg = DOF_BLUR_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsDOFBlur = TTK.Spinbox(graphicsAdvancedSettings, increment = 1.0, from_= 0.0, to = 1000.0, textvariable = dofBlur, width = 10)
+        graphicsDOFBlur.grid(row = 14, column = 1, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsDOFBlur, msg = DOF_BLUR_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Flare Style
+        flareStyle = StringVar()
+        FLARE_STYLE_TIP = "The style of flares used in-game."
+        graphicsFlareStyleLabel = Label(graphicsAdvancedSettings, text = "Flare Style:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsFlareStyleLabel.grid(row = 15, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsFlareStyleLabel, msg = FLARE_STYLE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsFlareStyle = TTK.OptionMenu(graphicsAdvancedSettings, flareStyle, *[""] + [name[0] for name in FLARE_STYLES])
+        graphicsFlareStyle.config(width = 25)
+        graphicsFlareStyle.grid(row = 15, column = 1, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsFlareStyle, msg = FLARE_STYLE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Use Anti-Aliasing
-    antiAliasing = StringVar()
-    ANTI_ALIASING_TIP = "Turn ON or OFF anti-aliasing. The anti-aliasing used by GHWT is multi-sampling."
-    graphicsAntiAliasing = TTK.Checkbutton(wtdeOptionsGraphics, text = "Use Anti-Aliasing", variable = antiAliasing, onvalue = '1', offvalue = '0')
-    graphicsAntiAliasing.grid(row = 11, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsAntiAliasing, msg = ANTI_ALIASING_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Render Particles
-    renderParticles = StringVar()
-    RENDER_PARTICLES_TIP = "Turn ON or OFF rendering of particles. This includes things like fire, sparks, smoke, etc."
-    graphicsRenderParticles = TTK.Checkbutton(wtdeOptionsGraphics, text = "Render Particles", variable = renderParticles, onvalue = '1', offvalue = '0')
-    graphicsRenderParticles.grid(row = 12, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsRenderParticles, msg = RENDER_PARTICLES_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Render Level Geometry
-    renderGeoms = StringVar()
-    RENDER_GEOMETRY_TIP = "Turn ON or OFF rendering of level geometry, except level objects."
-    graphicsRenderGeoms = TTK.Checkbutton(wtdeOptionsGraphics, text = "Render Level Geometry", variable = renderGeoms, onvalue = '1', offvalue = '0')
-    graphicsRenderGeoms.grid(row = 13, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsRenderGeoms, msg = RENDER_GEOMETRY_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Render Instances
-    renderInstances = StringVar()
-    RENDER_INSTANCES_TIP = "Turn ON or OFF rendering of instances. Controls rendering of things like dynamic\n" \
-                           "and level objects. Also includes characters and anything that moves."
-    graphicsRenderInstances = TTK.Checkbutton(wtdeOptionsGraphics, text = "Render Instances", variable = renderInstances, onvalue = '1', offvalue = '0')
-    graphicsRenderInstances.grid(row = 14, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsRenderInstances, msg = RENDER_INSTANCES_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Draw Projectors
-    drawProjectors = StringVar()
-    DRAW_PROJECTORS_TIP = "Turn ON or OFF rendering of projectors. These are things like spotlight projectors that\n" \
-                          "show under characters and cast shadows."
-    graphicsDrawProjectors = TTK.Checkbutton(wtdeOptionsGraphics, text = "Draw Projectors", variable = drawProjectors, onvalue = '1', offvalue = '0')
-    graphicsDrawProjectors.grid(row = 15, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsDrawProjectors, msg = DRAW_PROJECTORS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Render 2D Items
-    render2D = StringVar()
-    RENDER_2D_TIP = "Turn ON or OFF rendering 2D items.\n\n" \
-                    "Note: If this is OFF, this disables rendering of ALL 2D elements, including the HUD and GUI!"
-    graphicsRender2D = TTK.Checkbutton(wtdeOptionsGraphics, text = "Render 2D Items", variable = render2D, onvalue = '1', offvalue = '0')
-    graphicsRender2D.grid(row = 16, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsRender2D, msg = RENDER_2D_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Render Screen FX
-    renderScreenFX = StringVar()
-    RENDER_SCREEN_FX_TIP = "Turn ON or OFF rendering of screen effects, such as bloom, depth of field, saturation, etc."
-    graphicsRenderScreenFX = TTK.Checkbutton(wtdeOptionsGraphics, text = "Render Screen FX", variable = renderScreenFX, onvalue = '1', offvalue = '0')
-    graphicsRenderScreenFX.grid(row = 17, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsRenderScreenFX, msg = RENDER_SCREEN_FX_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Black Stage
-    blackStage = StringVar()
-    BLACK_STAGE_TIP = "Turn ON or OFF black stage. Makes the stage completely black and hides all band members."
-    graphicsBlackStage = TTK.Checkbutton(wtdeOptionsGraphics, text = "Hide Stage/Black Stage", variable = blackStage, onvalue = '1', offvalue = '0')
-    graphicsBlackStage.grid(row = 18, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsBlackStage, msg = BLACK_STAGE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Hide Band
-    hideBand = StringVar()
-    HIDE_BAND_TIP = "Show or hide the band."
-    graphicsHideBand = TTK.Checkbutton(wtdeOptionsGraphics, text = "Hide Band", variable = hideBand, onvalue = '1', offvalue = '0')
-    graphicsHideBand.grid(row = 19, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsHideBand, msg = HIDE_BAND_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Hide Instruments
-    hideInstruments = StringVar()
-    HIDE_INSTRUMENTS_TIP = "Show or hide the band's instruments."
-    graphicsHideInstruments = TTK.Checkbutton(wtdeOptionsGraphics, text = "Hide Instruments", variable = hideInstruments, onvalue = '1', offvalue = '0')
-    graphicsHideInstruments.grid(row = 1, column = 4, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsHideInstruments, msg = HIDE_INSTRUMENTS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Apply Band Name
-    applyBandName = StringVar()
-    APPLY_BAND_NAME_TIP = "Applies the band's name to certain venue elements. Unless there are edge cases\n" \
-                          "where this causes crashes, this should be left enabled."
-    graphicsApplyBandName = TTK.Checkbutton(wtdeOptionsGraphics, text = "Apply Band Name", variable = applyBandName, onvalue = '1', offvalue = '0')
-    graphicsApplyBandName.grid(row = 2, column = 4, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsApplyBandName, msg = APPLY_BAND_NAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Apply Band Name
-    applyBandLogo = StringVar()
-    APPLY_BAND_LOGO_TIP = "Applies the band's logo textures to certain venue elements. Unless there are edge cases\n" \
-                          "where this causes crashes, this should be left enabled."
-    graphicsApplyBandLogo = TTK.Checkbutton(wtdeOptionsGraphics, text = "Apply Band Logo", variable = applyBandLogo, onvalue = '1', offvalue = '0')
-    graphicsApplyBandLogo.grid(row = 3, column = 4, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsApplyBandLogo, msg = APPLY_BAND_LOGO_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Note (Gem) Style
-    gemTheme = StringVar()
-    NOTE_STYLE_TIP = "Select the style of notes used on the highway."
-    graphicsNoteStyleLabel = Label(wtdeOptionsGraphics, text = "Note (Gem) Style:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    graphicsNoteStyleLabel.grid(row = 4, column = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsNoteStyleLabel, msg = NOTE_STYLE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    graphicsNoteStyle = TTK.OptionMenu(wtdeOptionsGraphics, gemTheme, *[""] + [name[0] for name in NOTE_STYLES])
-    graphicsNoteStyle.config(width = 25)
-    graphicsNoteStyle.grid(row = 4, column = 5, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsNoteStyle, msg = NOTE_STYLE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Note (Gem) Theme
-    gemColors = StringVar()
-    NOTE_THEME_TIP = "Select the color scheme for the notes on the highway."
-    graphicsNoteThemeLabel = Label(wtdeOptionsGraphics, text = "Note (Gem) Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    graphicsNoteThemeLabel.grid(row = 5, column = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsNoteThemeLabel, msg = NOTE_THEME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    graphicsNoteTheme = TTK.OptionMenu(wtdeOptionsGraphics, gemColors, *[""] + [name[0] for name in NOTE_THEMES])
-    graphicsNoteTheme.config(width = 25)
-    graphicsNoteTheme.grid(row = 5, column = 5, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsNoteTheme, msg = NOTE_THEME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Song Intro Style
-    songIntroStyle = StringVar()
-    INTRO_STYLE_TIP = "Select the style of intro shown on the top left corner of the\n" \
-                      "screen at the beginning of songs."
-    graphicsSongIntroStyleLabel = Label(wtdeOptionsGraphics, text = "Song Intro Style:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    graphicsSongIntroStyleLabel.grid(row = 6, column = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsSongIntroStyleLabel, msg = INTRO_STYLE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    graphicsSongIntroStyle = TTK.OptionMenu(wtdeOptionsGraphics, songIntroStyle, *[""] + [name[0] for name in INTRO_STYLES])
-    graphicsSongIntroStyle.config(width = 25)
-    graphicsSongIntroStyle.grid(row = 6, column = 5, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsSongIntroStyle, msg = INTRO_STYLE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    # Time of Day Profile
-    defaultTODProfile = StringVar()
-    TOD_PROFILE_TIP = "This sets the default Time of Day profile in-game, which is the default post-processing effects.\n" \
-                      "In its essence, these are basically filter effects on the screen."
-    graphicsTODProfilesLabel = Label(wtdeOptionsGraphics, text = "Time of Day Profile:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    graphicsTODProfilesLabel.grid(row = 7, column = 4, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsTODProfilesLabel, msg = TOD_PROFILE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
-
-    graphicsTODProfiles = TTK.OptionMenu(wtdeOptionsGraphics, defaultTODProfile, *[""] + [name[0] for name in TOD_PROFILES])
-    graphicsTODProfiles.config(width = 25)
-    graphicsTODProfiles.grid(row = 7, column = 5, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(graphicsTODProfiles, msg = TOD_PROFILE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+    # antiAliasing = StringVar()
+    # ANTI_ALIASING_TIP = "Turn ON or OFF anti-aliasing. The anti-aliasing used by GHWT is multi-sampling.\n\nWarning: It is heavily encouraged you DON'T enable this."
+    # graphicsAntiAliasing = TTK.Checkbutton(wtdeOptionsGraphics, text = "Use Anti-Aliasing", variable = antiAliasing, onvalue = '1', offvalue = '0', command = warn_antialias_select)
+    # graphicsAntiAliasing.grid(row = 11, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+    # ToolTip(graphicsAntiAliasing, msg = ANTI_ALIASING_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
 # Execute tab code.
 GraphicsSettings()
@@ -2276,17 +3152,61 @@ class BandSettings():
     \n
     This class is responsible for populating the Band Settings tab with the necessary widgets.
     """
+    # Load a character mod's folder name into the given entry box.
+    def load_character_mod_name(entry: Entry) -> None:
+        """ Load a character mod's folder name into the given entry box. """
+        # Find our MODS folder.
+        reset_working_directory()
+        config.clear()
+        config.read("Updater.ini")
+
+        charFolderPath = FD.askdirectory(title = 'Select Character Mod Folder', initialdir = f"{config.get('Updater', 'GameDirectory')}\\DATA\\MODS")
+
+        if (not charFolderPath): return
+
+        if (not OS.path.exists(f"{charFolderPath}\\character.ini")):
+            MSG.showerror("Not a Character Mod", "This is not a character mod!")
+            return
+
+        entry.delete(0, END)
+
+        entry.insert(END, charFolderPath.split("/")[-1])
+
+    # Load a highway mod's folder name into the given entry box.
+    def load_highway_mod_name(entry: Entry) -> None:
+        """ Load a highway mod's folder name into the given entry box. """
+        # Find our MODS folder.
+        reset_working_directory()
+        config.clear()
+        config.read("Updater.ini")
+
+        hwyFolderPath = FD.askdirectory(title = 'Select Highway Mod Folder', initialdir = f"{config.get('Updater', 'GameDirectory')}\\DATA\\MODS")
+
+        if (not hwyFolderPath): return
+
+        if (not OS.path.exists(f"{hwyFolderPath}\\highway.ini")):
+            MSG.showerror("Not a Highway Mod", "This is not a highway mod!")
+            return
+
+        entry.delete(0, END)
+
+        entry.insert(END, hwyFolderPath.split("/")[-1])
+
     # Title text with the purpose of the tab.
     BAND_SETTINGS_TITLE_TEXT = "Band Settings: Modify your preferred characters and venue for your band.\nHover over any option to see what it does!"
     bandTitleLabel = Label(wtdeOptionsBand, text = BAND_SETTINGS_TITLE_TEXT, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO_HEADER, justify = 'left', anchor = 'w')
     bandTitleLabel.grid(row = 0, column = 0, columnspan = 999, sticky = 'w')
 
+    SET_FOLDER_NAME_TIP = "Select a character mod folder to assign to this preferred band member."
+    SET_HWY_FOLDER_NAME_TIP = "Select a highway mod folder to assign to this preferred band member's highway."
+    SET_VNU_FOLDER_NAME_TIP = "Select a venue mod's INI file to assign to the default venue in the Venue Selector."
+
     # Preferred Guitarist
     GUITAR_PREFERRED_TIP = "Set the ID of the character to force as the active guitarist. Leave this blank to force no character.\n\n" \
                            "This value depends on what you want for your characters.\n" \
-                           "  •  For Rock Star Creator characters, use \"custom_character_x\", where x ranges from 0-19,\n" \
-                           "     defining which custom character to use. For instance, \"custom_character_0\" will use\n" \
-                           "     the first custom character made.\n" \
+                           "  •  For Rock Star Creator characters, use \"custom_character_x\", where x is the index of which\n" \
+                           "     custom character to use. For instance, \"custom_character_0\" will use the first custom\n" \
+                           "     character in alphabetical order by .car files in your Profiles folder.\n" \
                            "  •  For built-in WTDE characters, refer to the \"ID_Characters.txt\" file in the Resources\n" \
                            "     folder in your GHWT installation folder.\n" \
                            "  •  If you're using modded characters, use the FOLDER name of the character!\n\n" \
@@ -2299,12 +3219,16 @@ class BandSettings():
     bandPrefGuitarist.grid(row = 1, column = 1, padx = 10, pady = 5, sticky = 'w')
     ToolTip(bandPrefGuitarist, msg = GUITAR_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
+    bandPrefGuitaristOpenFile = TTK.Button(wtdeOptionsBand, width = 3, text = "...", command = lambda: BandSettings.load_character_mod_name(BandSettings.bandPrefGuitarist))
+    bandPrefGuitaristOpenFile.grid(row = 1, column = 2, pady = 5)
+    ToolTip(bandPrefGuitaristOpenFile, msg = SET_FOLDER_NAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
     # Preferred Bassist
-    BASS_PREFERRED_TIP = "Set the ID of the character to force as the active guitarist. Leave this blank to force no character.\n\n" \
+    BASS_PREFERRED_TIP = "Set the ID of the character to force as the active bassist. Leave this blank to force no character.\n\n" \
                          "This value depends on what you want for your characters.\n" \
-                         "  •  For Rock Star Creator characters, use \"custom_character_x\", where x ranges from 0-19,\n" \
-                         "     defining which custom character to use. For instance, \"custom_character_0\" will use\n" \
-                         "     the first custom character made.\n" \
+                         "  •  For Rock Star Creator characters, use \"custom_character_x\", where x is the index of which\n" \
+                         "     custom character to use. For instance, \"custom_character_0\" will use the first custom\n" \
+                         "     character in alphabetical order by .car files in your Profiles folder.\n" \
                          "  •  For built-in WTDE characters, refer to the \"ID_Characters.txt\" file in the Resources\n" \
                          "     folder in your GHWT installation folder.\n" \
                          "  •  If you're using modded characters, use the FOLDER name of the character!\n\n" \
@@ -2317,12 +3241,16 @@ class BandSettings():
     bandPrefBassist.grid(row = 2, column = 1, padx = 10, pady = 5, sticky = 'w')
     ToolTip(bandPrefBassist, msg = BASS_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
+    bandPrefBassistOpenFile = TTK.Button(wtdeOptionsBand, width = 3, text = "...", command = lambda: BandSettings.load_character_mod_name(BandSettings.bandPrefBassist))
+    bandPrefBassistOpenFile.grid(row = 2, column = 2, pady = 5)
+    ToolTip(bandPrefBassistOpenFile, msg = SET_FOLDER_NAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
     # Preferred Drummer
     DRUM_PREFERRED_TIP = "Set the ID of the character to force as the active drummer. Leave this blank to force no character.\n\n" \
                          "This value depends on what you want for your characters.\n" \
-                         "  •  For Rock Star Creator characters, use \"custom_character_x\", where x ranges from 0-19,\n" \
-                         "     defining which custom character to use. For instance, \"custom_character_0\" will use\n" \
-                         "     the first custom character made.\n" \
+                         "  •  For Rock Star Creator characters, use \"custom_character_x\", where x is the index of which\n" \
+                         "     custom character to use. For instance, \"custom_character_0\" will use the first custom\n" \
+                         "     character in alphabetical order by .car files in your Profiles folder.\n" \
                          "  •  For built-in WTDE characters, refer to the \"ID_Characters.txt\" file in the Resources\n" \
                          "     folder in your GHWT installation folder.\n" \
                          "  •  If you're using modded characters, use the FOLDER name of the character!\n\n" \
@@ -2335,16 +3263,21 @@ class BandSettings():
     bandPrefDrummer.grid(row = 3, column = 1, padx = 10, pady = 5, sticky = 'w')
     ToolTip(bandPrefDrummer, msg = DRUM_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
+    bandPrefDrummerOpenFile = TTK.Button(wtdeOptionsBand, width = 3, text = "...", command = lambda: BandSettings.load_character_mod_name(BandSettings.bandPrefDrummer))
+    bandPrefDrummerOpenFile.grid(row = 3, column = 2, pady = 5)
+    ToolTip(bandPrefDrummerOpenFile, msg = SET_FOLDER_NAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
     # Preferred Vocalist
     VOXS_PREFERRED_TIP = "Set the ID of the character to force as the active vocalist. Leave this blank to force no character.\n\n" \
                          "This value depends on what you want for your characters.\n" \
-                         "  •  For Rock Star Creator characters, use \"custom_character_x\", where x ranges from 0-19,\n" \
-                         "     defining which custom character to use. For instance, \"custom_character_0\" will use\n" \
-                         "     the first custom character made.\n" \
+                         "  •  For Rock Star Creator characters, use \"custom_character_x\", where x is the index of which\n" \
+                         "     custom character to use. For instance, \"custom_character_0\" will use the first custom\n" \
+                         "     character in alphabetical order by .car files in your Profiles folder.\n" \
                          "  •  For built-in WTDE characters, refer to the \"ID_Characters.txt\" file in the Resources\n" \
                          "     folder in your GHWT installation folder.\n" \
                          "  •  If you're using modded characters, use the FOLDER name of the character!\n\n" \
-                         "Remember! If someone else does NOT have a character that you have, they will be rendered as Axel Steel (GHWT) in-game as a placeholder. Modded characters in Online Career will crash the game."
+                         "Remember! If someone else does NOT have a character that you have, they will be rendered as Axel Steel (GHWT) in-game as a placeholder. Modded characters in Online Career will crash the game.\n\n" \
+                         "If you're using this on a song where the vocalist has a guitar, the guitar will still be visible!"
     bandPrefSingerLabel = Label(wtdeOptionsBand, text = "Preferred Singer:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
     bandPrefSingerLabel.grid(row = 4, column = 0, padx = 10, pady = 5, sticky = 'e')
     ToolTip(bandPrefSingerLabel, msg = VOXS_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
@@ -2353,15 +3286,19 @@ class BandSettings():
     bandPrefSinger.grid(row = 4, column = 1, padx = 10, pady = 5, sticky = 'w')
     ToolTip(bandPrefSinger, msg = VOXS_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
+    bandPrefSingerOpenFile = TTK.Button(wtdeOptionsBand, width = 3, text = "...", command = lambda: BandSettings.load_character_mod_name(BandSettings.bandPrefSinger))
+    bandPrefSingerOpenFile.grid(row = 4, column = 2, pady = 5)
+    ToolTip(bandPrefSingerOpenFile, msg = SET_FOLDER_NAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
     # Preferred Venue
-    VENUE_PREFERRED_TIP = "Set the venue you want to always use while in-game. If a venue you wish to\n" \
-                          "use isn't listed, type it in the box.\n\n" \
-                          "This also determines the default venue in the Venue Selector in Quickplay."
+    preferredStage = StringVar()
+    VENUE_PREFERRED_TIP = "Set the default venue in the Venue Selector in Quickplay."
     bandPrefStageLabel = Label(wtdeOptionsBand, text = "Preferred Venue:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
     bandPrefStageLabel.grid(row = 5, column = 0, padx = 10, pady = 5, sticky = 'e')
     ToolTip(bandPrefStageLabel, msg = VENUE_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    bandPrefStage = TTK.Combobox(wtdeOptionsBand, values = [ven[0] for ven in VENUES], width = 27)
+    bandPrefStage = TTK.OptionMenu(wtdeOptionsBand, preferredStage, *[ven[0] for ven in VENUES])
+    bandPrefStage.config(width = 25)
     bandPrefStage.grid(row = 5, column = 1, padx = 10, pady = 5, sticky = 'w')
     ToolTip(bandPrefStage, msg = VENUE_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
@@ -2370,36 +3307,54 @@ class BandSettings():
                                "For a list of highway IDs, see the \"ID_Highways.txt\" file in your Resources folder.\n\n" \
                                "For modded highways, this is the folder name of the highway mod."
     bandPrefGuitaristHwyLabel = Label(wtdeOptionsBand, text = "                    Preferred Guitarist Highway:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    bandPrefGuitaristHwyLabel.grid(row = 1, column = 2, padx = 10, pady = 5, sticky = 'e')
+    bandPrefGuitaristHwyLabel.grid(row = 1, column = 3, padx = 10, pady = 5, sticky = 'e')
     ToolTip(bandPrefGuitaristHwyLabel, msg = GUITAR_HWY_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     bandPrefGuitaristHwy = TTK.Entry(wtdeOptionsBand, width = 30)
-    bandPrefGuitaristHwy.grid(row = 1, column = 3, pady = 5, sticky = 'w')
+    bandPrefGuitaristHwy.grid(row = 1, column = 4, pady = 5, sticky = 'w')
     ToolTip(bandPrefGuitaristHwy, msg = GUITAR_HWY_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    bandPrefGuitaristHwyOpenFile = TTK.Button(wtdeOptionsBand, width = 3, text = "...", command = lambda: BandSettings.load_highway_mod_name(BandSettings.bandPrefGuitaristHwy))
+    bandPrefGuitaristHwyOpenFile.grid(row = 1, column = 5, padx = 10, pady = 5)
+    ToolTip(bandPrefGuitaristHwyOpenFile, msg = SET_HWY_FOLDER_NAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Preferred Bassist Highway
     BASS_HWY_PREFERRED_TIP = "Set the preferred highway that the bassist will use.\n\n" \
                              "For a list of highway IDs, see the \"ID_Highways.txt\" file in your Resources folder.\n\n" \
                              "For modded highways, this is the folder name of the highway mod."
     bandPrefBassistHwyLabel = Label(wtdeOptionsBand, text = "                    Preferred Bassist Highway:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    bandPrefBassistHwyLabel.grid(row = 2, column = 2, padx = 10, pady = 5, sticky = 'e')
+    bandPrefBassistHwyLabel.grid(row = 2, column = 3, padx = 10, pady = 5, sticky = 'e')
     ToolTip(bandPrefBassistHwyLabel, msg = BASS_HWY_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     bandPrefBassistHwy = TTK.Entry(wtdeOptionsBand, width = 30)
-    bandPrefBassistHwy.grid(row = 2, column = 3, pady = 5, sticky = 'w')
+    bandPrefBassistHwy.grid(row = 2, column = 4, pady = 5, sticky = 'w')
     ToolTip(bandPrefBassistHwy, msg = BASS_HWY_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    bandPrefBassistHwyOpenFile = TTK.Button(wtdeOptionsBand, width = 3, text = "...", command = lambda: BandSettings.load_highway_mod_name(BandSettings.bandPrefBassistHwy))
+    bandPrefBassistHwyOpenFile.grid(row = 2, column = 5, padx = 10, pady = 5)
+    ToolTip(bandPrefBassistHwyOpenFile, msg = SET_HWY_FOLDER_NAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Preferred Drummer Highway
     DRUM_HWY_PREFERRED_TIP = "Set the preferred highway that the drummer will use.\n\n" \
                              "For a list of highway IDs, see the \"ID_Highways.txt\" file in your Resources folder.\n\n" \
                              "For modded highways, this is the folder name of the highway mod."
     bandPrefDrummerHwyLabel = Label(wtdeOptionsBand, text = "                    Preferred Drummer Highway:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    bandPrefDrummerHwyLabel.grid(row = 3, column = 2, padx = 10, pady = 5, sticky = 'e')
+    bandPrefDrummerHwyLabel.grid(row = 3, column = 3, padx = 10, pady = 5, sticky = 'e')
     ToolTip(bandPrefDrummerHwyLabel, msg = DRUM_HWY_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     bandPrefDrummerHwy = TTK.Entry(wtdeOptionsBand, width = 30)
-    bandPrefDrummerHwy.grid(row = 3, column = 3, pady = 5, sticky = 'w')
+    bandPrefDrummerHwy.grid(row = 3, column = 4, pady = 5, sticky = 'w')
     ToolTip(bandPrefDrummerHwy, msg = DRUM_HWY_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    bandPrefDrummerHwyOpenFile = TTK.Button(wtdeOptionsBand, width = 3, text = "...", command = lambda: BandSettings.load_highway_mod_name(BandSettings.bandPrefDrummerHwy))
+    bandPrefDrummerHwyOpenFile.grid(row = 3, column = 5, padx = 10, pady = 5)
+    ToolTip(bandPrefDrummerHwyOpenFile, msg = SET_HWY_FOLDER_NAME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Rock Star Creator Manager
+    CAR_MANAGER_TIP = "Manage installed custom characters made through the in-game character editor."
+    bandCARManagerOpen = TTK.Button(wtdeOptionsBand, text = "Rock Star Creator (CAR) Manager...", width = 45, command = wtde_manage_rsc)
+    bandCARManagerOpen.grid(row = 4, column = 3, columnspan = 3, pady = 5, padx = 10)
+    ToolTip(bandCARManagerOpen, msg = CAR_MANAGER_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Guitar Strum Animations
     guitarStrumAnim = StringVar()
@@ -2457,7 +3412,7 @@ class AutoLaunch():
             for (widget) in (autoP2SettingsFrame.grid_slaves()): widget.configure(state = 'disabled')
             for (widget) in (autoP3SettingsFrame.grid_slaves()): widget.configure(state = 'disabled')
             for (widget) in (autoP4SettingsFrame.grid_slaves()): widget.configure(state = 'disabled')
-            
+
     # Title text with the purpose of the tab.
     AUTO_SETTINGS_TITLE_TEXT = "Auto Launch Settings: Set up the game to automatically load into a song of your choice.\nHover over any option to see what it does!"
     autoTitleLabel = Label(wtdeOptionsAutoLaunch, text = AUTO_SETTINGS_TITLE_TEXT, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO_HEADER, justify = 'left', anchor = 'w')
@@ -2515,6 +3470,37 @@ class AutoLaunch():
                 for (widget) in (autoP3SettingsFrame.grid_slaves()): widget.configure(state = 'disabled')
                 for (widget) in (autoP4SettingsFrame.grid_slaves()): widget.configure(state = 'disabled')
 
+        # Get song mod checksum.
+        def auto_get_checksum() -> None:
+            """ Update the Song checksum box with a given checksum. """
+            reset_working_directory()
+
+            config.read('Updater.ini')
+            modsDir = f"{config.get('Updater', 'GameDirectory')}\\DATA\\MODS"
+
+            iniFile = FD.askopenfilename(title = "Select song.ini File", initialdir = modsDir, filetypes = [("song.ini Files", "song.ini"), ("All Files", "*.*")])
+
+            if (not iniFile):
+                root.focus_force()
+                return
+
+            try:
+                config.clear()
+
+                config.read(iniFile)
+
+                songChecksum = config.get('SongInfo', 'Checksum')
+
+                AutoLaunch.AutoLaunch_General.autoSongIDEntry.delete(0, END)
+                AutoLaunch.AutoLaunch_General.autoSongIDEntry.insert(0, songChecksum)
+
+            except Exception as excep:
+                debug_add_entry(f"[Auto Launch Settings] Error reading checksum: {excep}")
+
+                root.focus_force()
+
+                return
+
         # Auto Launch Settings frame.
         autoSettingsFrame = Frame(wtdeOptionsAutoLaunch, bg = BG_COLOR)
         autoSettingsFrame.pack(fill = 'x', anchor = 'n', pady = 5)
@@ -2532,7 +3518,7 @@ class AutoLaunch():
 
         # ================== SPACER ================== #
         autoSettingsSpacer1 = Label(autoSettingsFrame, bg = BG_COLOR, text = "")
-        autoSettingsSpacer1.grid(row = 1, column = 1, padx = 30)
+        autoSettingsSpacer1.grid(row = 1, column = 1, padx = 20)
 
         # Number of Players
         global autoPlayerCount
@@ -2550,7 +3536,7 @@ class AutoLaunch():
 
         # ================== SPACER ================== #
         autoSettingsSpacer2 = Label(autoSettingsFrame, bg = BG_COLOR, text = "")
-        autoSettingsSpacer2.grid(row = 1, column = 4, padx = 30)
+        autoSettingsSpacer2.grid(row = 1, column = 4, padx = 10)
 
         # Venue Selector
         VENUE_SELECTION_TIP = "Select the venue you want to use."
@@ -2560,24 +3546,30 @@ class AutoLaunch():
         ToolTip(autoVenueSelectLabel, msg = VENUE_SELECTION_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
         autoVenue = StringVar()
-        autoVenueSelect = TTK.Combobox(autoSettingsFrame, width = 25, values = [ven[0] for ven in VENUES], textvariable = autoVenue)
+        autoVenueSelect = TTK.OptionMenu(autoSettingsFrame, autoVenue, *[ven[0] for ven in VENUES])
+        autoVenueSelect.config(width = 25)
         autoVenueSelect.grid(row = 1, column = 6, padx = 10, pady = 5)
         ToolTip(autoVenueSelect, msg = VENUE_SELECTION_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
         # ================== SPACER ================== #
         autoSettingsSpacer3 = Label(autoSettingsFrame, bg = BG_COLOR, text = "")
-        autoSettingsSpacer3.grid(row = 1, column = 7, padx = 20)
+        autoSettingsSpacer3.grid(row = 1, column = 8, padx = 10)
 
         # Song Checksum
-        SONG_ID_TIP = "The checksum of the song to boot into."
+        SONG_ID_TIP = "The checksum of the song to boot into. If you're unsure, select the triple dot (...) button to select a song.ini file for the desired song mod, and read its checksum."
         autoSongIDLabel = Label(autoSettingsFrame, text = "Song:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-        autoSongIDLabel.grid(row = 1, column = 8, pady = 5, sticky = 'e')
+        autoSongIDLabel.grid(row = 1, column = 9, pady = 5, sticky = 'e')
         ToolTip(autoSongIDLabel, msg = SONG_ID_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
         autoSongID = StringVar()
         autoSongIDEntry = TTK.Entry(autoSettingsFrame, width = 25, takefocus = False, textvariable = autoSongID)
-        autoSongIDEntry.grid(row = 1, column = 9, padx = 10, pady = 5, sticky = 'w')
+        autoSongIDEntry.grid(row = 1, column = 10, padx = 10, pady = 5, sticky = 'w')
         ToolTip(autoSongIDEntry, msg = SONG_ID_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        AUTO_INI_CHOOSER_TIP = "Select a song.ini file for a song mod to get the checksum of."
+        autoSongINIChooser = TTK.Button(autoSettingsFrame, width = 3, text = "...", command = auto_get_checksum)
+        autoSongINIChooser.grid(row = 1, column = 11)
+        ToolTip(autoSongINIChooser, msg = AUTO_INI_CHOOSER_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
         # ===========================================================================================================
         # Auto Launch Player Settings
@@ -2922,8 +3914,114 @@ class DebugSettings():
     debugShowWarnings.place(x = 20, y = 324)
     ToolTip(debugShowWarnings, msg = SHOW_WARNS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
+    # Fix Fast Textures
+    fixFastTextures = StringVar()
+    FIX_FAST_TEXTURES_TIP = "Toggles a faster implementation of non-DDS textures. Only disable this in edge cases when encountering graphical crashes (e.g. loading custom character photo images)."
+    debugFixFastTextures = TTK.Checkbutton(wtdeOptionsDebug, text = "Fix Fast Textures", variable = fixFastTextures, onvalue = '1', offvalue = '0')
+    debugFixFastTextures.place(x = 20, y = 355)
+    ToolTip(debugFixFastTextures, msg = FIX_FAST_TEXTURES_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Hide Bind Warning
+    bindWarningShown = StringVar()
+    HIDE_BIND_WARNING_TIP = "Hides the controller bind warning upon startup."
+    debugBindWarningShown = TTK.Checkbutton(wtdeOptionsDebug, text = "Hide Bind Warning", variable = bindWarningShown, onvalue = '1', offvalue = '0')
+    debugBindWarningShown.place(x = 20, y = 386)
+    ToolTip(debugBindWarningShown, msg = HIDE_BIND_WARNING_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Quick Debug
+    quickDebug = StringVar()
+    QUICK_DEBUG_TIP = "Enables extra measures for faster debugging, such as the ability to use SHIFT + 1 to open a quick debugging menu mid-song."
+    debugQuickDebug = TTK.Checkbutton(wtdeOptionsDebug, text = "Quick Debug", variable = quickDebug, onvalue = '1', offvalue = '0')
+    debugQuickDebug.place(x = 20, y = 417)
+    ToolTip(debugQuickDebug, msg = QUICK_DEBUG_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Print Loaded PAK Assets
+    printLoadedAssets = StringVar()
+    PRINT_LOADED_ASSETS_TIP = "When enabled, this will write every loaded PAK asset into debug.txt."
+    debugPrintLoadedAssets = TTK.Checkbutton(wtdeOptionsDebug, text = "Print Loaded PAK Assets", variable = printLoadedAssets, onvalue = '1', offvalue = '0')
+    debugPrintLoadedAssets.place(x = 20, y = 448)
+    ToolTip(debugPrintLoadedAssets, msg = PRINT_LOADED_ASSETS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Print Opened Files
+    printCreateFile = StringVar()
+    PRINT_CREATE_FILE_TIP = "When enabled, this will write every file that the game attempts to open into debug.txt."
+    debugPrintCreateFile = TTK.Checkbutton(wtdeOptionsDebug, text = "Print Opened Files", variable = printCreateFile, onvalue = '1', offvalue = '0')
+    debugPrintCreateFile.place(x = 20, y = 479)
+    ToolTip(debugPrintCreateFile, msg = PRINT_CREATE_FILE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Hide Rock Star Creator Notice
+    casNoticeShown = StringVar()
+    CAS_NOTICE_SHOWN_TIP = "Hides the notice shown when entering the Rock Star Creator, warning about how modded characters will not appear there."
+    debugCASNoticeShown = TTK.Checkbutton(wtdeOptionsDebug, text = "Hide Rock Star Creator Notice", variable = casNoticeShown, onvalue = '1', offvalue = '0')
+    debugCASNoticeShown.place(x = 20, y = 510)
+    ToolTip(debugCASNoticeShown, msg = CAS_NOTICE_SHOWN_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
 # Execute tab code.
 DebugSettings()
+
+# ===========================================================================================================
+# INI Editor Tab
+# 
+# Used to freely edit the GHWTDE.ini file.
+# ===========================================================================================================
+# Main INIEditor class.
+class INIEditor():
+    """
+    INI Editor tab.
+    \n
+    This class is responsible for creating the widgets on the screen for the INI Editor tab.
+    """
+    # Save INI file contents.
+    def save_ini_data(text: Text) -> None:
+        """ Save the contents of GHWTDE.ini to the disk. """
+        OS.chdir(wtde_find_config())
+
+        with (open("GHWTDE.ini", 'w')) as iniFile: iniFile.write(text.get(1.0, END))
+
+        reset_working_directory()
+
+    # Load INI file contents.
+    def load_ini_data(text: Text) -> None:
+        """ Load the contents of GHWTDE.ini into the text editor. """
+        OS.chdir(wtde_find_config())
+
+        iniFile = open("GHWTDE.ini", 'r')
+        text.delete(1.0, END)
+        text.insert(END, iniFile.read())
+
+        reset_working_directory()
+
+    # Title text with the purpose of the tab.
+    INI_EDITOR_TITLE_TEXT = "INI Editor: Make direct changes to GHWTDE.ini directly from the launcher.\nHover over any option to see what it does!"
+    iniTitleLabel = Label(wtdeOptionsINIEdit, text = INI_EDITOR_TITLE_TEXT, bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO_HEADER, justify = 'left', anchor = 'w')
+    iniTitleLabel.pack(fill = 'x', anchor = 'nw')
+
+    # Editor commands.
+    iniEditorCommandsFrame = Frame(wtdeOptionsINIEdit, bg = BG_COLOR)
+    iniEditorCommandsFrame.pack(fill = 'x', pady = 5)
+
+    # Refresh INI
+    REFRESH_INI_TIP = "Reload the contents of GHWTDE.ini into the editor."
+    iniEditorRefreshINI = TTK.Button(iniEditorCommandsFrame, width = 20, text = "Refresh INI", command = lambda: INIEditor.load_ini_data(INIEditor.iniEditorText))
+    iniEditorRefreshINI.grid(row = 0, column = 0, padx = 10)
+    ToolTip(iniEditorRefreshINI, msg = REFRESH_INI_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Save INI
+    SAVE_INI_TIP = "Save the contents of GHWTDE.ini to the disk."
+    iniEditorSaveINI = TTK.Button(iniEditorCommandsFrame, width = 20, text = "Save INI", command = lambda: INIEditor.save_ini_data(INIEditor.iniEditorText))
+    iniEditorSaveINI.grid(row = 0, column = 1, padx = 10)
+    ToolTip(iniEditorSaveINI, msg = SAVE_INI_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    iniEditorText = Text(wtdeOptionsINIEdit, wrap = 'word', undo = True, font = FONT_INFO_CODE)
+    iniEditorText.pack(side = 'left', fill = 'both', expand = 1)
+
+    iniEditorScrollbar = TTK.Scrollbar(wtdeOptionsINIEdit, orient = 'vertical', command = iniEditorText.yview)
+    iniEditorScrollbar.pack(side = 'right', fill = 'y')
+    iniEditorText.config(yscrollcommand = iniEditorScrollbar.set)
+    load_ini_data(iniEditorText)
+
+# Execute tab code.
+INIEditor()
 
 # ===========================================================================================================
 # Credits Tab
@@ -2953,7 +4051,7 @@ class CreditsTab():
     creditsMembersFrame.pack(fill = 'x', anchor = 'center', padx = 120)
 
     # Add the names of the members of the WTDE team into the frame.
-    wtde_add_credits(creditsMembersFrame, resource_path('res/WTDECreditsNames.csv'))
+    wtde_add_credits(creditsMembersFrame, resource_path('res/WTDECreditsNames.csv'), 15)
 
     # Second line of credits text.
     TAB_CREDITS_TEXT2 = "A special thanks to our development testers and of course, all of you, the players, modders, content creators, and everything in between!\n\n" \
@@ -2980,8 +4078,8 @@ class CreditsTab():
     creditsWTDEDiscord.grid(row = 0, column = 1, padx = SOCIAL_BUTTON_PADX)
 
     # WTDE Twitter
-    creditsWTDETwitter = TTK.Button(creditsSocialsFrame, text = "GHWT: DE Twitter", width = SOCIAL_BUTTON_WIDTH, command = lambda: WEB.open("https://twitter.com/ghwtde"), takefocus = False)
-    creditsWTDETwitter.grid(row = 0, column = 2, padx = SOCIAL_BUTTON_PADX)
+    # creditsWTDETwitter = TTK.Button(creditsSocialsFrame, text = "GHWT: DE Twitter", width = SOCIAL_BUTTON_WIDTH, command = lambda: WEB.open("https://twitter.com/ghwtde"), takefocus = False)
+    # creditsWTDETwitter.grid(row = 0, column = 2, padx = SOCIAL_BUTTON_PADX)
 
     # Fretworks GitGud
     creditsFretworksGit = TTK.Button(creditsSocialsFrame, text = "Fretworks GitGud", width = SOCIAL_BUTTON_WIDTH, command = lambda: WEB.open("https://gitgud.io/fretworks"), takefocus = False)
@@ -3003,6 +4101,16 @@ wtde_verify_config()
 debug_add_entry("[BS4, ConfigParser] Importing GHWT: DE settings...")
 wtde_load_config()
 
+# Direct focus to the window.
+root.focus_force()
+
+# Check for any updates.
+wtde_check_for_updates()
+
+# Load all mod data into the Mod Manager.
+debug_add_entry("[Mod Manager] Populating mod manager...")
+wtde_get_mods(root, modTree, modManagerStatus)
+
 # Enter main loop.
 debug_add_entry("[Tk] Entering main loop.")
 root.mainloop()
@@ -3010,5 +4118,5 @@ root.mainloop()
 debug_add_entry("[Tk] Exited main loop of Tk; program was closed!")
 
 # Save debug log.
-debug_add_entry("[exit] Saving debug log in working directory as dbg_launcher.txt")
+debug_add_entry(f"[exit] Saving debug log in working directory as dbg_launcher.txt; {len(debugLog)} lines written")
 save_debug()

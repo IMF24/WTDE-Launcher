@@ -1,0 +1,3 @@
+# Ignore spec files and dist folder
+*.spec
+dist/
