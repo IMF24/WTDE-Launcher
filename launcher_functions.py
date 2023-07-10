@@ -33,12 +33,24 @@ import hashlib as HASH
 config = CF.ConfigParser(comment_prefixes = ("#", ";"), allow_no_value = True, strict = False)
 config.optionxform = str
 
+# Set up SYS.stdout to be written to a text file.
+if (not OS.path.exists(f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour Definitive Edition\\Logs")):
+    myGamesFolder = f"{WS.my_documents()}\\My Games"
+    ghwtdeFolder = f"\\Guitar Hero World Tour Definitive Edition"
+    logsFolder = "\\Logs"
+
+    if (not OS.path.exists(myGamesFolder)): OS.mkdir(myGamesFolder)
+
+    if (not OS.path.exists(OS.path.join(myGamesFolder, ghwtdeFolder))): OS.mkdir(OS.path.join(myGamesFolder, ghwtdeFolder))
+
+    if (not OS.path.exists(OS.path.join(myGamesFolder, ghwtdeFolder, logsFolder))): OS.mkdir(OS.path.join(myGamesFolder, ghwtdeFolder, logsFolder))
+
 SYS.stdout = open(f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour Definitive Edition\\Logs\\debug_launcher.txt", 'w')
 
 print("-------------------------------------------\n" \
      f"GHWT: DE Launcher++ Debug Log - V{VERSION}\n" \
      f"Date of Execution: {datetime.now()}\n" \
-     "-------------------------------------------")
+      "-------------------------------------------")
 
 # The debug log. Used by the ++ launcher for debugging purposes.
 global debugLog
