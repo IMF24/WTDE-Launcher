@@ -19,9 +19,26 @@ A completely redesigned launcher for GH World Tour: Definitive Edition, based of
 """
 # DEBUG: Print the debug header. For personal use in debugging the program!
 from cmd_colors import *
-print(f"{RED}-----------------------------------------------{WHITE}")
-print(f"{LIGHT_RED}WTDE LAUNCHER++ DEBUG CONSOLE{WHITE}")
-print(f"{RED}-----------------------------------------------{WHITE}")
+import sys as SYS
+
+# Process command line arguments!
+args = SYS.argv
+
+# Run in debug mode or not.
+global allowDebugMode
+if ("-d" or "--debug") in (args):
+    allowDebugMode = True
+    header1 = BLUE
+    header2 = LIGHT_BLUE
+else:
+    allowDebugMode = False
+    header1 = RED
+    header2 = LIGHT_RED
+
+print(f"{header1}-----------------------------------------------{WHITE}")
+print(f"{header2}WTDE LAUNCHER++ DEBUG CONSOLE{WHITE}")
+if (allowDebugMode): print(f"{header2}DEBUG MODE ENABLED{WHITE}")
+print(f"{header1}-----------------------------------------------{WHITE}")
 
 # Import required modules.
 from tkinter import *
@@ -34,7 +51,6 @@ from launcher_constants import *
 from PIL import Image, ImageTk
 import webbrowser as WEB
 import os as OS
-import sys as SYS
 import hashlib as HASH
 
 debug_add_entry("[init] All modules imported!")
@@ -1204,13 +1220,15 @@ def note_info(mode: str, gemProperty: str, value: str) -> str:
 # Sets up the root window of the GHWT: DE Launcher++.
 # ===========================================================================================================
 # Show the splash screen before we create the actual window.
+print("Displaying intro splash screen, neat")
 intro_splash()
 
 # Set up root window.
 debug_add_entry("[init] Setting up Tk widget root...")
 
 root = Tk()
-root.title(TITLE)
+if (not allowDebugMode): root.title(TITLE)
+else: root.title(f"{TITLE} - Debug Mode Enabled")
 root.iconbitmap(resource_path("res/icon.ico"))
 root.geometry(f"1080x718+{get_screen_resolution()[0] // 5}+{get_screen_resolution()[1] // 8}")
 
@@ -1344,6 +1362,7 @@ wtdeOptionsRoot.place(x = 186, y = 0)
 
 # Various WTDE commands.
 # Edit the background color on the buttons and notebook.
+print("Styling the root window")
 TTK.Style().configure("TButton", background = BG_COLOR)
 TTK.Style().configure("TNotebook", background = '#0B101F', tabposition = 'nw')
 TTK.Style().configure("TCheckbutton", background = BG_COLOR, foreground = FG_COLOR)
@@ -1474,9 +1493,15 @@ class MenuClass():
     gameMenu = Menu(topMenu, tearoff = False, activebackground = MENU_HOVER, activeforeground = '#000000')
     gameMenu.add_command(label = " Run GHWT: DE", image = ImageConst.RUN_WTDE_ICON, compound = 'left', command = wtde_run_game)
 
+    # ======= DEBUG MENU ======= #
+    debugMenu = Menu(topMenu, tearoff = False, activebackground = MENU_HOVER, activeforeground = '#000000')
+
     topMenu.add_cascade(menu = fileMenu, label = "File")
     topMenu.add_cascade(menu = modsMenu, label = "Mods")
     topMenu.add_cascade(menu = gameMenu, label = "Game")
+    if (allowDebugMode): topMenu.add_cascade(menu = debugMenu, label = "Debug")
+
+    
 
 # ===========================================================================================================
 # GHWT: DE News
@@ -4162,4 +4187,4 @@ debug_add_entry("[Tk] Exited main loop of Tk; program was closed!")
 
 # Save debug log.
 debug_add_entry(f"[exit] Saving debug log in working directory as dbg_launcher.txt; {len(debugLog)} lines written")
-save_debug()
+SYS.stdout.close()

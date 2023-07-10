@@ -33,6 +33,13 @@ import hashlib as HASH
 config = CF.ConfigParser(comment_prefixes = ("#", ";"), allow_no_value = True, strict = False)
 config.optionxform = str
 
+SYS.stdout = open(f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour Definitive Edition\\Logs\\debug_launcher.txt", 'w')
+
+print("-------------------------------------------\n" \
+     f"GHWT: DE Launcher++ Debug Log - V{VERSION}\n" \
+     f"Date of Execution: {datetime.now()}\n" \
+     "-------------------------------------------")
+
 # The debug log. Used by the ++ launcher for debugging purposes.
 global debugLog
 debugLog: list[str] = []
@@ -64,7 +71,7 @@ def intro_splash() -> None:
 # Debug Functions
 # ===========================================================================================================
 # Save debug log.
-def save_debug(use: bool = True, filename: str = "debug_launcher") -> str:
+def save_debug(use: bool = True, filename: str = "debug_launcher.txt") -> str:
     """ Save the debug log for the program's activity inside a log file. Saved as a `.txt` file. """
     if (use):
         reset_working_directory()
@@ -78,14 +85,15 @@ def save_debug(use: bool = True, filename: str = "debug_launcher") -> str:
         try:
             print("Debug logging enabled; writing debug log file.")
 
-            with (open(f"{filename}.txt", 'w')) as dbg:
+            with (open(filename, 'w')) as SYS.stdout:
                 topMessage = "-------------------------------------------\n" \
                             f"GHWT: DE Launcher++ Debug Log - V{VERSION}\n" \
                             f"Date of Execution: {datetime.now()}\n" \
                             "-------------------------------------------\n"
-                dbg.write(topMessage)
+                
+                SYS.stdout.write(topMessage)
 
-                for (msg) in (debugLog): dbg.write(msg + "\n")
+                print("Writing terminal as debug log...")
 
         except Exception as excep:
             MSG.showerror("Launcher Debug Save Error", f"An error occurred saving the launcher debug log.\n\n{excep}")
@@ -110,6 +118,11 @@ def debug_add_entry(entry: str, indent: int = 0) -> None:
     if (indent > 0): entry = ("    " * indent) + entry
 
     debugLog.append(entry)
+
+# Write the terminal text to an output text file.
+# def write_terminal(file: str = "debug_launcher.txt") -> None:
+#     with (open(file, 'w')) as SYS.stdout:
+#         print("Writing terminal as debug log...")
 
 # ===========================================================================================================
 # Directory and Resource Functions
@@ -288,12 +301,14 @@ def is_connected(url: str, tout: int | float = 10) -> bool:
     # If we can do that, return True.
     try:
         REQ.get(url, timeout = tout)
+        print(f"{GREEN}We have a connection, nice!{WHITE}")
         return True
 
     # Catch the error, if found. Return False.
     except (REQ.ConnectionError, REQ.Timeout) as exception:
         print(str(exception))
         debug_add_entry(f"[Network Connection] ERROR IN NETWORK CONNECTION: {exception}", 2)
+        print(f"{RED}NO NETWORK CONNECTION, MAN{WHITE}")
         return False
 
 # Retrieve the latest version of WTDE on the GitHub page.
@@ -302,13 +317,20 @@ def wtde_get_news() -> str:
     newsPage = "https://raw.githubusercontent.com/IMF24/WTDE-Launcher/main/res/ghwt_de_news.html"
     if (is_connected(newsPage)):
         debug_add_entry("[News Receiver] HTML document successfully retrieved", 1)
+        print("We got the news from GitHub!")
         return REQ.get(newsPage).text
     
     else:
+        print("Trying again...")
+
         try:
             REQ.get(newsPage).text
+
         except Exception as exception:
+            print(f"{RED}Yeah, we must not have an internet connection, then{WHITE}")
+
             debug_add_entry(f"[News Receiver] Failed to retrieve news; Maybe a network error? {exception}", 1)
+
             return f"<p style=\"font-size: 11px;\">Hm... We couldn't establish a connection to the internet.<br>Is the Wi-Fi and/or router turned on?<br>  <br>Error Information:<br>{exception}</p>"
 
 # ===========================================================================================================
@@ -329,6 +351,7 @@ def wtde_find_config() -> str:
     # If neither worked, it's a bad path, so just return nothing.
     else:
         # Alert the user that their GHWTDE.ini can't be found.
+        print(f"{RED}CRITICAL: No GHWTDE.ini found, THIS IS VERY BAD; let's just make the file{WHITE}")
         # MSG.showerror("GHWTDE.ini Not Auto Detected", "We couldn't automatically detect GHWTDE.ini. The program will now attempt to create a fallback INI file.")
 
         # Let's make that folder!
@@ -344,6 +367,7 @@ def wtde_find_config() -> str:
 
         OS.chdir("Guitar Hero World Tour Definitive Edition")
 
+        # Also verify Logs folder!
         if (not OS.path.exists("Logs")): OS.makedirs("Logs")
 
         reset_working_directory()
@@ -359,6 +383,8 @@ def wtde_find_config() -> str:
 # Verify GHWTDE.ini and AspyrConfig.xml.
 def wtde_verify_config() -> None:
     """ Runs a sanity check on our GHWTDE.ini and AspyrConfig.xml files, looks for missing fields that are used by the launcher, and adds them if they're absent. """
+    print(f"{YELLOW}Doing sanity check on GHWTDE.ini...{WHITE}")
+    
     # Close any config files we were previously reading.
     config.clear()
 
@@ -390,6 +416,8 @@ def wtde_verify_config() -> None:
 
     for (name) in (generalOptionNames):
         if (not config.has_option("Config", name)):
+            print(f"{RED}Warning: Option {name} not found in [Config], adding it...{WHITE}")
+
             debug_add_entry(f"[Verify Config] Warning: Option {name} not found in [Config], adding it...", 2)
 
             match (name):
@@ -419,6 +447,8 @@ def wtde_verify_config() -> None:
 
     for (name) in (graphicsOptionNames):
         if (not config.has_option("Graphics", name)):
+            print(f"{RED}Warning: Option {name} not found in [Graphics], adding it...{WHITE}")
+
             debug_add_entry(f"[Verify Config] Warning: Option {name} not found in [Graphics], adding it...", 2)
 
             match (name):
@@ -461,6 +491,8 @@ def wtde_verify_config() -> None:
 
     for (name) in (bandOptionNames):
         if (not config.has_option("Band", name)):
+            print(f"{RED}Warning: Option {name} not found in [Band], adding it...{WHITE}")
+
             debug_add_entry(f"[Verify Config] Warning: Option {name} not found in [Band], adding it...", 2)
 
             match (name):
@@ -483,6 +515,8 @@ def wtde_verify_config() -> None:
     
     for (name) in (audioOptionNames):
         if (not config.has_option("Audio", name)):
+            print(f"{RED}Warning: Option {name} not found in [Audio], adding it...{WHITE}")
+
             debug_add_entry(f"[Verify Config] Warning: Option {name} not found in [Audio], adding it...", 2)
 
             match (name):
@@ -506,6 +540,8 @@ def wtde_verify_config() -> None:
 
     for (name) in (loggerOptionNames):
         if (not config.has_option("Logger", name)):
+            print(f"{RED}Warning: Option {name} not found in [Logger], adding it...{WHITE}")
+
             debug_add_entry(f"[Verify Config] Warning: Option {name} not found in [Logger], adding it...", 2)
 
             match (name):
@@ -532,6 +568,8 @@ def wtde_verify_config() -> None:
 
     for (name) in (autoLaunchOptionNames):
         if (not config.has_option("AutoLaunch", name)):
+            print(f"{RED}Warning: Option {name} not found in [AutoLaunch], adding it...{WHITE}")
+
             debug_add_entry(f"[Verify Config] Warning: Option {name} not found in [AutoLaunch], adding it...", 2)
 
             match (name):
@@ -569,6 +607,8 @@ def wtde_verify_config() -> None:
 
     for (name) in (debugOptionNames):
         if (not config.has_option("Debug", name)):
+            print(f"{RED}Warning: Option {name} not found in [Debug], adding it...{WHITE}")
+
             debug_add_entry(f"[Verify Config] Warning: Option {name} not found in [Debug], adding it...", 2)
 
             match (name):
@@ -591,6 +631,8 @@ def wtde_verify_config() -> None:
 
     for (name) in (launcherOptionNames):
         if (not config.has_option("Launcher", name)):
+            print(f"{RED}Warning: Option {name} not found in [Launcher], adding it...{WHITE}")
+
             debug_add_entry(f"[Verify Config] Warning: Option {name} not found in [Launcher], adding it...", 2)
 
             match (name):
@@ -604,8 +646,12 @@ def wtde_verify_config() -> None:
 
     # After the sanity check, write this data back in.
     debug_add_entry("[Verify Config] Writing backup data...", 2)
+    print("Writing backup data...")
+
     with (open("GHWTDE.ini", 'w')) as cnf: config.write(cnf)
+
     debug_add_entry("[Verify Config] Sanity check complete", 1)
+    print(f"{GREEN}INI sanity check complete{WHITE}")
 
     # Reset working directory.
     reset_working_directory()
@@ -620,6 +666,7 @@ def aspyr_get_config() -> str:
     # Access our AspyrConfig.xml file.
     localAppData = OS.getenv('LOCALAPPDATA')
     aspyrConfigXMLDir = OS.path.join(localAppData, "Aspyr\\Guitar Hero World Tour")
+    print(f"AspyrConfig located in: {aspyrConfigXMLDir}")
     return aspyrConfigXMLDir
 
 # Verify AspyrConfig.xml.
@@ -677,10 +724,13 @@ def aspyr_get_string(key: str, fallback: bool = True, fallbackValue: int | float
 
         reset_working_directory()
 
+        print(f"{GREEN}Located tag string in tag {key}: {keyTest.decode_contents()}{WHITE}")
         return keyTest.decode_contents()
 
     # If not, add it as a backup tag.
     if (not wasValid) and (fallback):
+        print(f"{RED}CRITICAL: No string for s id tag {key} found, writing fallback tag with value {fallbackValue}{WHITE}")
+
         # Get the original parent `r` tag data.
         originalData = aspyrConfigDataBS.r
 
@@ -703,10 +753,12 @@ def aspyr_get_string(key: str, fallback: bool = True, fallbackValue: int | float
 
         reset_working_directory()
 
+        print(f"{GREEN}Located tag string in tag {key}: {keyTest.decode_contents()}{WHITE}")
         return keyTest.decode_contents()
     
     # If there was no desire for a fallback, and the tag wasn't valid, just return an empty string.
     else:
+        print(f"{RED}CRITICAL: No string for s id tag {key} found, no fallback designated, aborting...{WHITE}")
         reset_working_directory()
         return ""
 
@@ -714,6 +766,8 @@ def aspyr_get_string(key: str, fallback: bool = True, fallbackValue: int | float
 def aspyr_get_keybinds(csvFile: str = resource_path("res/AspyrKeyBinds.csv")) -> list[list[str]]:
     """ Returns a list of keybinds, using a CSV file. """
     reset_working_directory()
+
+    print("Reading CSV for AspyrKeyBinds.csv, converting to lists")
 
     with (open(csvFile, 'r', newline = "", encoding = 'utf-8')) as file:
         csvReader = CSV.reader(file, delimiter = ',')
@@ -757,6 +811,8 @@ def aspyr_key_encode(widgets: list[Entry] | list[TTK.Entry], inputs: list[str]) 
 
     # For each Entry widget, get its contents, and add a new list into the list.
     for (widget) in (widgets): keybindsList.append(list(dict.fromkeys(widget.get().split(" "))))
+
+    print(f"list of controls to encode: {keybindsList}")
 
     # Now we need to turn each of these keyboard keys into their numerical IDs.
     # Read our CSV file with all the key binding IDs.
@@ -805,6 +861,7 @@ def aspyr_key_encode(widgets: list[Entry] | list[TTK.Entry], inputs: list[str]) 
         del keybindsList[0]
 
     # Return the constructed mapping string.
+    print(f"final encoded string: {inputsEncoded}")
     return inputsEncoded
 
 # Key bind string decoder.
@@ -829,6 +886,7 @@ def aspyr_key_decode(string: str, inputKey: str) -> str:
     """
     # Split the string at the whitespace.
     inputList = string.split(" ")
+    print(f"Input list to decode: {inputList}")
 
     # Start index. We'll use this to keep track of where we are in the list and where we need to start.
     startIndex = 0
@@ -858,6 +916,7 @@ def aspyr_key_decode(string: str, inputKey: str) -> str:
             if (keyPair[0] == id): inputsDecoded += keyPair[1] + " "
     
     # Remove all leading and trailing whitespace, then return the string.
+    print(f"Input string decoded: {inputsDecoded.strip()}")
     return inputsDecoded.strip()
 
 # Editor for the friends list.
@@ -961,9 +1020,11 @@ def wtde_backup_save(filename: str = f"GHWTDE_{datetime.now()}.sav".replace(':',
     try:
         SHUT.copyfile("GHWTDE.sav", f"Save Backups/{filename}")
 
+        print(f"Save data backed up as file {filename}")
+
         BACK_UP_SUCCESS_INFO = "Your save has been backed up! It can be found in the Save Backups folder where your config file is located.\n\n" \
                               f"The file has been saved as: {filename}"
-        
+
         MSG.showinfo("Save Backed Up", BACK_UP_SUCCESS_INFO)
 
         debug_add_entry(f"[Save Backup] Backed up save data: {filename}")
@@ -1034,6 +1095,8 @@ def wtde_manage_saves() -> None:
         for (file) in (OS.listdir(".")): manageSavesBackupsList.insert(END, file)
         
         manageSavesBackupsHeader.config(text = f"Save Backups ({len(OS.listdir('.'))}):")
+
+        print(f"Found a total of {len(OS.listdir('.'))} save backups: {OS.listdir('.')}")
         
         reset_working_directory()
 
@@ -1145,17 +1208,15 @@ def wtde_manage_rsc() -> None:
             
         OS.chdir("Profiles")
 
-        dirFiles = OS.listdir(".")
-        filesFound = 0
+        if (len(OS.listdir(".")) > 0):
+            print(f"We've found {len(OS.listdir('.'))} .car files: {OS.listdir('.')}")
 
-        if (len(dirFiles) > 0):
-            for (file) in (dirFiles):
+            for (file) in (OS.listdir(".")):
                 if (OS.path.isfile(file)): carList.insert(END, file)
-                filesFound += 1
 
         TIME.sleep(0.2)
 
-        carListHeader.config(text = f"Installed CARs ({filesFound}):")
+        carListHeader.config(text = f"Installed CARs ({len(OS.listdir('.'))}):")
 
         reset_working_directory()
 
@@ -1173,14 +1234,21 @@ def wtde_manage_rsc() -> None:
                                  "Is this correct?"
     
             if (MSG.askyesno("Confirm Selection", CAR_FILES_SELECTED)):
-                for (file) in (carFilePaths): SHUT.copy(file, f"{wtde_find_config()}\\Profiles")
-                refresh_list()
+                for (file) in (carFilePaths):
+                    try:
+                        SHUT.copy(file, f"{wtde_find_config()}\\Profiles")
+                        print(f"{GREEN}Copied file {file}{WHITE}")
+                        refresh_list()
+                    
+                    except Exception as excep:
+                        print(f"{RED}Error copying .car file: {excep}{WHITE}")
 
         carManagerRoot.focus_force()
 
     # Refresh list.
     def refresh_list() -> None:
         """ Update the list of installed CAR characters. """
+        print(f"{YELLOW}Refreshing list of .car files...{WHITE}")
         carList.delete(0, END)
         get_installed_car()
 
@@ -1188,6 +1256,7 @@ def wtde_manage_rsc() -> None:
     def open_profiles_folder() -> None:
         """ Opens the Profiles folder in the user's config directory. """
         OS.startfile(f"{wtde_find_config()}\\Profiles")
+        print(f"Opening Profiles folder located at: \"{wtde_find_config()}\\Profiles\"")
 
     # Delete selected CAR.
     def del_selected_car() -> None:
@@ -1195,8 +1264,14 @@ def wtde_manage_rsc() -> None:
         if (MSG.askyesno("Are You Sure?", "Are you sure you want to delete this CAR character?")):
             carSelected = ""
             for (x) in (carList.curselection()): carSelected = carList.get(x)
-            OS.remove(f"{wtde_find_config()}\\Profiles\\{carSelected}")
-            refresh_list()
+
+            try:
+                OS.remove(f"{wtde_find_config()}\\Profiles\\{carSelected}")
+                print(f"{GREEN}Deleted .car file {carSelected}{WHITE}")
+                refresh_list()
+
+            except Exception as exc:
+                print(f"{RED}Error deleting file {carSelected}: {exc}{WHITE}")
 
         carManagerRoot.focus_force()
 
@@ -2343,11 +2418,9 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
                     try:
                         config.clear()
 
-                        print(f"in dir: {dir}")
-
                         config.read(f"{dir}\\{file}")
 
-                        print(f"Reading config file {dir}\\{file}")
+                        print(f"Doing mod folder scan: {len(modInfoList) + 1} mods scanned", end = "\r")
 
                         modType = ""
 
@@ -2363,17 +2436,13 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
                             case 'Mod.ini':             modType = "Script"
                             case _:                     modType = "Other/Unknown"
 
-                        print(f"Detected mod type: {modType}")
-
                         match (modType):
                             case "Song":
-                                print("Found a song mod! Checking if its checksum has been duplicated...")
                                 newChecksum = config.get('SongInfo', 'Checksum')
 
                                 if (len(songModInfo) > 0):
                                     for (mod) in (songModInfo):
                                         if (mod[0] == newChecksum):
-                                            print(f"{YELLOW}Warning: Checksum duplicate found, will show duplicate manager if enabled{WHITE}")
                                             duplicateChecksumsFound = True
                                             mod.append(dir)
                                             break
@@ -2383,25 +2452,18 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
                                 else: songModInfo.append([newChecksum, dir])
 
                             case "Venue":
-                                print("Found a venue mod! Attempting to add it to the global venue selector...")
-
                                 try:
                                     venueModInfo.append([f"Mod: {config.get('VenueInfo', 'Name')}", config.get('VenueInfo', 'PakPrefix')])
-                                    print(f"Venue mod {config.get('VenueInfo', 'Name')} registered!")
 
                                 except Exception as excep:
-                                    print(f"{RED}Failed to add venue mod to global mod listing due to error: {excep}{WHITE}")
+                                    print(f"{RED}Error adding venue mod to list: {excep}")
                                     debug_add_entry(f"[Mod Reader] Error adding venue mod to global list: {excep}", 1)
 
                             case "Gems":
-                                print("Found a gem mod! Attempting to add it to the global gem mod selector...")
-
                                 try:
                                     gemModInfo.append([f"Mod: {config.get('GemInfo', 'Name')}", config.get('GemInfo', 'Filename')])
-                                    print(f"Gem mod {config.get('GemInfo', 'Name')} registered!")
 
                                 except Exception as excep:
-                                    print(f"{RED}Failed to add gem mod to global mod listing due to error: {excep}{WHITE}")
                                     debug_add_entry(f"[Mod Reader] Error adding gem mod to global list: {excep}", 1)
 
                         try: modName = config.get('ModInfo', 'Name')
@@ -2422,8 +2484,11 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
                             debug_add_entry(f"[Mod Reader] Mod added successfully! Mod info tuple[str]: {addInfo}", 2)
 
                     except Exception as execp:
-                        debug_add_entry(f"[Error] ERROR IN MOD INFO READ: {execp}", 2)
+                        debug_add_entry(f"[Errr] ERROR IN MOD INFO READ: {execp}", 2)
+                        print(f"{RED}CRITICAL: Error in reading mod info: {execp}{WHITE}")
                         continue
+
+    print("")
 
     reset_working_directory()
     
