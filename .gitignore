@@ -5,3 +5,4 @@ __pycache__/
 Updater.exe
 libcurl.dll
 Updater.ini
+config.ini
