@@ -1,7 +1,9 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #     W T D E     L A U N C H E R + +     E X C E P T I O N S
+#
+#       All custom exceptions thrown by the GHWT: DE Launcher++.
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-""" All exceptions thrown by the WTDE Launcher++. """
+""" All custom exceptions thrown by the WTDE Launcher++. """
 # Non-matching number of inputs and widgets in the aspyr_key_encode() function.
 class AspyrLenMismatchError(Exception):
     """ Raised by `aspyr_key_encode()` when the number of inputs and widgets do not match. """

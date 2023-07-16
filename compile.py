@@ -1,3 +1,8 @@
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+#     W T D E     L A U N C H E R + +     B U I L D     C O M P I L E R
+#
+#       The script for compiling builds for the GHWT: Definitive Edition Launcher++.
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 from launcher_constants import VERSION
 from cmd_colors import *
 import os as OS
@@ -8,6 +13,15 @@ import configparser as CF
 config = CF.ConfigParser(strict = False, allow_no_value = True)
 
 arguments = SYS.argv
+
+if ("-H" in arguments) or ("-h" in arguments) or ("--help" in arguments):
+    HELP_INFO = "Usage: python compile.py [args]\n\n" \
+                "List of arguments:\n" \
+                "   --help, -H, -h              Prints this message.\n" \
+                "   --repo-build, -R            Make the EXE's file name be the one utilized in public WTDE builds.\n" \
+                "   --sync, -S                  Sync the EXE file to the folder where the developers' repository is located. Requires a config.ini file."
+    print(HELP_INFO)
+    exit()
 
 if ("-R") in (arguments) or ("--repo-build") in (arguments):
     dashNName = f"GHWT_Definitive_Launcher"
@@ -23,6 +37,8 @@ else:
 print(f"{BLUE}-------------------------------")
 print(f"{LIGHT_BLUE}Please wait, compiling build...")
 print(f"{BLUE}-------------------------------{WHITE}")
+
+print(f"{YELLOW}Compiling build for launcher version {VERSION}...{WHITE}")
 
 if ("-R") in (arguments) or ("--repo-build") in (arguments): print(f"{YELLOW}Compiling build for developers' repository...{WHITE}")
 if ("-S") in (arguments) or ("--sync") in (arguments): print(f"{YELLOW}Will sync build to developers' repo!{WHITE}")

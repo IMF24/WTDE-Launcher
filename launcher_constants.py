@@ -1,5 +1,7 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-#     W T D E     L A U N C H E R + +     C O N S T A N T S 
+#     W T D E     L A U N C H E R + +     C O N S T A N T S
+#
+#       All constants used for the GHWT: DE Launcher++.
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 """ All constants used for the GHWT: DE Launcher++. """
 # Import required modules.

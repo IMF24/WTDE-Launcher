@@ -1,5 +1,7 @@
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #     W T D E     L A U N C H E R + +     F U N C T I O N S
+#
+#       All functions used by the GHWT: DE Launcher++.
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 """ All functions used by the GHWT: DE Launcher++. """
 # Import required modules.
@@ -25,6 +27,8 @@ import requests as REQ
 from bs4 import BeautifulSoup
 import configparser as CF
 import zipfile as ZIP
+import py7zr as P7Z
+from pyunpack import Archive
 import time as TIME
 import hashlib as HASH
 
@@ -450,7 +454,7 @@ def wtde_verify_config() -> None:
     # List of all names under the 'Graphics' section.
     graphicsOptionNames = ["WindowedMode", "DisableVSync", "HelperPillTheme", "HUDTheme", "DisableDOF", "HitSparks", "Borderless", "DisableBloom",
                            "TapTrailTheme", "SongIntroStyle", "SustainFX", "HitFlameTheme", "GemTheme", "GemColors", "FPSLimit",
-                           "ColorFilters", "LoadingTheme", "HavokFPS", "SoloMarkers", "HitFlames", "RenderParticles",
+                           "ColorFilters", "LoadingTheme", "HavokFPS", "SoloMarkers", "HitFlames", "RenderParticles", "HighwayOpacity", "HighwayVignetteOpacity",
                            "RenderGeoms", "RenderInstances", "RenderFog", "DrawProjectors", "BlackStage", "HideBand", "HideInstruments", "Render2D",
                            "RenderScreenFX", "UseNativeRes", "DefaultTODProfile", "ApplyBandName", "ApplyBandLogo", "DOFQuality", "DOFBlur", "FlareStyle"]
 
@@ -484,6 +488,8 @@ def wtde_verify_config() -> None:
                 case "DOFQuality":                  valueToSet = "2"
                 case "DOFBlur":                     valueToSet = "6.0"
                 case "FlareStyle":                  valueToSet = "wtde"
+                case "HighwayOpacity":              valueToSet = "100"
+                case "HighwayVignetteOpacity":      valueToSet = "0"
                 case _:                             valueToSet = "1"
             
             config.set("Graphics", name, valueToSet)
@@ -571,7 +577,7 @@ def wtde_verify_config() -> None:
     # Option Section: 'AutoLaunch'
     # ==================================
     # List of all names under the 'AutoLaunch' section.
-    autoLaunchOptionNames = ["Enabled", "HideHUD", "SongTime", "RawLoad", "Players", "Venue", "Song",
+    autoLaunchOptionNames = ["Enabled", "HideHUD", "SongTime", "RawLoad", "EncoreMode", "Players", "Venue", "Song",
                              "Difficulty", "Difficulty2", "Difficulty3", "Difficulty4",
                              "Part", "Part2", "Part3", "Part4", "Bot", "Bot2", "Bot3", "Bot4"]
     
@@ -600,6 +606,7 @@ def wtde_verify_config() -> None:
                 case "Bot2":                valueToSet = "1"
                 case "Bot3":                valueToSet = "1"
                 case "Bot4":                valueToSet = "1"
+                case "EncoreMode":          valueToSet = "none"
                 case _:                     valueToSet = "0"
             
             config.set("AutoLaunch", name, valueToSet)
@@ -1950,14 +1957,14 @@ def wtde_ask_install_mods() -> None:
 
     # Add a new ZIP mod into the user's MODS folder.
     def wtde_ask_mod_zip(pathList: list, text: Text) -> str:
-        """ Asks the user for a ZIP file containing a mod, adds it to the queue. """
+        """ Asks the user for a ZIP/7Z/RAR (archive) file containing a mod, adds it to the queue. """
         # Actions to execute at end of logic.
         def exit_actions():
             """ Actions to perform at the end of the logic chain. """
             text.config(state = 'normal')
             for (file) in (zipFileNames):
                 pathList.append(file)
-                text.insert('end', f"ZIP Mod Queued: {file}\n")
+                text.insert('end', f"Archive Mod Queued: {file}\n")
             text.config(state = 'disabled')
             installQueuedMods.config(state = 'normal')
             clearInstallQueue.config(state = 'normal')
@@ -1967,7 +1974,7 @@ def wtde_ask_install_mods() -> None:
             else: modInstallRoot.title(f"Mod Manager: Mod Installer: {len(modQueueList) + len(modZIPQueueList)} Mods Pending")
 
         # Ask for a ZIP file.
-        zipFileNames = FD.askopenfilenames(title = "Select Mods in ZIP Format", filetypes = (("ZIP Files", "*.zip"), ("All Files", "*.*")))
+        zipFileNames = FD.askopenfilenames(title = "Select Mods in ZIP/7Z/RAR Format", filetypes = (("Archive Files", ".zip .7z .rar"), ("ZIP Archives", "*.zip"), ("7-Zip Archives", "*.7z"), ("WinRAR Archives", "*.rar"), ("All Files", "*.*")))
 
         # If no file name was given, return nothing.
         if (not zipFileNames):
@@ -1981,27 +1988,29 @@ def wtde_ask_install_mods() -> None:
 
         for (file) in (zipFileNames):
             zipNames += file + "\n"
-            try: file.split("/")[-1].index(".zip")
-            except:
-                invalidZIPs += 1
-                invalidZIPNames += file + '\n'
-                invalidZIPNames.strip()
+            match (OS.path.splitext(file)[1]):
+                case '.zip' | '.7z' | '.rar': continue
+
+                case _:
+                    invalidZIPs += 1
+                    invalidZIPNames += file + '\n'
+                    invalidZIPNames.strip()
 
         if (invalidZIPs >= 1):
-            MSG.showerror("Invalid ZIP Files", f"There were invalid ZIP files detected!\n\nThe program found this many invalid files: {invalidZIPs}.\n\nThe following mods are invalid:\n\n{invalidZIPNames}")
+            MSG.showerror("Invalid Archive Files", f"There were invalid archive files detected!\n\nThe program found this many invalid files: {invalidZIPs}.\n\nThe following mods are invalid:\n\n{invalidZIPNames}")
             return
 
         # Ask if the mod is correct.
-        ZIP_MOD_CONFIRM_MSG = "You selected the following ZIP files:\n\n" \
+        ZIP_MOD_CONFIRM_MSG = "You selected the following archives:\n\n" \
                              f"{zipNames.strip()}\n\n" \
                               "Is this correct?"
         
-        if (MSG.askyesno("ZIP Mod Confirmation", ZIP_MOD_CONFIRM_MSG)): exit_actions()
+        if (MSG.askyesno("Archived Mod Confirmation", ZIP_MOD_CONFIRM_MSG)): exit_actions()
         else: modInstallRoot.focus_force()
 
     # Execute installing of queued mods.
     def wtde_execute_mod_install() -> None:
-        """ Using the lists of paths and ZIP file paths, install all queued mods to the user's MODS folder. """
+        """ Using the lists of folder paths and archive mod file paths, install all queued mods to the user's MODS folder. """
         # Copy all folders to the user's MODS folder.
         modQueueSize = len(modQueueList) + len(modZIPQueueList)
 
@@ -2055,7 +2064,7 @@ def wtde_ask_install_mods() -> None:
                         modInstallRoot.update_idletasks()
                         TIME.sleep(0.25)
 
-                # Now let's do ZIP files.
+                # Now let's do ZIP/7Z/RAR files.
                 if (len(modZIPQueueList) > 0):
                     for (mod) in (modZIPQueueList):
                         print(f"Current mod: {mod}")
@@ -2063,19 +2072,19 @@ def wtde_ask_install_mods() -> None:
                         modFolderName = mod.split("/")[-1]
                         modFolderName = str(modFolderName)
 
-                        installProgressStatus.config(text = f'Extracting ZIP Mod: {mod} to {config.get("Updater", "GameDirectory") + f"/DATA/MODS/{modFolderName}"}')
+                        installProgressStatus.config(text = f'Extracting Archive Mod: {mod} to {config.get("Updater", "GameDirectory") + f"/DATA/MODS/{modFolderName}"}')
                         modInstallRoot.update_idletasks()
 
                         try:
                             if (modFolderName.index(".zip")): modFolderName = modFolderName.split(".zip")[0]
 
                         except Exception as excep:
-                            print(f"{RED}Error installing ZIP mod {mod}: {excep}{WHITE}")
+                            print(f"{RED}Error installing archive mod {mod}: {excep}{WHITE}")
                             debug_add_entry(f"[Mod Installer] ERROR IN MOD INSTALL: {excep}", 2)
 
                         print(f"modFolderName: {modFolderName}")
 
-                        # Copy the ZIP file.
+                        # Copy the archive file.
                         newZIP = SHUT.copy(mod, copyDir)
 
                         # Extract the files.
@@ -2083,13 +2092,26 @@ def wtde_ask_install_mods() -> None:
                         realFolderName = modFolderName
 
                         newZIPPath = f"{copyDir}\\{tempFolderName}"
-                        with (ZIP.ZipFile(newZIP, 'r')) as zipRef: zipRef.extractall(path = newZIPPath)                        
 
-                        # Delete the ZIP file; we no longer need it.
+                        # What extension is this? Let's use the correct library to unpack it.
+                        wasRARFile = False
+                        match (OS.path.splitext(newZIP)[1].lower()):
+                            case '.zip':
+                                with (ZIP.ZipFile(newZIP, 'r')) as zipRef: zipRef.extractall(path = newZIPPath)
+                            
+                            case '.7z':
+                                P7Z.unpack_7zarchive(newZIP, newZIPPath)
+
+                            case '.rar':
+                                wasRARFile = True
+                                Archive(newZIP).extractall(newZIPPath, True)
+
+                        # Delete the archive file; we no longer need it.
                         OS.remove(newZIP)
 
                         # Now, if this is a character or instrument mod, we need to make sure it's installed correctly.
-                        installProgressStatus.config(text = f'Installing ZIP Mod: {mod} to {config.get("Updater", "GameDirectory") + f"/DATA/MODS/{modFolderName}"}')
+                        # DONE FOR BACKWARDS COMPATIBILITY
+                        installProgressStatus.config(text = f'Installing Archive Mod: {mod} to {config.get("Updater", "GameDirectory") + f"/DATA/MODS/{modFolderName}"}')
 
                         # Head into the folder we just created after extraction.
                         OS.chdir(newZIPPath)
@@ -2157,6 +2179,7 @@ def wtde_ask_install_mods() -> None:
                             try:
                                 print("Attempting to rename temp folder to real folder name...")
                                 OS.rename(tempFolderName, realFolderName)
+                                if (wasRARFile): OS.rename(realFolderName, realFolderName.replace(".rar", ""))
 
                             except:
                                 print("Failed to do that; Must have been an existing, non-empty directory, or something went wrong, trying to move files")
@@ -2168,6 +2191,7 @@ def wtde_ask_install_mods() -> None:
                                 SHUT.rmtree(realFolderName, ignore_errors = True)
 
                                 SHUT.copytree(tempFolderName, realFolderName)
+                                if (wasRARFile): OS.rename(realFolderName, realFolderName.replace(".rar", ""))
 
                                 SHUT.rmtree(tempFolderName, ignore_errors = True)
 
@@ -2279,9 +2303,9 @@ def wtde_ask_install_mods() -> None:
     addModToQueue.grid(row = 1, column = 0, padx = 5, pady = 5)
     ToolTip(addModToQueue, msg = "Add a folder containing a mod to the list of mods to install.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    addZIPModToQueue = TTK.Button(modInstallRoot, text = "Add ZIP Mod...", command = lambda: wtde_ask_mod_zip(modZIPQueueList, modQueue), width = 20)
+    addZIPModToQueue = TTK.Button(modInstallRoot, text = "Add Archive Mod(s)...", command = lambda: wtde_ask_mod_zip(modZIPQueueList, modQueue), width = 20)
     addZIPModToQueue.grid(row = 1, column = 1, padx = 5, pady = 5, sticky = 'w')
-    ToolTip(addZIPModToQueue, msg = "Add a mod contained in a ZIP file to the list of mods to install.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+    ToolTip(addZIPModToQueue, msg = "Add mod(s) contained in a ZIP, 7Z, or RAR file to the list of mods to install.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
     
     clearInstallQueue = TTK.Button(modInstallRoot, text = "Clear Install Queue", command = wtde_clear_install_queue, width = 20)
     clearInstallQueue.place(x = 285, y = 28)
@@ -2925,6 +2949,7 @@ VENUES = [
     ["GH5: Hypersphere", 'z_hyperspherewt'],
     ["BH: Mall of Fame Tour", 'z_mall'],
     ["BH: Summer Park Festival", 'z_centralpark'],
+    ["BH: Harajuku", 'z_tokyo'],
     ["BH: Everpop Awards", 'z_awardshow'],
     ["BH: AMP Orbiter", 'z_space'],
     ["III: Desert Rock Tour", 'z_wikker'],
@@ -3082,7 +3107,7 @@ HIT_FLAME_THEMES = [
 DOF_QUALITIES = [
     ["Off", '0'],
     ["Standard", '1'],
-    ["Hi-Res", '2']
+    ["High", '2']
 ]
 
 # Flare styles.

@@ -18,8 +18,8 @@ GHWT: DE LAUNCHER++ BY IMF24
 A completely redesigned launcher for GH World Tour: Definitive Edition, based off of Uzis's original launcher.
 """
 # DEBUG: Print the debug header. For personal use in debugging the program!
-from cmd_colors import *
 import sys as SYS
+from cmd_colors import *
 
 # Process command line arguments!
 args = SYS.argv
@@ -34,6 +34,9 @@ else:
     allowDebugMode = False
     header1 = RED
     header2 = LIGHT_RED
+
+# FORCE DEBUG MODE OFF, THIS IS A PUBLIC BUILD
+allowDebugMode = False
 
 print(f"{header1}-----------------------------------------------{WHITE}")
 print(f"{header2}WTDE LAUNCHER++ DEBUG CONSOLE{WHITE}")
@@ -70,6 +73,16 @@ def wtde_save_config(run: bool = False) -> None:
     print(f"{YELLOW}Saving GHWTDE.ini and AspyrConfig.xml...{WHITE}")
 
     if (autoLaunchEnabled.get() == '1'):
+        selectedChecksum = AutoLaunch.AutoLaunch_General.autoSongID.get()
+
+        for (mod) in (songModInfo):
+            if (mod[0] == selectedChecksum): break
+
+        else:
+            if (not selectedChecksum.lower() == 'random'):
+                MSG.showerror("Auto Launch: Song Not Found", "Auto Launch Error: That song checksum doesn't exist across any song mods!")
+                return
+
         print(f"{YELLOW}Warning: Auto launch enabled, asking user to back up save data{WHITE}")
         AUTO_ENABLED_ASK_BACKUP = "You have Auto Launch functionality enabled. Due to this, you might risk losing your save data.\n" \
                                   "Do you want to create a backup of your save data?"
@@ -155,6 +168,8 @@ def wtde_save_config(run: bool = False) -> None:
     config.set("Graphics", "DOFBlur", str(float(GraphicsSettings.GraphicsSettings_Advanced.dofBlur.get())))
     config.set("Graphics", "FlareStyle", flare_style('checksum', GraphicsSettings.GraphicsSettings_Advanced.flareStyle.get()))
     config.set("Config", "EnableCamPulse", GraphicsSettings.GraphicsSettings_Advanced.enableCamPulse.get())
+    config.set("Graphics", "HighwayOpacity", str(int(GraphicsSettings.GraphicsSettings_Interface.highwayOpacity.get())))
+    config.set("Graphics", "HighwayVignetteOpacity", str(int(GraphicsSettings.GraphicsSettings_Interface.highwayVignetteOpacity.get())))
 
     # ==================================
     # Band Settings
@@ -202,6 +217,7 @@ def wtde_save_config(run: bool = False) -> None:
 
     config.set("AutoLaunch", "RawLoad", AutoLaunch.AutoLaunch_Advanced.autoRawLoad.get())
     config.set("AutoLaunch", "SongTime", AutoLaunch.AutoLaunch_Advanced.autoSongTime.get())
+    config.set("AutoLaunch", "EncoreMode", AutoLaunch.AutoLaunch_Advanced.autoEncoreMode.get())
 
     # ==================================
     # Debug Settings
@@ -456,6 +472,8 @@ def wtde_load_config() -> None:
     GraphicsSettings.GraphicsSettings_Advanced.dofBlur.set(config.get('Graphics', 'DOFBlur'))
     GraphicsSettings.GraphicsSettings_Advanced.flareStyle.set(flare_style('option', config.get('Graphics', 'FlareStyle')))
     GraphicsSettings.GraphicsSettings_Advanced.enableCamPulse.set(config.get('Config', 'EnableCamPulse'))
+    GraphicsSettings.GraphicsSettings_Interface.highwayOpacity.set(config.get('Graphics', 'HighwayOpacity'))
+    GraphicsSettings.GraphicsSettings_Interface.highwayVignetteOpacity.set(config.get('Graphics', 'HighwayVignetteOpacity'))
 
     # ==================================
     # Band Settings
@@ -494,6 +512,7 @@ def wtde_load_config() -> None:
 
     AutoLaunch.AutoLaunch_Advanced.autoRawLoad.set(config.get('AutoLaunch', 'RawLoad'))
     AutoLaunch.AutoLaunch_Advanced.autoSongTime.set(config.get('AutoLaunch', 'SongTime'))
+    AutoLaunch.AutoLaunch_Advanced.autoEncoreMode.set(config.get('AutoLaunch', 'EncoreMode'))
 
     AutoLaunch.auto_update_status()
 
@@ -1500,8 +1519,6 @@ class MenuClass():
     topMenu.add_cascade(menu = modsMenu, label = "Mods")
     topMenu.add_cascade(menu = gameMenu, label = "Game")
     if (allowDebugMode): topMenu.add_cascade(menu = debugMenu, label = "Debug")
-
-    
 
 # ===========================================================================================================
 # GHWT: DE News
@@ -3057,6 +3074,36 @@ class GraphicsSettings():
         graphicsSustainFX.grid(row = 8, column = 0, padx = 20, pady = 5, sticky = 'w')
         ToolTip(graphicsSustainFX, msg = USE_SUSTAIN_FX_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
+        # Highway Alpha/Opacity
+        highwayOpacity = StringVar()
+        HIGHWAY_ALPHA_TIP = "The alpha (opacity) of the highway, in a percentage. 100% is default; the lower the value, the more transparent the highway."
+        graphicsHighwayOpacityLabel = Label(graphicsInterfaceSettings, text = "Highway Alpha (Opacity):", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsHighwayOpacityLabel.grid(row = 9, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHighwayOpacityLabel, msg = HIGHWAY_ALPHA_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsHighwayOpacity = TTK.Spinbox(graphicsInterfaceSettings, increment = 10.0, from_ = 0.0, to = 100.0, textvariable = highwayOpacity, width = 5)
+        graphicsHighwayOpacity.grid(row = 9, column = 1, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHighwayOpacity, msg = HIGHWAY_ALPHA_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsHwyAlphaPercentSign = Label(graphicsInterfaceSettings, text = "%", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsHwyAlphaPercentSign.place(x = 305, y = 298)
+        ToolTip(graphicsHwyAlphaPercentSign, msg = HIGHWAY_ALPHA_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Highway Vignette Alpha/Opacity
+        highwayVignetteOpacity = StringVar()
+        HWY_VIGNETTE_ALPHA_TIP = "Adds a faint shadow on the left and right edges of the highway. 0% is default, the higher the value, the more opaque the vignette."
+        graphicsHighwayVignetteOpacityLabel = Label(graphicsInterfaceSettings, text = "Highway Vignette Alpha (Opacity):", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsHighwayVignetteOpacityLabel.grid(row = 10, column = 0, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHighwayVignetteOpacityLabel, msg = HWY_VIGNETTE_ALPHA_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsHighwayVignetteOpacity = TTK.Spinbox(graphicsInterfaceSettings, increment = 10.0, from_ = 0.0, to = 100.0, textvariable = highwayVignetteOpacity, width = 5)
+        graphicsHighwayVignetteOpacity.grid(row = 10, column = 1, columnspan = 3, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHighwayVignetteOpacity, msg = HWY_VIGNETTE_ALPHA_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        graphicsHwyVignAlphaPercentSign = Label(graphicsInterfaceSettings, text = "%", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+        graphicsHwyVignAlphaPercentSign.place(x = 305, y = 330)
+        ToolTip(graphicsHwyVignAlphaPercentSign, msg = HWY_VIGNETTE_ALPHA_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
     # Advanced Graphics Settings
     class GraphicsSettings_Advanced():
         """ The Advanced tab for the Graphics Settings. """
@@ -3569,6 +3616,12 @@ class AutoLaunch():
 
                 return
 
+        # Use a random song checksum.
+        def auto_use_random_cs() -> None:
+            """ Use a random song checksum. """
+            AutoLaunch.AutoLaunch_General.autoSongIDEntry.delete(0, END)
+            AutoLaunch.AutoLaunch_General.autoSongIDEntry.insert(END, "random")
+
         # Auto Launch Settings frame.
         autoSettingsFrame = Frame(wtdeOptionsAutoLaunch, bg = BG_COLOR)
         autoSettingsFrame.pack(fill = 'x', anchor = 'n', pady = 5)
@@ -3624,7 +3677,7 @@ class AutoLaunch():
         autoSettingsSpacer3.grid(row = 1, column = 8, padx = 10)
 
         # Song Checksum
-        SONG_ID_TIP = "The checksum of the song to boot into. If you're unsure, select the triple dot (...) button to select a song.ini file for the desired song mod, and read its checksum."
+        SONG_ID_TIP = "The checksum of the song to boot into. If you're unsure, select the triple dot (...) button to select a song.ini file for the desired song mod, and read its checksum.\n\nTo boot into a random song, type \"random\"."
         autoSongIDLabel = Label(autoSettingsFrame, text = "Song:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
         autoSongIDLabel.grid(row = 1, column = 9, pady = 5, sticky = 'e')
         ToolTip(autoSongIDLabel, msg = SONG_ID_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
@@ -3638,6 +3691,11 @@ class AutoLaunch():
         autoSongINIChooser = TTK.Button(autoSettingsFrame, width = 3, text = "...", command = auto_get_checksum)
         autoSongINIChooser.grid(row = 1, column = 11)
         ToolTip(autoSongINIChooser, msg = AUTO_INI_CHOOSER_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        AUTO_RANDOM_CHECKSUM_TIP = "Boot into a random song."
+        autoSongRandomChecksum = TTK.Button(autoSettingsFrame, width = 3, text = "?!", command = auto_use_random_cs)
+        autoSongRandomChecksum.grid(row = 1, column = 12, padx = 5)
+        ToolTip(autoSongRandomChecksum, msg = AUTO_RANDOM_CHECKSUM_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
         # ===========================================================================================================
         # Auto Launch Player Settings
@@ -3875,6 +3933,14 @@ class AutoLaunch():
         autoShowSongTime = TTK.Checkbutton(autoAdvancedSettingsFrame, text = "Show Song Time", variable = autoSongTime, onvalue = '1', offvalue = '0')
         autoShowSongTime.grid(row = 1, column = 1, padx = 20, pady = 5)
         ToolTip(autoShowSongTime, msg = SONG_TIME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Last Song Encore
+        autoEncoreMode = StringVar()
+        ENCORE_MODE_TIP = "When enabled, this will trigger the encore animations for the venue on the last song of the auto launch rotation."
+        autoEncoreModeCheck = TTK.Checkbutton(autoAdvancedSettingsFrame, text = "Last Song Encore", variable = autoEncoreMode, onvalue = 'last_song', offvalue = 'none')
+        autoEncoreModeCheck.grid(row = 1, column = 2, padx = 20, pady = 5)
+        ToolTip(autoEncoreModeCheck, msg = ENCORE_MODE_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
 
     # Add general and advanced settings tab.
     AutoLaunch_General()
