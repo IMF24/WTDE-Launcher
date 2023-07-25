@@ -43,7 +43,17 @@ print(f"{YELLOW}Compiling build for launcher version {VERSION}...{WHITE}")
 if ("-R") in (arguments) or ("--repo-build") in (arguments): print(f"{YELLOW}Compiling build for developers' repository...{WHITE}")
 if ("-S") in (arguments) or ("--sync") in (arguments): print(f"{YELLOW}Will sync build to developers' repo!{WHITE}")
 
-OS.system(f"python -m PyInstaller -F --clean -y -n \"{dashNName}\" --add-data=\"res;res\" --windowed --icon=\"res/icon.ico\" main.py")
+print(f"Ensuring modules are up to date...")
+
+print(f"{LIGHT_RED}-- MODULE SCAN -----------------------------{WHITE}")
+
+OS.system("pip install --upgrade PyInstaller")
+
+print(f"{LIGHT_RED}-- END MODULE SCAN -------------------------{WHITE}")
+
+cmd = f"python -m PyInstaller -F --clean -y -n \"{dashNName}\" --add-data=\"res;res\" --windowed --icon=\"res/icon.ico\" --hidden-import=patoolib main.py"
+print(f"Executing the following command: {cmd}")
+OS.system(cmd)
 
 print(f"{GREEN}Done compiling the EXE!\n{YELLOW}Cleaning up files...")
 

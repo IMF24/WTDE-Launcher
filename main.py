@@ -6,7 +6,7 @@
 #      \  /\  /     | |  | |__| | |____      | |____ / ____ \ |__| | |\  | |____| |  | | |____| | \ \ |_|   |_|     #
 #       \/  \/      |_|  |_____/|______|     |______/_/    \_\____/|_| \_|\_____|_|  |_|______|_|  \_\              #
 #                                                                                                                   #
-#                              GH World Tour: Definitive Edition Launcher++ Version 2.2                             #
+#                            GH World Tour: Definitive Edition Launcher++ Version 2.2.2                             #
 #                                                                                                                   #
 #          Coded by IMF24                Guitar Hero World Tour: Definitive Edition by Fretworks EST. 2021          #
 #                                                                                                                   #
@@ -17,32 +17,6 @@ GHWT: DE LAUNCHER++ BY IMF24
 ----------------------------
 A completely redesigned launcher for GH World Tour: Definitive Edition, based off of Uzis's original launcher.
 """
-# DEBUG: Print the debug header. For personal use in debugging the program!
-import sys as SYS
-from cmd_colors import *
-
-# Process command line arguments!
-args = SYS.argv
-
-# Run in debug mode or not.
-global allowDebugMode
-if ("-d" or "--debug") in (args):
-    allowDebugMode = True
-    header1 = BLUE
-    header2 = LIGHT_BLUE
-else:
-    allowDebugMode = False
-    header1 = RED
-    header2 = LIGHT_RED
-
-# FORCE DEBUG MODE OFF, THIS IS A PUBLIC BUILD
-allowDebugMode = False
-
-print(f"{header1}-----------------------------------------------{WHITE}")
-print(f"{header2}WTDE LAUNCHER++ DEBUG CONSOLE{WHITE}")
-if (allowDebugMode): print(f"{header2}DEBUG MODE ENABLED{WHITE}")
-print(f"{header1}-----------------------------------------------{WHITE}")
-
 # Import required modules.
 from tkinter import *
 from tkinter import ttk as TTK, messagebox as MSG, filedialog as FD
@@ -54,6 +28,7 @@ from launcher_constants import *
 from PIL import Image, ImageTk
 import webbrowser as WEB
 import os as OS
+import sys as SYS
 import hashlib as HASH
 
 debug_add_entry("[init] All modules imported!")
@@ -154,7 +129,7 @@ def wtde_save_config(run: bool = False) -> None:
     config.set("Graphics", "ApplyBandName", GraphicsSettings.GraphicsSettings_Advanced.applyBandName.get())
     config.set("Graphics", "ApplyBandLogo", GraphicsSettings.GraphicsSettings_Advanced.applyBandLogo.get())
 
-    config.set("Graphics", "GemTheme", note_info('checksum', 'style', GraphicsSettings.GraphicsSettings_Interface.gemTheme.get()))
+    config.set("Graphics", "GemTheme", note_info('checksum', 'style', str(GraphicsSettings.GraphicsSettings_Interface.gemTheme.get())))
     config.set("Graphics", "GemColors", note_info('checksum', 'theme', GraphicsSettings.GraphicsSettings_Interface.gemColors.get()))
     config.set("Graphics", "SongIntroStyle", intro_style('checksum', GraphicsSettings.GraphicsSettings_Interface.songIntroStyle.get()))
     config.set("Graphics", "DefaultTODProfile", tod_profile('checksum', GraphicsSettings.GraphicsSettings_Advanced.defaultTODProfile.get()))
@@ -269,6 +244,9 @@ def wtde_save_config(run: bool = False) -> None:
 
     except: generalAutoLoginXML.string = GeneralSettings.autoLogin.get().upper()
 
+    generalSPClapDelayXML = aspyrConfigDataBS.find('s', {"id": "Sound.ClapDelay"})
+    generalSPClapDelayXML.string = GeneralSettings.generalSPClapDelayEntry.get()
+
     # ==================================
     # Input Settings
     # ==================================
@@ -376,6 +354,9 @@ def wtde_load_config() -> None:
     Also contains functionality for reloading all config settings when requested."""
     
     # Delete contents of all entry widgets.
+    for (slave) in (wtdeOptionsGeneral.grid_slaves()):
+        if (isinstance(slave, TTK.Entry)): slave.delete(0, END)
+
     for (slave) in (InputSettings.inputFrameWidgets.grid_slaves()):
         if (isinstance(slave, TTK.Entry)): slave.delete(0, END)
     
@@ -417,6 +398,7 @@ def wtde_load_config() -> None:
     GeneralSettings.holiday.set(holiday_name('option', config.get("Config", "Holiday")))
     GeneralSettings.checkForUpdates.set(config.get("Launcher", "CheckForUpdates"))
     GeneralSettings.statusHandler.set(config.get("Config", "StatusHandler"))
+    GeneralSettings.generalSPClapDelayEntry.insert(END, aspyr_get_string("Sound.ClapDelay", fallbackValue = 0.18))
 
     GeneralSettings.useCareerOption.set(config.get("Config", "UseCareerOption"))
     GeneralSettings.useQuickplayOption.set(config.get("Config", "UseQuickplayOption"))
@@ -1216,8 +1198,8 @@ def note_info(mode: str, gemProperty: str, value: str) -> str:
                         if (value == optionName):
                             return dataValue
                     else:
-                        dataValue = GraphicsSettings.gemTheme.get()
-                        if (GraphicsSettings.gemTheme.get() != ""):
+                        dataValue = GraphicsSettings.GraphicsSettings_Interface.gemTheme.get()
+                        if (GraphicsSettings.GraphicsSettings_Interface.gemTheme.get() != ""):
                             return dataValue
                         else: return NOTE_STYLES[0][0]
                     
@@ -1246,8 +1228,9 @@ intro_splash()
 debug_add_entry("[init] Setting up Tk widget root...")
 
 root = Tk()
-if (not allowDebugMode): root.title(TITLE)
-else: root.title(f"{TITLE} - Debug Mode Enabled")
+# if (not allowDebugMode): root.title(TITLE)
+# else: root.title(f"{TITLE} - Debug Mode Enabled")
+root.title(TITLE)
 root.iconbitmap(resource_path("res/icon.ico"))
 root.geometry(f"1080x718+{get_screen_resolution()[0] // 5}+{get_screen_resolution()[1] // 8}")
 
@@ -1518,7 +1501,7 @@ class MenuClass():
     topMenu.add_cascade(menu = fileMenu, label = "File")
     topMenu.add_cascade(menu = modsMenu, label = "Mods")
     topMenu.add_cascade(menu = gameMenu, label = "Game")
-    if (allowDebugMode): topMenu.add_cascade(menu = debugMenu, label = "Debug")
+    # if (allowDebugMode): topMenu.add_cascade(menu = debugMenu, label = "Debug")
 
 # ===========================================================================================================
 # GHWT: DE News
@@ -1777,6 +1760,27 @@ class GeneralSettings():
     generalStatusHandler = TTK.Checkbutton(wtdeOptionsGeneral, text = "Write Streamer Files", variable = statusHandler, onvalue = '1', offvalue = '0', command = lambda: warn_auto_update_deselect(GeneralSettings.checkForUpdates))
     generalStatusHandler.grid(row = 12, column = 0, padx = 20, pady = 5, sticky = 'w')
     ToolTip(generalStatusHandler, msg = STATUS_HANDLER_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # SP Clap Delay
+    SP_CLAP_DELAY_TIP = "Time in seconds behind the music that the audience will clap when Star Power is active. Negative values will disable clapping sounds."
+    generalSPClapDelayLabel = Label(wtdeOptionsGeneral, text = "SP Clap Delay:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+    generalSPClapDelayLabel.grid(row = 13, column = 0, padx = 20, pady = 5, sticky = 'w')
+    ToolTip(generalSPClapDelayLabel, msg = SP_CLAP_DELAY_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    generalSPClapDelayEntry = TTK.Entry(wtdeOptionsGeneral, width = 10, takefocus = False)
+    generalSPClapDelayEntry.grid(row = 13, column = 1, padx = 20, pady = 5, sticky = 'w')
+    ToolTip(generalSPClapDelayEntry, msg = SP_CLAP_DELAY_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Quickplay Default Difficulty
+    defaultQPODifficulty = StringVar()
+    QPO_DIFF_DEFAULT_TIP = "The default difficulty that will be selected when playing a song for the first time in Quickplay."
+    generalHolidayForceLabel = Label(wtdeOptionsGeneral, text = "Holiday Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+    generalHolidayForceLabel.grid(row = 9, column = 0, padx = 20, pady = 5, sticky = 'w')
+    ToolTip(generalHolidayForceLabel, msg = FORCE_HOLIDAY_THEME, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    generalHolidayForce = TTK.OptionMenu(wtdeOptionsGeneral, defaultQPODifficulty, *[""] + [theme[0] for theme in HOLIDAYS])
+    generalHolidayForce.grid(row = 9, column = 1, padx = 20, pady = 5, sticky = 'w')
+    ToolTip(generalHolidayForce, msg = FORCE_HOLIDAY_THEME, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # ===========================================================================================================
     # Main Menu Toggles
@@ -4022,7 +4026,7 @@ class DebugSettings():
 
     # DLC Sync Debugging
     fixFSBObjects = StringVar()
-    FIX_FSB_OBJECTS_TIP = "Enable or disable fixing FMOD Sound Bank objects."
+    FIX_FSB_OBJECTS_TIP = "Attempts to redirect the 10 item FSB list to a bigger list internally."
     debugFixFSBObjectsOption = TTK.Checkbutton(wtdeOptionsDebug, text = "Fix FMOD Sound Bank Objects", variable = fixFSBObjects, onvalue = '1', offvalue = '0')
     debugFixFSBObjectsOption.place(x = 20, y = 231)
     ToolTip(debugFixFSBObjectsOption, msg = FIX_FSB_OBJECTS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)

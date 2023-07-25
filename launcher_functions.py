@@ -37,7 +37,7 @@ import hashlib as HASH
 config = CF.ConfigParser(comment_prefixes = ("#", ";"), allow_no_value = True, strict = False)
 config.optionxform = str
 
-# Set up SYS.stdout to be written to a text file.
+# Set up SYS.stdout to be written to a text file. All print() statements will go to the debug log now!
 if (not OS.path.exists(f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour Definitive Edition\\Logs")):
     myGamesFolder = f"{WS.my_documents()}\\My Games"
     ghwtdeFolder = f"\\Guitar Hero World Tour Definitive Edition"
@@ -55,6 +55,90 @@ print("-------------------------------------------\n" \
      f"GHWT: DE Launcher++ Debug Log - V{VERSION}\n" \
      f"Date of Execution: {datetime.now()}\n" \
       "-------------------------------------------")
+
+# ==================================================
+# WE'RE NOT USING THIS, IGNORE IT!
+# ==================================================
+# Number of command line arguments.
+# print(len(SYS.argv))
+
+# Process command line arguments!
+# args = SYS.argv
+
+# Run in debug mode or not.
+# global allowDebugMode
+# allowDebugMode = False
+# """ Allows for control of debugging the launcher further. Does close to nothing right now! """
+
+# if ("-H") in (args) or ("-h") in (args) or ("--help") in (args):
+#     HELP_INFO_MSG = f"{YELLOW}-~-~-~-~-~-~- WTDE Launcher++ Command Line Functionality -~-~-~-~-~-~-{WHITE}\n" \
+#                      "List of arguments:\n" \
+#                      "   -H, -h, --help              Prints this message.\n" \
+#                      "   -I, -i, --ini               Change an INI option, giving the section, option, and value.\n"
+    
+#     print(HELP_INFO_MSG)
+
+#     SYS.exit(1)
+
+# if ("-I") in (args) or ("-i") in (args) or ("--ini") in (args):
+#     if (len(args) <= 2):
+#         print(f"{RED}Please input an INI section, option, and value to change.{WHITE}")
+#         print(f"{YELLOW}Usage: [-i/-I/--ini] <section> <option> <value>{WHITE}")
+#         SYS.exit(1)
+
+#     elif (len(args) <= 3):
+#         print(f"{RED}Please input an option and value to change it to.{WHITE}")
+#         print(f"{YELLOW}Usage: [-i/-I/--ini] <section> <option> <value>{WHITE}")
+#         SYS.exit(1)
+
+#     elif (len(args) <= 4):
+#         print(f"{RED}Please input a value to change the given option to.{WHITE}")
+#         print(f"{YELLOW}Usage: [-i/-I/--ini] <section> <option> <value>{WHITE}")
+#         SYS.exit(1)
+
+#     elif (len(args) > 5):
+#         print(f"{RED}Too many arguments!{WHITE}")
+#         print(f"{YELLOW}Usage: [-i/-I/--ini] <section> <option> <value>{WHITE}")
+#         SYS.exit(1)
+
+#     else:
+#         print(f"{YELLOW}Attempting to change INI option {args[3]} to value {args[4]} in section {args[2]}...{WHITE}")
+
+#         try:
+#             OS.chdir(f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour Definitive Edition")
+
+#             config.read("GHWTDE.ini")
+
+#             config.set(args[2], args[3], args[4])
+
+#             with (open("GHWTDE.ini", 'w')) as cnf: config.write(cnf)
+
+#             print(f"{GREEN}INI value {args[3]} in section {args[2]} changed to {args[4]} successfully!{WHITE}")
+
+#             SYS.exit(1)
+
+#         except Exception as exc:
+#             print(f"{RED}Error changing INI value: {exc}{WHITE}")
+#             SYS.exit(1)
+
+# if ("-d") in (args) or ("-D") in (args) or ("--debug") or (args):
+#     allowDebugMode = True
+#     header1 = BLUE
+#     header2 = LIGHT_BLUE
+# else:
+#     allowDebugMode = False
+#     header1 = RED
+#     header2 = LIGHT_RED
+
+# # FORCE DEBUG MODE OFF, THIS IS A PUBLIC BUILD
+# allowDebugMode = False
+
+# print(f"{header1}-----------------------------------------------{WHITE}")
+# print(f"{header2}WTDE LAUNCHER++ DEBUG CONSOLE{WHITE}")
+# if (allowDebugMode): print(f"{header2}DEBUG MODE ENABLED{WHITE}")
+# print(f"{header1}-----------------------------------------------{WHITE}")
+
+# ==================================================
 
 # The debug log. Used by the ++ launcher for debugging purposes.
 global debugLog
@@ -425,7 +509,7 @@ def wtde_verify_config() -> None:
     # List of all names under the Config section.
     generalOptionNames = ["RichPresence", "AllowHolidays", "Language", "UseCareerOption", "UseQuickplayOption", "UseHeadToHeadOption",
                           "UseOnlineOption", "UseMusicStudioOption", "UseCAROption", "UseOptionsOption", "UseQuitOption",
-                          "SongSpecificIntros", "Holiday", "EnableCamPulse", "StatusHandler"]
+                          "SongSpecificIntros", "Holiday", "EnableCamPulse", "StatusHandler", "DefaultQPODifficulty"]
     
     # Verify "Config" section.
     if (not config.has_section("Config")): config["Config"] = {}
@@ -437,12 +521,13 @@ def wtde_verify_config() -> None:
             debug_add_entry(f"[Verify Config] Warning: Option {name} not found in [Config], adding it...", 2)
 
             match (name):
-                case "Language":            valueToSet = "en"
-                case "AttractDelay":        valueToSet = "110"
-                case "SplashScreenDelay":   valueToSet = "0"
-                case "Holiday":             valueToSet = ""
-                case "StatusHandler":       valueToSet = "0"
-                case _:                     valueToSet = "1"
+                case "Language":                valueToSet = "en"
+                case "AttractDelay":            valueToSet = "110"
+                case "SplashScreenDelay":       valueToSet = "0"
+                case "Holiday":                 valueToSet = ""
+                case "StatusHandler":           valueToSet = "0"
+                case "DefaultQPODifficulty":    valueToSet = "expert"
+                case _:                         valueToSet = "1"
             
             config.set("Config", name, valueToSet)
         else: continue
@@ -2075,12 +2160,23 @@ def wtde_ask_install_mods() -> None:
                         installProgressStatus.config(text = f'Extracting Archive Mod: {mod} to {config.get("Updater", "GameDirectory") + f"/DATA/MODS/{modFolderName}"}')
                         modInstallRoot.update_idletasks()
 
-                        try:
-                            if (modFolderName.index(".zip")): modFolderName = modFolderName.split(".zip")[0]
+                        match (OS.path.splitext(mod)[1].lower()):
+                            case '.zip':
+                                modFolderName = modFolderName.strip(".zip")
+                            
+                            case '.7z':
+                                modFolderName = modFolderName.strip(".7z")
 
-                        except Exception as excep:
-                            print(f"{RED}Error installing archive mod {mod}: {excep}{WHITE}")
-                            debug_add_entry(f"[Mod Installer] ERROR IN MOD INSTALL: {excep}", 2)
+                            case '.rar':
+                                wasRARFile = True
+                                modFolderName = modFolderName.strip(".rar")
+
+                        # try:
+                        #     if (modFolderName.index(".zip")): modFolderName = modFolderName.split(".zip")[0]
+
+                        # except Exception as excep:
+                        #     print(f"{RED}Error installing archive mod {mod}: {excep}{WHITE}")
+                        #     debug_add_entry(f"[Mod Installer] ERROR IN MOD INSTALL: {excep}", 2)
 
                         print(f"modFolderName: {modFolderName}")
 
@@ -2967,7 +3063,7 @@ VENUES = [
 NOTE_STYLES = [
     ["GHWT Notes (Default)", "ghwt"],
     ["GH3 Notes", "gh3"],
-    ["GH: WOR Notes", "wor"],
+    ["GH: WOR Notes", "ghwor"],
     ["Flat Notes", "flat"]
 
 # List of modded gems.
@@ -3116,6 +3212,15 @@ FLARE_STYLES = [
     ["GH World Tour", 'ghwt'],
     ["Guitar Hero III", 'gh3'],
     ["No Flares", 'none']
+]
+
+# Difficulty names/symbols (QPO).
+QPO_DIFFICULTIES = [
+    ["Beginner", 'easy_rhythm'],
+    ["Easy", 'easy'],
+    ["Medium", 'medium'],
+    ["Hard", 'hard'],
+    ["Expert", 'expert']
 ]
 
 # Player instruments.

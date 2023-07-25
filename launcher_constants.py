@@ -8,7 +8,7 @@
 import os as OS
 
 # Version of the program.
-VERSION = "2.2"
+VERSION = "2.2.2"
 """ Version of the program. """
 
 # Hash list page.

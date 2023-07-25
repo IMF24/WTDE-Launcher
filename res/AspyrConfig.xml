@@ -10,6 +10,7 @@
     <s id="Options.FrontRowCamera">0</s>
     <s id="Audio.BuffLen">4096</s>
     <s id="AutoLogin">PROMPT</s>
+    <s id="Sound.ClapDelay">0.18</s>
     <s id="Options.VocalsVisualLag">-315</s>
     <s id="Keyboard_Guitar">GREEN 328 308 RED 221 YELLOW 340 BLUE 343 ORANGE 267 STAR 402 318 CANCEL 999 START 219 BACK 999 DOWN 231 400 UP 327 401 WHAMMY 310 LEFT 265 RIGHT 309 </s>
     <s id="Keyboard_Drum">GREEN 308 262 259 258 254 RED 252 236 227 313 YELLOW 322 305 232 331 BLUE 295 256 324 341 ORANGE 999 KICK 318 CANCEL 999 START 219 BACK 999 DOWN 231 UP 327 WHAMMY 999 </s>
