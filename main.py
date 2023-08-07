@@ -20,6 +20,9 @@ A completely redesigned launcher for GH World Tour: Definitive Edition, based of
 # Import required modules.
 from tkinter import *
 from tkinter import ttk as TTK, messagebox as MSG, filedialog as FD
+import ttkthemes as TKT
+# from ttkbootstrap import Treeview, Notebook
+# from ttkbootstrap import Style as STY
 from tkhtmlview import HTMLLabel
 from tkinter.font import *
 from tktooltip import ToolTip
@@ -85,6 +88,7 @@ def wtde_save_config(run: bool = False) -> None:
     config.set("Config", "Language", language_name('checksum', GeneralSettings.language.get()))
     config.set("Launcher", "CheckForUpdates", GeneralSettings.checkForUpdates.get())
     config.set("Config", "StatusHandler", GeneralSettings.statusHandler.get())
+    config.set("Config", "DefaultQPODifficulty", qpo_diff('checksum', GeneralSettings.defaultQPODifficulty.get()))
 
     # Main Menu Toggles
     config.set("Config", "UseCareerOption", GeneralSettings.useCareerOption.get())
@@ -145,6 +149,8 @@ def wtde_save_config(run: bool = False) -> None:
     config.set("Config", "EnableCamPulse", GraphicsSettings.GraphicsSettings_Advanced.enableCamPulse.get())
     config.set("Graphics", "HighwayOpacity", str(int(GraphicsSettings.GraphicsSettings_Interface.highwayOpacity.get())))
     config.set("Graphics", "HighwayVignetteOpacity", str(int(GraphicsSettings.GraphicsSettings_Interface.highwayVignetteOpacity.get())))
+    config.set("Graphics", "HandFlames", GraphicsSettings.GraphicsSettings_Gameplay.handFlames.get())
+    config.set("Graphics", "SpecialStarPowerFX", GraphicsSettings.GraphicsSettings_Gameplay.specialStarPowerFX.get())
 
     # ==================================
     # Band Settings
@@ -213,6 +219,7 @@ def wtde_save_config(run: bool = False) -> None:
     config.set("Logger", "PrintLoadedAssets", DebugSettings.printLoadedAssets.get())
     config.set("Logger", "PrintCreateFile", DebugSettings.printCreateFile.get())
     config.set("Debug", "CASNoticeShown", DebugSettings.casNoticeShown.get())
+    config.set("Debug", "DisableInitialMovies", DebugSettings.disableInitialMovies.get())
 
     # Write all changes to our GHWTDE.ini file.
     with (open("GHWTDE.ini", 'w')) as cnf: config.write(cnf)
@@ -335,15 +342,11 @@ def wtde_save_config(run: bool = False) -> None:
     if (run):
         print("Asked to run WTDE! Exiting launcher execution and running GHWT_Definitive.exe...")
 
-        # Destroy the window.
+        # Destroy the window and run GHWT: DE.
         root.destroy()
+        wtde_run_game()
 
-        # Read where the game is installed.
-        config.read("Updater.ini")
-        OS.chdir(config.get("Updater", "GameDirectory"))
-
-        # Run the game.
-        OS.system(".\\GHWT_Definitive.exe")
+        SYS.exit(1)
 
     else:
         print("Not running GHWT_Definitive.exe, save complete")
@@ -399,6 +402,7 @@ def wtde_load_config() -> None:
     GeneralSettings.checkForUpdates.set(config.get("Launcher", "CheckForUpdates"))
     GeneralSettings.statusHandler.set(config.get("Config", "StatusHandler"))
     GeneralSettings.generalSPClapDelayEntry.insert(END, aspyr_get_string("Sound.ClapDelay", fallbackValue = 0.18))
+    GeneralSettings.defaultQPODifficulty.set(qpo_diff('option', config.get("Config", "DefaultQPODifficulty")))
 
     GeneralSettings.useCareerOption.set(config.get("Config", "UseCareerOption"))
     GeneralSettings.useQuickplayOption.set(config.get("Config", "UseQuickplayOption"))
@@ -456,6 +460,8 @@ def wtde_load_config() -> None:
     GraphicsSettings.GraphicsSettings_Advanced.enableCamPulse.set(config.get('Config', 'EnableCamPulse'))
     GraphicsSettings.GraphicsSettings_Interface.highwayOpacity.set(config.get('Graphics', 'HighwayOpacity'))
     GraphicsSettings.GraphicsSettings_Interface.highwayVignetteOpacity.set(config.get('Graphics', 'HighwayVignetteOpacity'))
+    GraphicsSettings.GraphicsSettings_Gameplay.handFlames.set(config.get('Graphics', 'HandFlames'))
+    GraphicsSettings.GraphicsSettings_Gameplay.specialStarPowerFX.set(config.get('Graphics', 'SpecialStarPowerFX'))
 
     # ==================================
     # Band Settings
@@ -517,6 +523,7 @@ def wtde_load_config() -> None:
     DebugSettings.printLoadedAssets.set(config.get('Logger', 'PrintLoadedAssets'))
     DebugSettings.printCreateFile.set(config.get('Logger', 'PrintCreateFile'))
     DebugSettings.casNoticeShown.set(config.get('Debug', 'CASNoticeShown'))
+    DebugSettings.disableInitialMovies.set(config.get('Debug', 'DisableInitialMovies'))
 
     # ====================================================================
     # AspyrConfig Settings
@@ -639,7 +646,8 @@ def wtde_run_updater() -> None:
 
             print(f"{GREEN}We successfully updated WTDE! Aborting further execution...{WHITE}")
 
-            exit()
+            SYS.exit(1)
+
         else:
             debug_add_entry("[WTDE Updater] WTDE Updater not downloaded!", 1)
             print(f"{RED}CRITICAL: No Updater.exe found, the user should download it!{WHITE}")
@@ -1351,8 +1359,8 @@ CREDITS_TEXT = "Made by IMF24, WTDE by Fretworks, Updater by Zedek the Plague Do
 VERSION_TEXT = f"Version {VERSION} || WTDE Latest Version: {WTDE_LATEST_VERSION}"
 
 # Add these strings as text onto the canvas.
-widgetCanvas.create_text(18, 724, text = CREDITS_TEXT, fill = FG_COLOR, font = FONT_INFO_FOOTER, justify = 'left', anchor = 'sw')
-widgetCanvas.create_text(1080, 724, text = VERSION_TEXT, fill = FG_COLOR, font = FONT_INFO_FOOTER, justify = 'right', anchor = 'se')
+widgetCanvas.create_text(18, 724, text = CREDITS_TEXT, fill = '#FFFFFF', font = FONT_INFO_FOOTER, justify = 'left', anchor = 'sw')
+widgetCanvas.create_text(1080, 724, text = VERSION_TEXT, fill = '#FFFFFF', font = FONT_INFO_FOOTER, justify = 'right', anchor = 'se')
 
 debug_add_entry("Canvas widget widgetCanvas created; text and images applied", 1)
 
@@ -1365,12 +1373,17 @@ wtdeOptionsRoot.place(x = 186, y = 0)
 # Various WTDE commands.
 # Edit the background color on the buttons and notebook.
 print("Styling the root window")
-TTK.Style().configure("TButton", background = BG_COLOR)
-TTK.Style().configure("TNotebook", background = '#0B101F', tabposition = 'nw')
-TTK.Style().configure("TCheckbutton", background = BG_COLOR, foreground = FG_COLOR)
-TTK.Style().configure("TMenubutton", width = 20)
-TTK.Style().configure("TCombobox", background = BG_COLOR)
-TTK.Style().configure("TEntry", background = BG_COLOR)
+# style = STY()
+# style.theme_use("superhero")
+
+TTK.Style().configure("TButton", background = BG_COLOR, font = FONT_INFO)
+TTK.Style().configure("TNotebook", background = '#0B101F', tabposition = 'nw', font = FONT_INFO)
+TTK.Style().configure("TCheckbutton", background = BG_COLOR, foreground = FG_COLOR, font = FONT_INFO)
+TTK.Style().configure("TMenubutton", width = 20, font = FONT_INFO)
+TTK.Style().configure("TCombobox", background = BG_COLOR, font = FONT_INFO)
+TTK.Style().configure("TEntry", background = BG_COLOR, font = FONT_INFO)
+# TTK.Style().configure("Treeview", background = "#2A3049")
+# print("THEME NAMES ------" + "\n\n" + f"{TTK.Style().theme_names()}")
 
 # Save configuration and start WTDE.
 wtdeStartGame = TTK.Button(root, text = "Save & Run WTDE", width = 25, padding = 10, command = lambda: wtde_save_config(True))
@@ -1774,13 +1787,13 @@ class GeneralSettings():
     # Quickplay Default Difficulty
     defaultQPODifficulty = StringVar()
     QPO_DIFF_DEFAULT_TIP = "The default difficulty that will be selected when playing a song for the first time in Quickplay."
-    generalHolidayForceLabel = Label(wtdeOptionsGeneral, text = "Holiday Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
-    generalHolidayForceLabel.grid(row = 9, column = 0, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(generalHolidayForceLabel, msg = FORCE_HOLIDAY_THEME, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+    generalQPODiffDefaultLabel = Label(wtdeOptionsGeneral, text = "Quickplay Default Difficulty:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
+    generalQPODiffDefaultLabel.grid(row = 14, column = 0, padx = 20, pady = 5, sticky = 'w')
+    ToolTip(generalQPODiffDefaultLabel, msg = QPO_DIFF_DEFAULT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    generalHolidayForce = TTK.OptionMenu(wtdeOptionsGeneral, defaultQPODifficulty, *[""] + [theme[0] for theme in HOLIDAYS])
-    generalHolidayForce.grid(row = 9, column = 1, padx = 20, pady = 5, sticky = 'w')
-    ToolTip(generalHolidayForce, msg = FORCE_HOLIDAY_THEME, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+    generalQPODiffDefault = TTK.OptionMenu(wtdeOptionsGeneral, defaultQPODifficulty, *[""] + [theme[0] for theme in QPO_DIFFICULTIES])
+    generalQPODiffDefault.grid(row = 14, column = 1, padx = 20, pady = 5, sticky = 'w')
+    ToolTip(generalQPODiffDefault, msg = QPO_DIFF_DEFAULT_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # ===========================================================================================================
     # Main Menu Toggles
@@ -2966,6 +2979,20 @@ class GraphicsSettings():
         graphicsHideInstruments.grid(row = 3, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
         ToolTip(graphicsHideInstruments, msg = HIDE_INSTRUMENTS_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
+        # Show Hand Flames
+        handFlames = StringVar()
+        HAND_FLAMES_TIP = "Active fire appears in the hands when the multiplier is 4x."
+        graphicsHandFlames = TTK.Checkbutton(graphicsGameplaySettings, text = "Show Hand Flames", variable = handFlames, onvalue = '1', offvalue = '0')
+        graphicsHandFlames.grid(row = 4, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsHandFlames, msg = HAND_FLAMES_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        # Special Star Power FX
+        specialStarPowerFX = StringVar()
+        SPECIAL_SP_FX_TIP = "For certain characters, this will enable certain particle effects (as seen in GH3) while Star Power is active."
+        graphicsSpecialStarPowerFX = TTK.Checkbutton(graphicsGameplaySettings, text = "Special Star Power FX", variable = specialStarPowerFX, onvalue = '1', offvalue = '0')
+        graphicsSpecialStarPowerFX.grid(row = 5, column = 0, columnspan = 4, padx = 20, pady = 5, sticky = 'w')
+        ToolTip(graphicsSpecialStarPowerFX, msg = SPECIAL_SP_FX_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
     # Interface Graphics Settings
     class GraphicsSettings_Interface():
         """ The Interface tab for the Graphics Settings. """
@@ -4093,6 +4120,13 @@ class DebugSettings():
     debugCASNoticeShown = TTK.Checkbutton(wtdeOptionsDebug, text = "Hide Rock Star Creator Notice", variable = casNoticeShown, onvalue = '1', offvalue = '0')
     debugCASNoticeShown.place(x = 20, y = 510)
     ToolTip(debugCASNoticeShown, msg = CAS_NOTICE_SHOWN_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Disable Initial Career Cut Scenes
+    disableInitialMovies = StringVar()
+    DISABLE_CAREER_MOVIES_TIP = "If this is ON, disables the introduction cut scenes in Career Mode."
+    debugDisableInitialMovies = TTK.Checkbutton(wtdeOptionsDebug, text = "Disable Initial Career Cut Scenes", variable = disableInitialMovies, onvalue = '1', offvalue = '0')
+    debugDisableInitialMovies.place(x = 20, y = 541)
+    ToolTip(debugDisableInitialMovies, msg = DISABLE_CAREER_MOVIES_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
 # Execute tab code.
 DebugSettings()

@@ -28,27 +28,11 @@ FRAME_WIDTH = 886
 FRAME_HEIGHT = 650
 
 # Default program variables.
-BG_COLOR = "#181B25"
-""" The global background color. """
 MENU_HOVER = "#A5C9CA"
 """ The color of the hover when mousing over the commands in the top menu bar. """
 # MENU_HOVER = "#E7F6F2"
-FG_COLOR = "#FFFFFF"
-""" Text color. """
-FONT = "Segoe UI"
-""" The main text font everything. """
-FONT_SIZE = 9
-""" The main font size. """
-FONT_INFO = (FONT, FONT_SIZE)
-""" Tuple containing the various font information for the program. """
-FONT_INFO_BOLD = (FONT, FONT_SIZE, 'bold')
-""" Same info tuple as `FONT_INFO`, but for bold text. """
 FONT_INFO_CODE = ("Consolas", 11)
 """ Tuple contining font information for the INI Editor or any other code editor. """
-FONT_INFO_HEADER = (FONT, 10)
-""" Font information for headers (meant for more important/pronounced text). """
-FONT_INFO_FOOTER = (FONT, 11)
-""" Font information for the footer (text along the bottom of the program). """
 TAB_WINDOW_WIDTH = FRAME_WIDTH
 """ The width of the windows on the tabs. """
 TAB_WINDOW_HEIGHT = FRAME_HEIGHT

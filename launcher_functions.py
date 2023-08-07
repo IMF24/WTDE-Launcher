@@ -175,7 +175,7 @@ def save_debug(use: bool = True, filename: str = "debug_launcher.txt") -> str:
     """ Save the debug log for the program's activity inside a log file. Saved as a `.txt` file. """
     if (use):
         reset_working_directory()
-
+        
         OS.chdir(wtde_find_config())
 
         if (not OS.path.exists("Logs")): OS.mkdir("Logs")
@@ -541,7 +541,8 @@ def wtde_verify_config() -> None:
                            "TapTrailTheme", "SongIntroStyle", "SustainFX", "HitFlameTheme", "GemTheme", "GemColors", "FPSLimit",
                            "ColorFilters", "LoadingTheme", "HavokFPS", "SoloMarkers", "HitFlames", "RenderParticles", "HighwayOpacity", "HighwayVignetteOpacity",
                            "RenderGeoms", "RenderInstances", "RenderFog", "DrawProjectors", "BlackStage", "HideBand", "HideInstruments", "Render2D",
-                           "RenderScreenFX", "UseNativeRes", "DefaultTODProfile", "ApplyBandName", "ApplyBandLogo", "DOFQuality", "DOFBlur", "FlareStyle"]
+                           "RenderScreenFX", "UseNativeRes", "DefaultTODProfile", "ApplyBandName", "ApplyBandLogo", "DOFQuality", "DOFBlur", "FlareStyle",
+                           "HandFlames", "SpecialStarPowerFX"]
 
     # Verify "Graphics" section.
     if (not config.has_section("Graphics")): config["Graphics"] = {}
@@ -575,6 +576,8 @@ def wtde_verify_config() -> None:
                 case "FlareStyle":                  valueToSet = "wtde"
                 case "HighwayOpacity":              valueToSet = "100"
                 case "HighwayVignetteOpacity":      valueToSet = "0"
+                case "HandFlames":                  valueToSet = "0"
+                case "SpecialStarPowerFX":          valueToSet = "0"
                 case _:                             valueToSet = "1"
             
             config.set("Graphics", name, valueToSet)
@@ -704,7 +707,8 @@ def wtde_verify_config() -> None:
     # List of all names under the 'Debug' section.
     debugOptionNames = ["MicAttempts", "BindWarningShown", "FixMemoryHandler", "FixFSBObjects",
                         "FixNoteLimit", "DisableInputHack", "SetlistScaler", "HeapScaler",
-                        "ExtraOptimizedSaves", "DebugSaves", "FixFastTextures", "QuickDebug", "CASNoticeShown"]
+                        "ExtraOptimizedSaves", "DebugSaves", "FixFastTextures", "QuickDebug", "CASNoticeShown",
+                        "DisableInitialMovies"]
     
     # Verify "Debug" section.
     if (not config.has_section("Debug")): config["Debug"] = {}
@@ -728,7 +732,7 @@ def wtde_verify_config() -> None:
     # Option Section: 'Launcher'
     # ==================================
     # List of all names under the 'Launcher' section.
-    launcherOptionNames = ["AllowWindowResize", "ScanDuplicateSongs", "PopulateModManager", "CheckForUpdates"]
+    launcherOptionNames = ["AllowWindowResize", "ScanDuplicateSongs", "PopulateModManager", "CheckForUpdates", "BGColor", "FGColor", "TextFont"]
     
     # Verify "Launcher" section.
     if (not config.has_section("Launcher")): config["Launcher"] = {}
@@ -740,10 +744,13 @@ def wtde_verify_config() -> None:
             debug_add_entry(f"[Verify Config] Warning: Option {name} not found in [Launcher], adding it...", 2)
 
             match (name):
-                case "ScanDuplicateSongs":     valueToSet = "1"
-                case "PopulateModManager":     valueToSet = "1"
-                case "CheckForUpdates":        valueToSet = "1"
-                case _:                        valueToSet = "0"
+                case "ScanDuplicateSongs":      valueToSet = "1"
+                case "PopulateModManager":      valueToSet = "1"
+                case "CheckForUpdates":         valueToSet = "1"
+                case "BGColor":                 valueToSet = "000000"
+                case "FGColor":                 valueToSet = "FFFFFF"
+                case "TextFont":                valueToSet = "Segoe UI"
+                case _:                         valueToSet = "0"
             
             config.set("Launcher", name, valueToSet)
         else: continue
@@ -775,11 +782,16 @@ def aspyr_get_config() -> str:
 
 # Verify AspyrConfig.xml.
 def aspyr_verify_config() -> None:
-    """ Makes sure that AsyprConfig.xml is existent in the folder it's supposed to be in. """
+    """ Makes sure that AspyrConfig.xml is existent in the folder it's supposed to be in. """
     # Does the AspyrConfig not exist?
     if (not OS.path.exists(OS.path.join(aspyr_get_config(), "AspyrConfig.xml"))):
         # Then we need to copy the file and make sure it's there!
         reset_working_directory()
+
+        if (not OS.path.exists(OS.path.join(OS.getenv("LOCALAPPDATA"), "Aspyr"))): OS.mkdir(OS.path.join(OS.getenv("LOCALAPPDATA"), "Aspyr"))
+
+        if (not OS.path.exists(OS.path.join(OS.getenv("LOCALAPPDATA"), "Aspyr\\Guitar Hero World Tour"))):
+            OS.mkdir(OS.path.join(OS.getenv("LOCALAPPDATA"), "Aspyr\\Guitar Hero World Tour"))
 
         # Copy the file out of our res folder to the destination.
         SHUT.copyfile(resource_path('res/AspyrConfig.xml'), OS.path.join(aspyr_get_config(), "AspyrConfig.xml"))
@@ -1491,6 +1503,8 @@ def wtde_run_game() -> None:
 
     OS.system(".\\GHWT_Definitive.exe")
 
+    reset_working_directory()
+
 # ======================================================
 # Auto Launch Functions
 # ======================================================
@@ -1711,6 +1725,19 @@ def flare_style(mode: str, value: str) -> str:
             for (optionName, dataValue) in (FLARE_STYLES):
                 if (value == optionName): return dataValue
             else: return FLARE_STYLES[0][1]
+
+# QPO difficulty function.
+def qpo_diff(mode: str, value: str) -> str:
+    match (mode):
+        case 'option':
+            for (optionName, dataValue) in (QPO_DIFFICULTIES):
+                if (value == dataValue): return optionName
+            else: return QPO_DIFFICULTIES[0][0]
+
+        case 'checksum':
+            for (optionName, dataValue) in (QPO_DIFFICULTIES):
+                if (value == optionName): return dataValue
+            else: return QPO_DIFFICULTIES[0][1]
 
 # ===========================================================================================================
 # Mod Manager
@@ -2499,7 +2526,7 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
     reset_working_directory()
     config.read("Updater.ini")
 
-    verify_updater_config()
+    # verify_updater_config()
 
     # Start in our MODS folder. This is for enabled mods.
     # Attempt to use the directory in Updater.ini.
@@ -3040,10 +3067,12 @@ VENUES = [
     ["GH5: Club Boson", 'z_lhc'],
     ["GH5: Sideshow", 'z_freakshow'],
     ["GH5: O'Connell's Corner", 'z_dublin'],
+    ["GH5: Guitarhenge", 'z_carhenge'],
     ["GH5: Electric Honky Tonk", 'z_nashville'],
     ["GH5: Calavera Square", 'z_mexicocity'],
     ["GH5: Hypersphere", 'z_hyperspherewt'],
     ["BH: Mall of Fame Tour", 'z_mall'],
+    ["BH: Club La Noza", 'z_cabo'],
     ["BH: Summer Park Festival", 'z_centralpark'],
     ["BH: Harajuku", 'z_tokyo'],
     ["BH: Everpop Awards", 'z_awardshow'],
@@ -3218,7 +3247,7 @@ FLARE_STYLES = [
 QPO_DIFFICULTIES = [
     ["Beginner", 'easy_rhythm'],
     ["Easy", 'easy'],
-    ["Medium", 'medium'],
+    ["Medium", 'normal'],
     ["Hard", 'hard'],
     ["Expert", 'expert']
 ]
@@ -3250,3 +3279,30 @@ reset_working_directory()
 if (aspyr_get_string("AutoLogin", fallbackValue = "PROMPT").title() == "Prompt"): autoLoginFirst = "Always Prompt"
 else: autoLoginFirst = aspyr_get_string("AutoLogin").title()
 AUTO_LOGIN_OPTIONS = [autoLoginFirst, "On", "Always Prompt", "Off"]
+
+reset_working_directory()
+config.read(f"{wtde_find_config()}\\GHWTDE.ini")
+
+BG_COLOR = "#" + config.get("Launcher", "BGColor")
+""" The global background color. """
+
+FG_COLOR = "#" + config.get("Launcher", "FGColor")
+""" Text color. """
+
+FONT = config.get("Launcher", "TextFont")
+""" The main text font everything uses. """
+
+FONT_SIZE = 9
+""" The main font size. """
+
+FONT_INFO = (FONT, FONT_SIZE)
+""" Tuple containing the various font information for the program. """
+
+FONT_INFO_BOLD = (FONT, FONT_SIZE, 'bold')
+""" Same info tuple as `FONT_INFO`, but for bold text. """
+
+FONT_INFO_HEADER = (FONT, 10)
+""" Font information for headers (meant for more important/pronounced text). """
+
+FONT_INFO_FOOTER = (FONT, 11)
+""" Font information for the footer (text along the bottom of the program). """
