@@ -343,10 +343,8 @@ def wtde_save_config(run: bool = False) -> None:
         print("Asked to run WTDE! Exiting launcher execution and running GHWT_Definitive.exe...")
 
         # Destroy the window and run GHWT: DE.
-        root.destroy()
+        if (config.get('Launcher', 'ExitOnSave') == '1'): root.destroy()
         wtde_run_game()
-
-        SYS.exit(1)
 
     else:
         print("Not running GHWT_Definitive.exe, save complete")
@@ -645,8 +643,6 @@ def wtde_run_updater() -> None:
             debug_add_entry("[WTDE Updater] Updater was found and ran successfully!", 1)
 
             print(f"{GREEN}We successfully updated WTDE! Aborting further execution...{WHITE}")
-
-            SYS.exit(1)
 
         else:
             debug_add_entry("[WTDE Updater] WTDE Updater not downloaded!", 1)

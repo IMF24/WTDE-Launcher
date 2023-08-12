@@ -732,7 +732,7 @@ def wtde_verify_config() -> None:
     # Option Section: 'Launcher'
     # ==================================
     # List of all names under the 'Launcher' section.
-    launcherOptionNames = ["AllowWindowResize", "ScanDuplicateSongs", "PopulateModManager", "CheckForUpdates", "BGColor", "FGColor", "TextFont"]
+    launcherOptionNames = ["AllowWindowResize", "ScanDuplicateSongs", "PopulateModManager", "CheckForUpdates", "BGColor", "FGColor", "TextFont", "ExitOnSave"]
     
     # Verify "Launcher" section.
     if (not config.has_section("Launcher")): config["Launcher"] = {}
@@ -750,6 +750,7 @@ def wtde_verify_config() -> None:
                 case "BGColor":                 valueToSet = "000000"
                 case "FGColor":                 valueToSet = "FFFFFF"
                 case "TextFont":                valueToSet = "Segoe UI"
+                case "ExitOnSave":              valueToSet = "1"
                 case _:                         valueToSet = "0"
             
             config.set("Launcher", name, valueToSet)
