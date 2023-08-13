@@ -51,7 +51,7 @@ OS.system("pip install --upgrade PyInstaller")
 
 print(f"{LIGHT_RED}-- END MODULE SCAN -------------------------{WHITE}")
 
-cmd = f"python -m PyInstaller -F --clean -y -n \"{dashNName}\" --add-data=\"res;res\" --windowed --icon=\"res/icon.ico\" --hidden-import=patoolib main.py"
+cmd = f"python -m PyInstaller -F --clean -y -n \"{dashNName}\" --add-data=\"res;res\" --windowed --icon=\"res/icon.ico\" main.py"
 print(f"Executing the following command: {cmd}")
 OS.system(cmd)
 

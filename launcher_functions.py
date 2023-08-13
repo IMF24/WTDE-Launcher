@@ -29,6 +29,8 @@ import configparser as CF
 import zipfile as ZIP
 import py7zr as P7Z
 from pyunpack import Archive
+# import patoolib as PAT
+import unrar as UNR
 import time as TIME
 import hashlib as HASH
 
@@ -1752,9 +1754,6 @@ def wtde_ask_install_mods() -> None:
     def wtde_ask_mod(pathList: list, text: Text) -> str:
         """
         Asks the user for a file folder, adds it to the queue.
-        
-        TODO: Make this work with subfolders.
-
         """
         # Actions to execute at end of logic.
         def exit_actions():
@@ -2228,7 +2227,8 @@ def wtde_ask_install_mods() -> None:
 
                             case '.rar':
                                 wasRARFile = True
-                                Archive(newZIP).extractall(newZIPPath, True)
+                                # PAT.extract_archive(newZIP, outdir = newZIPPath)
+                                # Archive(newZIP).extractall(newZIPPath, True)
 
                         # Delete the archive file; we no longer need it.
                         OS.remove(newZIP)

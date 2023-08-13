@@ -1,6 +1,7 @@
 *.spec
 build/
 dist/
+res/unrarw32.exe
 __pycache__/
 Updater.exe
 libcurl.dll
