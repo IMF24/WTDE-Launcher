@@ -4,7 +4,7 @@
 #       The script for compiling builds for the GHWT: Definitive Edition Launcher++.
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 from launcher_constants import VERSION
-from cmd_colors import *
+from cmd_const import *
 import os as OS
 import sys as SYS
 import shutil as SHUT

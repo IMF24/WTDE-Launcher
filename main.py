@@ -57,9 +57,15 @@ def wtde_save_config(run: bool = False) -> None:
             if (mod[0] == selectedChecksum): break
 
         else:
-            if (not selectedChecksum.lower() == 'random'):
-                MSG.showerror("Auto Launch: Song Not Found", "Auto Launch Error: That song checksum doesn't exist across any song mods!")
-                return
+            print(f"length of DEFAULT_SONGS: {len(DEFAULT_SONGS)}")
+
+            for (checksum) in (DEFAULT_SONGS):
+                if (checksum.lower() == selectedChecksum): break
+
+            else:
+                if (not selectedChecksum.lower() == 'random'):
+                    MSG.showerror("Auto Launch: Song Not Found", "Auto Launch Error: That song checksum doesn't exist across any song mods!")
+                    return
 
         print(f"{YELLOW}Warning: Auto launch enabled, asking user to back up save data{WHITE}")
         AUTO_ENABLED_ASK_BACKUP = "You have Auto Launch functionality enabled. Due to this, you might risk losing your save data.\n" \
@@ -3439,7 +3445,8 @@ class BandSettings():
     bandPrefStageLabel.grid(row = 5, column = 0, padx = 10, pady = 5, sticky = 'e')
     ToolTip(bandPrefStageLabel, msg = VENUE_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
-    bandPrefStage = TTK.OptionMenu(wtdeOptionsBand, preferredStage, *[ven[0] for ven in VENUES])
+    prefStageVenuesList = [["None", '']] + VENUES
+    bandPrefStage = TTK.OptionMenu(wtdeOptionsBand, preferredStage, *[ven[0] for ven in prefStageVenuesList])
     bandPrefStage.config(width = 25)
     bandPrefStage.grid(row = 5, column = 1, padx = 10, pady = 5, sticky = 'w')
     ToolTip(bandPrefStage, msg = VENUE_PREFERRED_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)

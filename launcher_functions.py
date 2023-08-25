@@ -708,9 +708,8 @@ def wtde_verify_config() -> None:
     # ==================================
     # List of all names under the 'Debug' section.
     debugOptionNames = ["MicAttempts", "BindWarningShown", "FixMemoryHandler", "FixFSBObjects",
-                        "FixNoteLimit", "DisableInputHack", "SetlistScaler", "HeapScaler",
-                        "ExtraOptimizedSaves", "DebugSaves", "FixFastTextures", "QuickDebug", "CASNoticeShown",
-                        "DisableInitialMovies"]
+                        "FixNoteLimit", "DisableInputHack", "ExtraOptimizedSaves", "DebugSaves",
+                        "FixFastTextures", "QuickDebug", "CASNoticeShown", "DisableInitialMovies"]
     
     # Verify "Debug" section.
     if (not config.has_section("Debug")): config["Debug"] = {}
@@ -2086,7 +2085,7 @@ def wtde_ask_install_mods() -> None:
             else: modInstallRoot.title(f"Mod Manager: Mod Installer: {len(modQueueList) + len(modZIPQueueList)} Mods Pending")
 
         # Ask for a ZIP file.
-        zipFileNames = FD.askopenfilenames(title = "Select Mods in ZIP/7Z/RAR Format", filetypes = (("Archive Files", ".zip .7z .rar"), ("ZIP Archives", "*.zip"), ("7-Zip Archives", "*.7z"), ("WinRAR Archives", "*.rar"), ("All Files", "*.*")))
+        zipFileNames = FD.askopenfilenames(title = "Select Mods in ZIP/7Z/RAR Format", filetypes = (("Archive Files", ".zip .7z"), ("ZIP Archives", "*.zip"), ("7-Zip Archives", "*.7z"), ("All Files", "*.*")))
 
         # If no file name was given, return nothing.
         if (not zipFileNames):
@@ -2101,7 +2100,7 @@ def wtde_ask_install_mods() -> None:
         for (file) in (zipFileNames):
             zipNames += file + "\n"
             match (OS.path.splitext(file)[1]):
-                case '.zip' | '.7z' | '.rar': continue
+                case '.zip' | '.7z': continue
 
                 case _:
                     invalidZIPs += 1
@@ -2128,8 +2127,6 @@ def wtde_ask_install_mods() -> None:
 
         if (modQueueSize > 0):
             reset_working_directory()            
-
-            config.read("Updater.ini")
 
             config.clear()
 
@@ -2194,9 +2191,9 @@ def wtde_ask_install_mods() -> None:
                             case '.7z':
                                 modFolderName = modFolderName.strip(".7z")
 
-                            case '.rar':
-                                wasRARFile = True
-                                modFolderName = modFolderName.strip(".rar")
+                            # case '.rar':
+                            #     wasRARFile = True
+                            #     modFolderName = modFolderName.strip(".rar")
 
                         # try:
                         #     if (modFolderName.index(".zip")): modFolderName = modFolderName.split(".zip")[0]
@@ -2225,8 +2222,8 @@ def wtde_ask_install_mods() -> None:
                             case '.7z':
                                 P7Z.unpack_7zarchive(newZIP, newZIPPath)
 
-                            case '.rar':
-                                wasRARFile = True
+                            # case '.rar':
+                            #     wasRARFile = True
                                 # PAT.extract_archive(newZIP, outdir = newZIPPath)
                                 # Archive(newZIP).extractall(newZIPPath, True)
 
@@ -2429,7 +2426,7 @@ def wtde_ask_install_mods() -> None:
 
     addZIPModToQueue = TTK.Button(modInstallRoot, text = "Add Archive Mod(s)...", command = lambda: wtde_ask_mod_zip(modZIPQueueList, modQueue), width = 20)
     addZIPModToQueue.grid(row = 1, column = 1, padx = 5, pady = 5, sticky = 'w')
-    ToolTip(addZIPModToQueue, msg = "Add mod(s) contained in a ZIP, 7Z, or RAR file to the list of mods to install.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+    ToolTip(addZIPModToQueue, msg = "Add mod(s) contained in a ZIP or 7Z file to the list of mods to install.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
     
     clearInstallQueue = TTK.Button(modInstallRoot, text = "Clear Install Queue", command = wtde_clear_install_queue, width = 20)
     clearInstallQueue.place(x = 285, y = 28)
@@ -3251,6 +3248,98 @@ QPO_DIFFICULTIES = [
     ["Medium", 'normal'],
     ["Hard", 'hard'],
     ["Expert", 'expert']
+]
+
+# Default song checksums.
+DEFAULT_SONGS = [
+    "aboutagirl",
+    "aggro",
+    "americanwoman",
+    "antisocial",
+    "areyougonnagomyway",
+    "assassin",
+    "bandontherun",
+    "beatit",
+    "beautifuldisaster",
+    "bossted",
+    "dlc1",
+    "bosszakk",
+    "dlc2"
+    "byob",
+    "crazytrain",
+    "dammit",
+    "demolitionman",
+    "doitagain",
+    "escueladecalor",
+    "everlong",
+    "eyeofthetiger",
+    "feelthepain",
+    "floaton",
+    "freakonaleash",
+    "goodgod",
+    "goyourownway",
+    "hailtothefreaks",
+    "heartbreaker",
+    "heymanniceshot",
+    "hollywoodnights",
+    "hotelcalifornia",
+    "hotforteacher",
+    "kickoutthejams",
+    "labamba",
+    "lazyeye",
+    "livingonaprayer",
+    "lovemetwotimes",
+    "loveremovalmachine",
+    "lovespreads",
+    "lvialviaquez",
+    "miserybusiness",
+    "monsoon",
+    "mountainsong",
+    "mrcrowley",
+    "nevertoolate",
+    "nosleeptillbrooklyn",
+    "nuvole",
+    "obstacle1",
+    "onearmedscissor",
+    "onewayoranother",
+    "ontheroadagain",
+    "ourtruth",
+    "overkill",
+    "parabola",
+    "prettyvacant",
+    "prisonerofsociety",
+    "pullmeunder",
+    "purplehaze",
+    "ramblinman",
+    "rebelyell",
+    "reedthroughlabor",
+    "rooftops",
+    "santeria",
+    "satchboogie",
+    "schism",
+    "screamaimfire",
+    "shiver",
+    "somemightsay",
+    "souldoubt",
+    "spiderwebs",
+    "stillborn",
+    "stranglehold",
+    "sweethomealabama",
+    "thejoker",
+    "thekill",
+    "themiddle",
+    "theoneilove",
+    "today",
+    "toomuchtooyoung",
+    "toyboy",
+    "trappedunderice",
+    "uparoundthebend",
+    "vicarious",
+    "vinternoll2",
+    "weaponofchoice",
+    "whativedone",
+    "windcriesmary",
+    "youregonnasayyeah"
 ]
 
 # Player instruments.
