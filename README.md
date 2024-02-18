@@ -1,11 +1,9 @@
-# GHWT: Definitive Edition Launcher++
-An upgraded launcher for Guitar Hero World Tour: Definitive Edition!
+![](res/icon.png)
+# GHWT: Definitive Edition Launcher V2.X
+### Final Release: 2.2.2 (Public), 2.2.3 (WIP build)
 
-Here's some of its features:
-- An entire graphical editor for just about every INI setting there is for WTDE, along with detailed and concise descriptions of each option and what it does.
-- Actually lets you remap your keyboard controls! No more icky AspyrConfig! Yay!
-- Update your config, the mod itself, and create a shortcut to the game all in the same window.
-- And more features will be coming soon!
+The old second generation launcher for GHWT: DE, last appearing in 1.3.0.7.
 
-Things left to do:
-Nothing for now!
+This launcher is no longer maintained or developed. The source code will be kept here for archival purposes. It is not organized whatsoever and it is poorly designed.
+
+For the third generation launcher, [visit the new and improved repository here](https://github.com/IMF24/WTDE-Launcher-V3).
