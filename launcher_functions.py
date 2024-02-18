@@ -22,17 +22,20 @@ from win32api import GetSystemMetrics
 from win32com.client import Dispatch
 from datetime import datetime
 import pyaudio as PA
-import keyboard as KEY
 import requests as REQ
 from bs4 import BeautifulSoup
 import configparser as CF
 import zipfile as ZIP
 import py7zr as P7Z
-from pyunpack import Archive
-# import patoolib as PAT
-import unrar as UNR
 import time as TIME
-import hashlib as HASH
+import struct
+# from pyunpack import Archive
+# import patoolib as PAT
+# import unrar as UNR
+# import hashlib as HASH
+# import subprocess as SUB
+# import math as MATH
+# from ctypes import c_uint16
 
 # Initialize ConfigParser. We'll use this without strict mode to help reduce crashes.
 # By setting optionxform to str, we can use the original upper camel casing used in GHWTDE.ini.
@@ -51,7 +54,7 @@ if (not OS.path.exists(f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour D
 
     if (not OS.path.exists(OS.path.join(myGamesFolder, ghwtdeFolder, logsFolder))): OS.mkdir(OS.path.join(myGamesFolder, ghwtdeFolder, logsFolder))
 
-SYS.stdout = open(f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour Definitive Edition\\Logs\\debug_launcher.txt", 'w')
+SYS.stdout = open(f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour Definitive Edition\\Logs\\debug_launcher.txt", 'w+')
 
 print("-------------------------------------------\n" \
      f"GHWT: DE Launcher++ Debug Log - V{VERSION}\n" \
@@ -234,6 +237,40 @@ def reset_working_directory() -> None:
     """ Resets our current working directory to the default when execution began. """
     OS.chdir(OWD)
     print(f"Reset our working directory to {OWD}")
+
+# Verify if ALL required directories for operation exist.
+# RUN THESE CHECKS BEFORE WE DO ANYTHING ELSE!
+def dirs_verify_ok() -> None:
+    """ Verify if ALL required directories for operation exist. RUN THESE CHECKS BEFORE WE DO ANYTHING ELSE! """
+    print("!! -- ALL DIRECTORIES ARE BEING VERIFIED, BE PATIENT")
+
+    # OK, first check: Documents folder.
+    wtdeDocumentsDir = f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour Definitive Edition"
+
+    if (not OS.path.exists(wtdeDocumentsDir)):
+        if (not OS.path.exists(f"{WS.my_documents()}\\My Games")): OS.mkdir(f"{WS.my_documents()}\\My Games")
+
+        if (not OS.path.exists(f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour Definitive Edition")): OS.mkdir(f"{WS.my_documents()}\\My Games\\Guitar Hero World Tour Definitive Edition")
+
+        if (not OS.path.exists(f"{wtdeDocumentsDir}\\Logs")): OS.mkdir(f"{wtdeDocumentsDir}\\Logs")
+
+    # Next check: AspyrConfig.
+    aspyrConfigDir = f"{OS.getenv('LOCALAPPDATA')}\\Aspyr\\Guitar Hero World Tour"
+
+    if (not OS.path.exists(aspyrConfigDir)):  
+        # We're ASSUMING the computer already has the AppData/Local folder.
+        # Any sane computer should have this already. If not, something
+        # is very wrong with the user's computer.
+        if (not OS.path.exists(f"{OS.getenv('LOCALAPPDATA')}\\Aspyr")): OS.mkdir(f"{OS.getenv('LOCALAPPDATA')}\\Aspyr")
+
+        if (not OS.path.exists(aspyrConfigDir)): OS.mkdir(aspyrConfigDir)
+
+    # Now copy required files.
+    if (not OS.path.exists(f"{wtdeDocumentsDir}\\GHWTDE.ini")): wtde_verify_config()
+
+    if (not OS.path.exists(f"{aspyrConfigDir}\\AspyrConfig.xml")): SHUT.copy(resource_path('res/AspyrConfig.xml'), aspyrConfigDir)
+
+    print("!! -- ALL DIRECTORIES SHOULD NOW EXIST IF THEY DIDN'T BEFORE")
 
 # Relative path function.
 def resource_path(relative_path: str) -> str:
@@ -2568,6 +2605,8 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
 
     # Start with our MODS folder.
     if (readModsFolder == '1'):
+        readStartTime = TIME.time()
+
         for (dir, _, dirsList) in (OS.walk(".")):
             for (file) in (dirsList):
                 if (file) in (filesToCheckFor):
@@ -2577,7 +2616,7 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
 
                         config.read(f"{dir}\\{file}")
 
-                        print(f"Doing mod folder scan: {len(modInfoList) + 1} mods scanned", end = "\r")
+                        # print(f"Doing mod folder scan: {len(modInfoList) + 1} mods scanned", end = "\r")
 
                         modType = ""
 
@@ -2645,6 +2684,10 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
                         print(f"{RED}CRITICAL: Error in reading mod info: {execp}{WHITE}")
                         continue
 
+        readEndTime = TIME.time()
+
+        print(f"ALL MODS SCANNED! We found {len(modInfoList)} mods, scanned in {readEndTime - readStartTime:.2f} seconds")
+
     print("")
 
     reset_working_directory()
@@ -2671,6 +2714,7 @@ def wtde_get_mod_info(errors: bool = True, returnList: bool = True) -> list[tupl
     mods = modInfoList
 
     if (returnList): return modInfoList
+
 global mods
 mods = wtde_get_mod_info(False)
 """ Global list of tuples of strings (`list[tuple[str]]`) that contains information about all installed mods in the user's MODS folder. """
@@ -2786,6 +2830,9 @@ def duplicate_checksum_manager() -> None:
         # Update status again.
         dupedSongStatusBar.config(text = f"Duplicate checksums reloaded; {dupedSongChecksumList.size()} duplicate checksums detected across {len(songModInfo)} total song mods")
         dupedSongManagerRoot.update_idletasks()
+    def update_path_list_e(e: Event) -> None:
+        """ Click event for path list. """
+        update_path_list()
 
     # Update checksum list.
     def update_checksum_list() -> None:
@@ -2934,9 +2981,1173 @@ def duplicate_checksum_manager() -> None:
 
     update_checksum_list()
 
+    dupedSongChecksumList.bind('<ButtonRelease-1>', update_path_list_e)
+
     # Enter main loop.
     dupedSongManagerRoot.focus_force()
     dupedSongManagerRoot.mainloop()
+
+# Song mod and song category/categorization manager.
+def song_category_manager() -> None:
+    """ User management for songs and song categories. """
+    reset_working_directory()
+
+    global loadedCategoryData
+    loadedCategoryData = ["", "", "", ""]
+    """ Currently loaded category list that is held in memory to the currently loaded category. """
+
+    global knownCategoryData
+    knownCategoryData = []
+
+    # Take a PNG image and convert it to IMG.
+    def png_to_img_xen(dir: str) -> str:
+        """ Takes a PNG image and converts it to `*.img.xen` format. """
+        reset_working_directory()
+        config.clear()
+        config.read('Updater.ini')
+        OS.chdir(f"{config.get('Updater', 'GameDirectory')}/DATA/MODS")
+        
+        if (not dir.find(".png")):
+            print("This isn't a PNG file!")
+            return
+
+        print("-- CONVERTING PNG TO IMG ------------------------")
+
+        outFile = dir.replace('\\', '/').replace('.png', '.img.xen')
+
+        # Get the image data and image size (both in bytes)
+        # to be written to the IMG file.
+        with (open(dir, 'rb')) as in_file:
+            # PNG data and image size.
+            png_data = in_file.read()
+            pngImageSize = len(png_data)
+
+            print(f"Input PNG file is {pngImageSize} B")
+
+        # Use PIL (Pillow) to get the image's dimensions.
+        imageWidth, imageHeight = Image.open(dir).size
+        print(f"Image size: {imageWidth} X {imageHeight}")
+
+        # Now we're compiling an IMG file.
+        with (open(outFile, 'wb')) as img_xen:
+            # IMG FILES ARE LAID OUT LIKE THIS, I THINK:
+            # - First, constant 8 bytes.
+            # - Image width, image height, 1
+            # - Image width, image height, 1
+            # - 12 more constant bytes.
+            # - Image size, term (0, unless on X360).
+            # - Actual PNG data.
+
+            # First 8 bytes of the IMG file. -- 0x0A, 0x28, 0x13, 0x00, 0x00, 0x00, 0x00, 0x00
+            # These should never change.
+            byteConst1 = bytes([0x0A, 0x28, 0x13, 0x00, 0x00, 0x00, 0x00, 0x00]) 
+            img_xen.write(byteConst1)
+
+            # Now, image size.
+            imgW = struct.pack('>H', imageWidth)
+            imgH = struct.pack('>H', imageHeight)
+            imgOne = struct.pack('>H', 1)
+
+            print(f"(w, h, one): {imgW}, {imgH}, {imgOne}")
+
+            img_xen.write(imgW)
+            img_xen.write(imgH)
+            img_xen.write(imgOne)
+            img_xen.write(imgW)
+            img_xen.write(imgH)
+            img_xen.write(imgOne)
+
+            # Next 12 constant bytes. -- 0x01, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x28
+            byteConst2 = bytes([0x01, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x28])
+            img_xen.write(byteConst2)
+
+            # Now we want the image size.
+            # term in the file should be 0, unless we're on Xbox 360 (we should never be,
+            # this is a for **A PC MOD** of GHWT).
+            packedSize = struct.pack(">I", pngImageSize)
+            print(f"value of packedSize: {packedSize}")
+            
+            img_xen.write(packedSize)
+
+            termZero = struct.pack('>I', 0)
+            img_xen.write(termZero)
+
+            # And now for the actual PNG data itself.
+            img_xen.write(png_data)
+
+            print("-- PNG TO IMG CONVERSION COMPLETE ------------------------")
+
+        return outFile
+    
+    # Open *.img.xen file, update active selected category image.
+    def open_img_xen(path: str) -> str:
+        """ Runs an `*.img.xen` file through IMG2PNG, makes a PNG, saves it, loads it into memory, then erases it from the disk. """
+        print("-- IMG.XEN IMAGE CONVERTING ------------------------")
+
+        reset_working_directory()
+        config.read('Updater.ini')
+        OS.chdir(f"{config.get('Updater', 'GameDirectory')}\\DATA\\MODS")
+        
+        with (open(path, 'rb')) as img_xen:
+            fixed_path = path.replace("\\", "/")
+
+            # Open IMG file, take all the data as bytes.
+            data = img_xen.read()
+
+            # Where does the image start?
+            image_start = struct.unpack_from(">I", data, 28)[0]
+            print(f"image start: {image_start}")
+
+            # What is the size of the image?
+            image_size = struct.unpack_from(">I", data, 32)[0]
+            print(f"image size: {image_size}")
+
+            # Now we'll get the data of the image.
+            image_data = struct.unpack_from(str(image_size) + "B", data, image_start)
+            print(f"file type: {image_data[1:4]}")
+
+            if (image_data[1:4] == (80, 78, 71)):
+                print("Valid PNG found!")
+
+                fileName = fixed_path.replace(".img.xen", "")
+
+                with (open(f"{fileName}.png", 'wb')) as png: png.write(bytes(image_data))
+
+                print("IMG converted to PNG!")
+
+                pngPath = OS.path.join(f"{config.get('Updater', 'GameDirectory')}/DATA/MODS", fixed_path.replace(".img.xen", ".png").split("./")[-1])
+                print(f"!!! --- IMAGE PATH CHECK: PNG file should be located here: {pngPath}")
+
+                # Scale down the image so it fits nicely!
+                imageSize = 160
+                origImage = Image.open(pngPath)
+                resizedImage = origImage.resize((imageSize, imageSize), Image.ADAPTIVE)
+                global img
+                img = ImageTk.PhotoImage(resizedImage, width = imageSize, height = imageSize)
+
+                print(f"is path a file? {OS.path.isfile(pngPath)}")
+
+                if (img): print("image is okay")
+                else: print("SOMETHING IS WRONG HERE")
+
+                # selectedCatImage.delete('all')
+                try:
+                    selectedCatImage.config(image = img, width = 160, height = 160)
+                    print(f"selectedCatImage, value of key \"image\" is: {selectedCatImage.cget('image')}")
+                except Exception as exc:
+                    print(f"WHY ARE WE CRASHING HERE? {exc}")
+
+                songCategoryManagerRoot.update_idletasks()
+
+                reset_working_directory()
+
+                print("-- IMG.XEN IMAGE CONVERSION FINISHED ---------------")
+
+                return
+
+            else:
+                print("Error: Not a valid PNG file, conversion failed")
+
+        reset_working_directory()
+
+        print("-- IMG.XEN IMAGE CONVERSION FINISHED ---------------")
+
+        '''
+        reset_working_directory()
+        path = path.replace("/", "\\")
+        SUB.run([f".\\{resource_path('IMG2PNG.exe')}", path], capture_output = True)
+        return path.replace(".img.xen", ".png")
+        '''
+
+    # Returns a list of category information.
+    def get_song_categories() -> list[list[str]]:
+        """ Returns a list of categories with these items per sub-list: [name, path, checksum, img]"""
+        reset_working_directory()
+
+        allModsInfo = wtde_get_mod_info()
+        print(f"Mods found: {len(allModsInfo)}")
+
+        config.read('Updater.ini')
+        OS.chdir(f"{config.get('Updater', 'GameDirectory')}\\DATA\\MODS")
+        config.clear()
+
+        returnList: list[list[str]] = []
+
+        for (infoList) in (allModsInfo):
+            if (infoList[2] == "Song Category"):
+                # print(f"in directory: {infoList[5]}")
+
+                config.read(f"{infoList[5]}\\category.ini")
+
+                try: categoryName = config.get("CategoryInfo", "Name")
+                except: categoryName = "Missing Info!"
+
+                try: categoryPath = infoList[5]
+                except: categoryPath = "Missing Info!"
+
+                try: categoryIMG = f"{infoList[5]}/{config.get('CategoryInfo', 'Logo')}.img.xen"
+                except: categoryIMG = "Missing Info!"
+
+                try: categoryChecksum = config.get("CategoryInfo", "Checksum")
+                except: categoryChecksum = "Missing Info!"
+
+                config.clear()
+            
+                returnList.append([categoryName, categoryPath, categoryChecksum, categoryIMG])
+
+                continue
+
+        songCatsList.delete(0, END)
+
+        for (cateName, _, _, _) in (returnList): songCatsList.insert(END, cateName)
+        
+        songCatsHeaderLabel.config(text = f"Song Categories ({songCatsList.size()}):")
+
+        reset_working_directory()
+
+        global knownCategoryData
+        knownCategoryData = returnList
+
+        return returnList
+    
+    # Returns a list of category information.
+    def get_song_mods() -> list[list[str]]:
+        """ Returns a list of mods with these items per sub-list: [name, path, checksum, tied_cat]"""
+        reset_working_directory()
+
+        allModsInfo = wtde_get_mod_info()
+        print(f"Mods found: {len(allModsInfo)}")
+
+        config.read('Updater.ini')
+        OS.chdir(f"{config.get('Updater', 'GameDirectory')}\\DATA\\MODS")
+        config.clear()
+
+        returnList: list[list[str]] = []
+
+        for (infoList) in (allModsInfo):
+            if (infoList[2] == "Song"):
+                # print(f"in directory: {infoList[5]}")
+
+                config.read(f"{infoList[5]}\\song.ini")
+
+                try: categoryName = f"{config.get('SongInfo', 'Artist')} - {config.get('SongInfo', 'Title')}"
+                except: categoryName = "Missing Info!"
+
+                try: categoryPath = infoList[5]
+                except: categoryPath = "Missing Info!"
+
+                try: categoryIMG = config.get('SongInfo', 'Checksum')
+                except: categoryIMG = "Missing Info!"
+
+                try: categoryChecksum = config.get("SongInfo", "GameCategory")
+                except: categoryChecksum = ""
+
+                config.clear()
+            
+                returnList.append([categoryName, categoryPath, categoryIMG, categoryChecksum])
+
+                continue
+
+        songCatsList.delete(0, END)
+
+        for (cateName, _, _, _) in (returnList): songList.insert(END, cateName)
+
+        songListHeaderLabel.config(text = f"Song Mods ({songList.size()}):")
+        
+        reset_working_directory()
+        return returnList
+
+    # Refresh mods.
+    def refresh_mods() -> None:
+        """ Refresh the mod listing. """
+        songList.delete(0, END)
+        songCatsList.delete(0, END)
+
+        editorStatusBar.config(text = "Refreshing mods list...")
+        songCategoryManagerRoot.update_idletasks()
+        TIME.sleep(0.5)
+
+        get_song_mods()
+        get_song_categories()
+
+        editorStatusBar.config(text = "Mods and category mods list refreshed")
+        songCategoryManagerRoot.update_idletasks()
+
+    # Load data for selected category.
+    def load_category_info() -> None:
+        """ Import the data from the selected category on the lower left. """
+        editorStatusBar.config(text = "Loading selected category data...")
+        songCategoryManagerRoot.update_idletasks()
+
+        selectedSongChecksum.config(text = "")
+        selectedSongGameIcon.delete(0, END)
+
+        songTitleEntry.delete(0, END)
+        songArtistEntry.delete(0, END)
+        songYearEntry.delete(0, END)
+
+        global selectedCate
+        selectedCate = 0
+        for (x) in (songCatsList.curselection()): selectedCate = int(x)
+
+        print(f"----------\nSelected index: {selectedCate}\nApparent info: {knownCategoryData[selectedCate]}")
+        
+        categoryChecksum = ""
+        print("/// --- Iterating for correct category")
+        
+        global loadedCategoryData
+        loadedCategoryData = knownCategoryData[selectedCate]
+
+        cate = knownCategoryData[selectedCate]
+
+        # print(f"do the two match? {songCatsList.get(selectedCate) == cate[0]}")
+        categoryChecksum = cate[2]
+
+        open_img_xen(cate[3])
+
+        dataString = f"Name: {cate[0]}\nPath: {cate[1]}\nChecksum: {cate[2]}"
+        
+        print(f"We're looking for this checksum: {categoryChecksum}")
+
+        # Now, let's find out all of the songs in the category.
+        # We'll have to iterate through the entire MODS directory.
+
+        # Get to the correct directory.
+        reset_working_directory()
+        config.clear()
+        config.read('Updater.ini')
+        OS.chdir(f"{config.get('Updater', 'GameDirectory')}\\DATA\\MODS")
+        config.clear()
+
+        # What INI files are we looking for?
+        filesToCheckFor = [
+            'song.ini', 'folder.ini'
+        ]
+
+        # Return list.
+        addToTreeList: list[tuple[str]] = []
+        addTuple = ()
+
+        # Now, time to do some iterating!
+        print(f"current working dir: {OS.getcwd()}")
+
+        print("/// --- LOOKING FOR SONG MODS TIED TO CATEGORY")
+        for (dir, _, dirsList) in (OS.walk(".")):
+            # print(f"in dir: {dir}")
+            addTuple = ()
+ 
+            linkedCat = ""
+            songName = ""
+            songArtist = ""
+            songChecksum = ""
+
+            for (file) in (dirsList):
+                if (file) in (filesToCheckFor):
+
+                    config.clear()
+                    config.read(f"{dir}\\{file}")
+
+                    match (file):
+                        case 'song.ini':
+                            print("/// -S- Found a song mod config")
+
+                            try: linkedCat = config.get('SongInfo', 'GameCategory')
+                            except: linkedCat = ""
+
+                            if (linkedCat) and (linkedCat.upper() == categoryChecksum.upper()):
+                                print("!! -- We found the category we want!")
+                                try: songName = config.get('SongInfo', 'Title')
+                                except: songName = "Untitled"
+
+                                try: songArtist = config.get('SongInfo', 'Artist')
+                                except: songArtist = "Unknown Artist"
+
+                                try: songChecksum = config.get('SongInfo', 'Checksum')
+                                except: songChecksum = 'undefined'
+
+                                songTitle = f"{songArtist} - {songName}"
+
+                                addTuple = (songTitle, dir, songChecksum)
+                                addToTreeList.append(addTuple)
+                                print(f"Mod added: {addTuple}")
+
+                            else:
+                                print("Not the category we want, keep looking")
+
+                        # Folder config, assume the entire folder is related to the
+                        # category in the INI file.
+                        case 'folder.ini':
+                            print("/// -F- Found a folder config")
+
+                            # Is this the checksum we want?
+                            # Song category checksums are case insensitive.
+                            if (config.has_option("SongInfo", "GameCategory")):
+                                if (config.get('SongInfo', 'GameCategory').upper() == categoryChecksum.upper()):
+                                    # It is, now let's just get the names of every song in this folder.
+                                    print("!! -- We found the category we want!")
+
+                                    for (childDir, _, childDirsList) in (OS.walk(dir)):
+                                        for (childFile) in (childDirsList):
+                                            if (childFile == 'song.ini'):
+
+                                                config.clear()
+
+                                                config.read(f"{childDir}\\{childFile}")
+
+                                                try: songName = config.get('SongInfo', 'Title')
+                                                except: songName = "Untitled"
+
+                                                try: songArtist = config.get('SongInfo', 'Artist')
+                                                except: songArtist = "Unknown Artist"
+
+                                                try: songChecksum = config.get('SongInfo', 'Checksum')
+                                                except: songChecksum = 'undefined'
+
+                                                songTitle = f"{songArtist} - {songName}"
+
+                                                # WE DON'T CARE ABOUT LINKED CATEGORY HERE
+                                                addTuple = (songTitle, childDir, songChecksum)
+                                                addToTreeList.append(addTuple)
+                                                print(f"Mod added: {addTuple}")
+
+                            else:
+                                print("Not the category we want, keep looking")
+
+                        case _:
+                            config.clear()
+                            continue
+
+        addToTreeList = sorted(list(set(addToTreeList)))
+
+        dataString += f"\nSongs Tied to Category: {len(addToTreeList)}"
+
+        selectedCatData.config(text = dataString)
+
+        # We're done iterating, back to the starting dir.
+        reset_working_directory()
+
+        # Add elements to the Treeview.
+        if (len(selectedCatSongs.get_children()) > 0):
+            for (item) in (selectedCatSongs.get_children()): selectedCatSongs.delete(item)
+
+        for (x, mod) in (enumerate(addToTreeList)): selectedCatSongs.insert(parent = '', index = 'end', iid = x, text = '', values = (mod[0], mod[1], mod[2]))
+
+        editorStatusBar.config(text = f"All data loaded, found {len(addToTreeList)} song(s) in this category")
+        songCategoryManagerRoot.update_idletasks()
+    def load_category_info_e(e: Event) -> None:
+        load_category_info()
+
+    # Open the category in the File Explorer.
+    def open_category_folder() -> None:
+        """ Opens the currently selected category in the File Explorer. """
+        reset_working_directory()
+        config.clear()
+        config.read("Updater.ini")
+        OS.chdir(f"{config.get('Updater', 'GameDirectory')}\\DATA\\MODS")
+        if (loadedCategoryData[0]): OS.startfile(loadedCategoryData[1])
+
+        config.clear()
+        reset_working_directory()
+
+    # Load selected Treeview song mod.
+    def get_selected_song_mod_data(e: Event) -> None:
+        """ Update data fields below the Treeview with the selected item in the tree. """
+        if (len(selectedCatSongs.get_children()) <= 0):
+            print("No songs are in this category!")
+            return
+
+        curItem = selectedCatSongs.focus()
+
+        reset_working_directory()
+        config.clear()
+        config.read('Updater.ini')
+        OS.chdir(f"{config.get('Updater', 'GameDirectory')}\\DATA\\MODS")
+        config.read(f"{selectedCatSongs.item(curItem)['values'][1]}\\song.ini")
+
+        selectedSongChecksum.config(text = "")
+        selectedSongGameIcon.delete(0, END)
+
+        songTitleEntry.delete(0, END)
+        songArtistEntry.delete(0, END)
+        songYearEntry.delete(0, END)
+
+        try: selectedSongGameIcon.insert(END, config.get('SongInfo', 'GameIcon'))
+        except: selectedSongGameIcon.insert(END, "")
+
+        selectedSongChecksum.config(text = selectedCatSongs.item(curItem)['values'][2])
+
+        songTitleEntry.insert(END, config.get('SongInfo', 'Title'))
+        songArtistEntry.insert(END, config.get('SongInfo', 'Artist'))
+        songYearEntry.insert(END, config.get('SongInfo', 'Year'))
+
+        reset_working_directory()
+
+    # Open selected Treeview song mod in File Explorer.
+    def open_selected_song_mod_folder() -> None:
+        """ Opens the mod folder for the selected song mod in the Treeview in the File Explorer. """
+        try:
+            curItem = selectedCatSongs.focus()
+
+            reset_working_directory()
+            config.clear()
+            config.read('Updater.ini')
+            OS.chdir(f"{config.get('Updater', 'GameDirectory')}\\DATA\\MODS")
+            config.read(f"{selectedCatSongs.item(curItem)['values'][1]}\\song.ini")
+
+            OS.startfile(selectedCatSongs.item(curItem)['values'][1])
+
+            reset_working_directory()
+        
+        except Exception as exc:
+            print(f"Can't open folder! Probably no category was loaded. | {exc}")
+            return
+
+    # Import IMG file for GameIcon parameter for selected song mod.
+    def select_game_icon() -> None:
+        """ Ask the user for an `*.img.xen` to link to a song mod as its icon. """
+        fileToUse = FD.askopenfilename(title = "Select Logo Image", filetypes = (("NX Image Files", "*.img.xen"),)).replace("\\", "/")
+
+        if (fileToUse):
+            selectedSongGameIcon.delete(0, END)
+
+            selectedSongGameIcon.insert(END, fileToUse.split("/")[-1].replace(".img.xen", ""))
+
+        songCategoryManagerRoot.focus_force()
+
+    # Make new category mod.
+    def make_new_category() -> None:
+        """ Makes a new category mod for the end user to tie song mods to. """
+        # Select output path.
+        def select_out_dir() -> None:
+            """ Select the output path in DATA/MODS for this category. """
+            reset_working_directory()
+            config.clear()
+            config.read("Updater.ini")
+            outDir = FD.askdirectory(title = "Select Output Folder", initialdir = f"{config.get('Updater', 'GameDirectory')}/DATA/MODS")
+
+            if (outDir):
+                newCateDir.delete(0, END)
+                newCateDir.insert(END, outDir)
+
+            newCategoryRoot.focus_force()
+
+        # Select image path.
+        def select_image_dir() -> None:
+            """ Select the image path for this category. """
+            reset_working_directory()
+            config.clear()
+            config.read("Updater.ini")
+            outDir = FD.askopenfilename(title = "Select Image File", filetypes = (("PNG Images", "*.png"),))
+
+            if (outDir):
+                newCateImageDir.delete(0, END)
+                newCateImageDir.insert(END, outDir)
+
+            newCategoryRoot.focus_force()
+
+        # Create new mod.
+        def create_mod() -> None:
+            """ Make a new category mod. """
+            modCreateS = TIME.time()
+
+            # The save directory.
+            saveDir = newCateDir.get().replace("\\", "/")
+
+            # The image path.
+            imageDir = newCateImageDir.get().replace("\\", "/")
+
+            # Make new directory. Assume we're in DATA/MODS.
+            # That is, make it if it doesn't already exist.
+            reset_working_directory()
+            config.clear()
+            config.read('Updater.ini')
+
+            modsDir = f"{config.get('Updater', 'GameDirectory')}/DATA/MODS".replace("\\", "/")
+
+            OS.chdir(f"{config.get('Updater', 'GameDirectory')}/DATA/MODS")
+
+            print(f"Category will be saved here: {saveDir}")
+
+            if (not OS.path.exists(saveDir)): OS.mkdir(saveDir)
+
+            # Now change into that directory.
+            OS.chdir(saveDir)
+
+            # Now, let's make us a new INI file. I'll just write this
+            # as a text file. This is pretty straightforward.
+            with (open('category.ini', 'w')) as ini:
+                # I think this is a PNG extension...
+                outLogo = newCateImageDir.get().replace('\\', '/').split('/')[-1].replace('.png', '')
+
+                print(f"out logo text: {outLogo}")
+
+                # The contents of the INI itself.
+                OUT_INI_DATA = "[ModInfo]\n" \
+                              f"Name={newCateName.get()}\n" \
+                              f"Author={newCateModAuthor.get()}\n" \
+                              f"Description={newCateModDesc.get()}\n" \
+                               "Version=1.0\n\n" \
+                               "[CategoryInfo]\n" \
+                              f"Name={newCateName.get()}\n" \
+                              f"Checksum={newCateChecksum.get()}\n" \
+                              f"Logo={outLogo}"
+                
+                ini.write(OUT_INI_DATA)
+
+                print('Mod config written!')
+
+            # Now take the output image and copy it to the category folder.
+            outImage = png_to_img_xen(imageDir)
+            SHUT.copy(outImage, saveDir)
+
+            modCreateE = TIME.time()
+
+            print(f"ALL DONE! New category created in {modCreateE - modCreateS:.2f} seconds\nname: {newCateName.get()}\ndir: {saveDir}\nimage: {imageDir}\nchecksum: {newCateChecksum.get()}")
+            
+            # DEBUG: Open the category folder.
+            # OS.startfile(saveDir)
+
+            refresh_mods()
+            newCategoryRoot.destroy()
+
+
+        # Set up Tk window, like usual.
+        newCategoryRoot = Toplevel()
+        newCategoryRoot.title("New Song Category")
+        newCategoryRoot.config(bg = '#FFFFFF')
+        newCategoryRoot.iconbitmap(resource_path('res/menuicons/file/new_file.ico'))
+        newCategoryRoot.geometry("500x500")
+        newCategoryRoot.resizable(False, False)
+        newCategoryRoot.focus_force()
+
+        # Title header.
+        newCateTitleHeader = Label(newCategoryRoot, text = "New Song Category: Create a new category mod to tie song mods to.", font = FONT_INFO_HEADER, bg = '#FFFFFF', fg = '#000000')
+        newCateTitleHeader.grid(row = 0, column = 0, padx = 3, columnspan = 999, sticky = 'w')
+
+        # New category name.
+        newCateNameLabel = Label(newCategoryRoot, text = "          Name:     ", bg = "#FFFFFF", fg = '#000000', font = FONT_INFO)
+        newCateNameLabel.grid(row = 1, column = 0, pady = 5, sticky = 'e')
+
+        newCateName = TTK.Entry(newCategoryRoot, width = 30)
+        newCateName.grid(row = 1, column = 1, pady = 5, sticky = 'w')
+
+        # New category path.
+        newCateDirLabel = Label(newCategoryRoot, text = "          Path:     ", bg = "#FFFFFF", fg = '#000000', font = FONT_INFO)
+        newCateDirLabel.grid(row = 2, column = 0, pady = 5, sticky = 'e')
+
+        newCateDir = TTK.Entry(newCategoryRoot, width = 50)
+        newCateDir.grid(row = 2, column = 1, pady = 5, sticky = 'w')
+
+        newCateDirSelectDir = TTK.Button(newCategoryRoot, text = '...', width = 3, command = select_out_dir)
+        newCateDirSelectDir.grid(row = 2, column = 2, pady = 5, padx = 5)
+
+        # New category checksum.     
+        newCateChecksumLabel = Label(newCategoryRoot, text = "      Checksum:     ", bg = "#FFFFFF", fg = '#000000', font = FONT_INFO)
+        newCateChecksumLabel.grid(row = 3, column = 0, pady = 5, sticky = 'e')
+
+        newCateChecksum = TTK.Entry(newCategoryRoot, width = 15)
+        newCateChecksum.grid(row = 3, column = 1, pady = 5, sticky = 'w')
+
+        # New category image path.
+        newCateImageDirLabel = Label(newCategoryRoot, text = "         Image:     ", bg = "#FFFFFF", fg = '#000000', font = FONT_INFO)
+        newCateImageDirLabel.grid(row = 4, column = 0, pady = 5, sticky = 'e')
+
+        newCateImageDir = TTK.Combobox(newCategoryRoot, width = 47, values = GAME_LOGO_IMAGES)
+        newCateImageDir.grid(row = 4, column = 1, pady = 5, sticky = 'w')
+
+        newCateImageSelectDir = TTK.Button(newCategoryRoot, text = '...', width = 3, command = select_image_dir)
+        newCateImageSelectDir.grid(row = 4, column = 2, pady = 5, padx = 5)
+
+        # New category mod description.                      
+        newCateModDescLabel = Label(newCategoryRoot, text = "  Mod Description:     ", bg = "#FFFFFF", fg = '#000000', font = FONT_INFO)
+        newCateModDescLabel.grid(row = 5, column = 0, pady = 5, sticky = 'e')
+
+        newCateModDesc = TTK.Entry(newCategoryRoot, width = 50)
+        newCateModDesc.grid(row = 5, column = 1, pady = 5, sticky = 'w')
+
+        # New category mod author.
+        newCateModAuthorLabel = Label(newCategoryRoot, text = "       Mod Author:     ", bg = "#FFFFFF", fg = '#000000', font = FONT_INFO)
+        newCateModAuthorLabel.grid(row = 6, column = 0, pady = 5, sticky = 'e')
+
+        newCateModAuthor = TTK.Entry(newCategoryRoot, width = 40)
+        newCateModAuthor.grid(row = 6, column = 1, pady = 5, sticky = 'w')
+
+        # Create button.
+        newCateCreateButton = TTK.Button(newCategoryRoot, text = "OK / Create New", width = 20, command = create_mod)
+        newCateCreateButton.place(x = 280, y = 470)
+
+        # Cancel dialog.
+        newCateCancelButton = TTK.Button(newCategoryRoot, text = "Cancel", width = 10, command = newCategoryRoot.destroy)
+        newCateCancelButton.place(x = 420, y = 470)
+
+        # ---------------------- TOOLTIPS ---------------------- #
+        ToolTip(newCateName, msg = "The name of this category.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        ToolTip(newCateNameLabel, msg = "The name of this category.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        ToolTip(newCateDir, msg = "The directory this category will be created in.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        ToolTip(newCateDirLabel, msg = "The directory this category will be created in.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        ToolTip(newCateDirSelectDir, msg = "Select a directory on the disk to save this category to.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        ToolTip(newCateChecksum, msg = "The checksum (unique identifier) for this category, used to tie songs to this category.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        ToolTip(newCateChecksumLabel, msg = "The checksum (unique identifier) for this category, used to tie songs to this category.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        ToolTip(newCateImageDir, msg = "The image that will be associated with this category.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        ToolTip(newCateImageDirLabel, msg = "The image that will be associated with this category.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        ToolTip(newCateImageSelectDir, msg = "Select a PNG or IMG file on the disk.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        ToolTip(newCateModDesc, msg = "The description of the mod. Shows up in the Installed Mods menu in-game and in the Mod Manager in the launcher.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        ToolTip(newCateModDescLabel, msg = "The description of the mod. Shows up in the Installed Mods menu in-game and in the Mod Manager in the launcher.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        ToolTip(newCateModAuthor, msg = "The author of this category mod.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        ToolTip(newCateModAuthorLabel, msg = "The author of this category mod.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        ToolTip(newCateCreateButton, msg = "Create a new category using the provided information.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+        ToolTip(newCateCancelButton, msg = "Close this window without saving any changes.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+        newCategoryRoot.mainloop()
+
+    # Edit the data of the selected category.
+    def edit_category_meta(data: list[str]) -> None:
+        """ Edit the meta data of the selected category. """
+        if (loadedCategoryData == ["", "", "", ""]): return
+
+        # Convert new image, output to folder.
+        def change_category_image() -> None:
+            """ Updates the image for the category. """
+            global imageFile
+            imageFile = FD.askopenfilename(title = "Select PNG Image", filetypes = (("PNG Images", '*.png'),))
+
+            png_to_img_xen(imageFile)
+
+            if (imageFile):
+                imageFile = imageFile.replace("\\", "/")
+                imageFile = imageFile.replace(".png", ".img.xen")
+
+                reset_working_directory()
+                config.clear()
+                config.read("Updater.ini")
+                OS.chdir(f"{config.get('Updater', 'GameDirectory')}/DATA/MODS")
+
+                cateImage.delete(0, END)
+                cateImage.insert(END, imageFile.split("/")[-1].replace(".img.xen", ""))
+
+                reset_working_directory()
+            
+            editCateDataRoot.focus_force()
+
+        # Update category data and close.
+        def update_and_close() -> None:
+            """ Update the data for the selected category and close this dialog box. """
+            # Change into DATA/MODS/<path to category>.
+            reset_working_directory()
+            config.clear()
+            config.read('Updater.ini')
+            entireModsDir = f"{config.get('Updater', 'GameDirectory')}/DATA/MODS"
+            OS.chdir(f"{config.get('Updater', 'GameDirectory')}/DATA/MODS{data[1]}")
+
+            config.clear()
+            config.read("category.ini")
+
+            # Old category checksum. If this was changed, we want to update
+            # ALL instances of it in the MODS folder on the fly.
+            global loadedCategoryData
+            oldChecksum = loadedCategoryData[2]
+            oldImage = loadedCategoryData[3].replace("\\", "/").split('/')[-1].replace(".img.xen", "")
+
+            config.set('CategoryInfo', 'Name', cateName.get())
+            config.set('CategoryInfo', 'Checksum', cateChecksum.get())
+            config.set('CategoryInfo', 'Logo', cateImage.get())
+
+            with (open('category.ini', 'w')) as cnf: config.write(cnf)
+            print("Updated category config!")
+
+            config.clear()
+
+            global imageFile
+            if (not imageFile): imageFile = data[3]
+            loadedCategoryData = [cateName.get(), data[1], cateChecksum.get(), imageFile]
+
+            # Was the checksum changed?
+            newChecksum = cateChecksum.get()
+            newImage = cateImage.get()
+            if (oldChecksum != newChecksum):
+                # Yes, it was, let's update ALL instances of this checksum
+                # on the fly. For the user's convenience!
+                OS.chdir(entireModsDir)
+                for (dir, _, dirsList) in (OS.walk(".")):
+                    for (file) in (dirsList):
+                        if (file == 'song.ini') or (file == 'folder.ini'):
+                            config.clear()
+                            config.read(f"{dir}\\{file}")
+
+                            try:
+                                print("Reading tied category, if any...")
+                                tiedCat = config.get('SongInfo', 'GameCategory')
+
+                                if (tiedCat == oldChecksum):
+                                    config.set('SongInfo', 'Checksum', newChecksum)
+
+                                    with (open(f"{dir}/{file}", 'w')) as cnf: config.write(cnf)
+
+                                    print(f"Updated mod's category checksum from {oldChecksum} to {newChecksum}")
+
+                                else:
+                                    print("!! - Wrong category")
+
+                                print("Reading tied image, if any...")
+                                tiedIcon = config.get('SongInfo', 'GameIcon')
+
+                                if (tiedIcon == oldImage):
+                                    config.set('SongInfo', 'GameIcon', newImage)
+
+                                    with (open(f"{dir}/{file}", 'w')) as cnf: config.write(cnf)
+
+                                    print(f"Updated mod's image name from {oldImage} to {newImage}")
+
+                                else:
+                                    print("!! - Wrong image")
+                            
+                            except:
+                                print("No tied category or image, skipping...")
+
+            # Reset working directory and close window.
+            reset_working_directory()
+            refresh_mods()
+            editCateDataRoot.destroy()
+    
+        # Set up window.
+        editCateDataRoot = Toplevel()
+        editCateDataRoot.title("Edit Category Data")
+        editCateDataRoot.iconbitmap(resource_path('res/menuicons/category/edit_data.ico'))
+        editCateDataRoot.config(bg = '#FFFFFF')
+        editCateDataRoot.geometry("560x320")
+        editCateDataRoot.resizable(False, False)
+        editCateDataRoot.focus_force()
+
+        TTK.Style(editCateDataRoot).configure('TButton', background = '#FFFFFF')
+
+        titleHeaderLabel = Label(editCateDataRoot, text = "Edit Category Data: Modify the mod data for this category.", font = FONT_INFO_HEADER, bg = '#FFFFFF', fg = '#000000')
+        titleHeaderLabel.grid(row = 0, column = 0, columnspan = 999, sticky = 'w')
+
+        cateNameLabel = Label(editCateDataRoot, text = "Name:", bg = "#FFFFFF", fg = '#000000')
+        cateNameLabel.grid(row = 1, column = 0, padx = 25, pady = 5, sticky = 'e')
+
+        cateName = TTK.Entry(editCateDataRoot, width = 70)
+        cateName.grid(row = 1, column = 1, columnspan = 2, pady = 5, sticky = 'w')
+        cateName.insert(END, data[0])
+
+        catePathLabel = Label(editCateDataRoot, text = "Path:", bg = "#FFFFFF", fg = '#000000')
+        catePathLabel.grid(row = 2, column = 0, padx = 25, pady = 5, sticky = 'e')
+
+        catePath = Label(editCateDataRoot, width = 60, text = data[1], bg = '#FFFFFF', fg = '#808080', justify = 'left', anchor = 'w', bd = 1, relief = 'solid')
+        catePath.grid(row = 2, column = 1, columnspan = 2, pady = 5, sticky = 'w')
+
+        cateChecksumLabel = Label(editCateDataRoot, text = "Checksum:", bg = "#FFFFFF", fg = '#000000')
+        cateChecksumLabel.grid(row = 3, column = 0, padx = 25, pady = 5, sticky = 'e')
+
+        cateChecksum = TTK.Entry(editCateDataRoot, width = 25)
+        cateChecksum.grid(row = 3, column = 1, columnspan = 2, pady = 5, sticky = 'w')
+        cateChecksum.insert(END, data[2])
+
+        cateImageLabel = Label(editCateDataRoot, text = "Image:", bg = "#FFFFFF", fg = '#000000')
+        cateImageLabel.grid(row = 4, column = 0, padx = 25, pady = 5, sticky = 'e')
+
+        cateImage = TTK.Entry(editCateDataRoot, width = 47)
+        cateImage.grid(row = 4, column = 1, pady = 5, sticky = 'w')
+        cateImage.insert(END, data[3].replace("\\", "/").split("/")[-1].replace(".img.xen", ""))
+
+        changeImageButton = TTK.Button(editCateDataRoot, text = "Change Image...", width = 20, command = change_category_image)
+        changeImageButton.grid(row = 4, column = 2, padx = 3, pady = 5, sticky = 'w')
+
+        okCloseDialog = TTK.Button(editCateDataRoot, text = "Apply and Close", width = 20, command = update_and_close)
+        okCloseDialog.place(x = 426, y = 290)
+
+        editCateDataRoot.mainloop()
+
+    reset_working_directory()
+
+    # -------------------------------
+    # WINDOW SETUP
+    # -------------------------------
+    songCategoryManagerRoot = Toplevel()
+    songCategoryManagerRoot.title("Mod Manager: Song & Song Category Manager")
+    songCategoryManagerRoot.geometry("1000x780")
+    songCategoryManagerRoot.iconbitmap(resource_path('res/icons/music.ico'))
+    songCategoryManagerRoot.focus_force()
+    songCategoryManagerRoot.resizable(False, False)
+
+    songCatManagerStyle = TTK.Style(songCategoryManagerRoot)
+    songCatManagerStyle.configure('TButton', background = '#FFFFFF')
+    songCatManagerStyle.configure('TEntry', background = '#FFFFFF')
+
+    # -------------------------------
+    # TOP MENU BAR
+    # -------------------------------
+    reset_working_directory()
+
+    # Base menu bar.
+    baseMenu = Menu(songCategoryManagerRoot)
+    songCategoryManagerRoot.config(menu = baseMenu)
+
+    # File Menu
+    fileMenu = Menu(baseMenu, tearoff = False, activebackground = MENU_HOVER, activeforeground = '#000000')
+
+    NEW_CATE_IMG = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/file/new_file.ico")))
+    OPEN_CATE_IMG = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/mods/open_mods.ico")))
+    IMPORT_CATE_IMG = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/mods/upload_mod.ico")))
+    # -------------------------------
+    EXIT_PROGRAM_IMG = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/file/exit_program.ico")))
+
+    fileMenu.add_command(label = " New Category...", command = make_new_category, image = NEW_CATE_IMG, compound = 'left', accelerator = "(CTRL + N)")
+    fileMenu.add_command(label = " Import Category Mod...", image = IMPORT_CATE_IMG, compound = 'left', accelerator = "(CTRL + O)")
+    fileMenu.add_separator()
+    fileMenu.add_command(label = " Exit", command = songCategoryManagerRoot.destroy, image = EXIT_PROGRAM_IMG, compound = 'left')
+
+    # Mods Menu
+    modsMenu = Menu(baseMenu, tearoff = False, activebackground = MENU_HOVER, activeforeground = '#000000')
+
+    REFRESH_MODS_IMG = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/mods/refresh.ico")))
+    INSTALL_MODS_IMG = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/mods/install_mods.ico")))
+    # -------------------------------
+    DUPE_SONG_MGR_IMG = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/mods/copy.ico")))
+
+    modsMenu.add_command(label = " Refresh Mods", command = refresh_mods, image = REFRESH_MODS_IMG, compound = 'left', accelerator = "(CTRL + R)")
+    modsMenu.add_command(label = " Install Mods...", image = INSTALL_MODS_IMG, compound = 'left', command = wtde_ask_install_mods, accelerator = "(CTRL + I)")
+    modsMenu.add_command(label = " Link Folder to Category...")
+    modsMenu.add_separator()
+    modsMenu.add_command(label = " Manage Duplicate Song Checksums...", command = duplicate_checksum_manager, image = DUPE_SONG_MGR_IMG, compound = 'left', accelerator = "(CTRL + D)")
+    modsMenu.add_separator()
+    modsMenu.add_command(label = " Open Mods Folder", command = open_mods_folder, image = OPEN_CATE_IMG, compound = 'left', accelerator = "(CTRL + M)")
+
+    # Song Category Menu
+    songCatMenu = Menu(baseMenu, tearoff = False, activebackground = MENU_HOVER, activeforeground = '#000000')
+
+    EDIT_DATA_IMG = ImageTk.PhotoImage(Image.open(resource_path("res/menuicons/category/edit_data.ico")))
+    # -------------------------------
+
+    songCatMenu.add_command(label = " Load Category Info", command = load_category_info, accelerator = "(CTRL + L)")
+    songCatMenu.add_command(label = " Edit Category Data...", command = lambda: edit_category_meta(loadedCategoryData), image = EDIT_DATA_IMG, compound = 'left', accelerator = "(CTRL + E)")
+    songCatMenu.add_command(label = " View Category in File Explorer", command = open_category_folder, image = OPEN_CATE_IMG, compound = 'left', accelerator = "(CTRL + SHIFT + L)")
+    songCatMenu.add_separator()
+    songCatMenu.add_command(label = " Update Mod Info")
+    songCatMenu.add_command(label = " Open Selected Song Folder", image = OPEN_CATE_IMG, compound = 'left', command = open_selected_song_mod_folder)
+    songCatMenu.add_command(label = " Unlink Selected Song")
+
+    # Add dropdown menus as cascades.
+    baseMenu.add_cascade(label = "File", menu = fileMenu)
+    baseMenu.add_cascade(label = "Mods", menu = modsMenu)
+    baseMenu.add_cascade(label = "Song Category", menu = songCatMenu)
+
+    # -------------------------------
+    # WINDOW PANES
+    # -------------------------------
+    editorWidgetPane = PanedWindow(songCategoryManagerRoot, bd = 1, relief = 'sunken', bg = 'white')
+    editorWidgetPane.pack(fill = 'both', expand = 1)
+
+    # Left pane holds the songs/categories.
+    global editorPathsPane
+    editorPathsPane = PanedWindow(songCategoryManagerRoot, bd = 1, relief = 'sunken', bg = 'white')
+    editorWidgetPane.add(editorPathsPane, width = 300, height = 640)
+
+    # Right pane is the main editing area.
+    global editorPreviewPane
+    editorPreviewPane = PanedWindow(songCategoryManagerRoot, bd = 1, relief = 'sunken', bg = 'white')
+    editorWidgetPane.add(editorPreviewPane, width = 700, height = 640)
+
+    # =======================================================================================================
+    #   S O N G       A N D       C A T E G O R Y       L I S T S
+    # =======================================================================================================
+    # -------------------------------
+    # SONG LIST (LEFT SIDE, TOP)
+    # -------------------------------
+    songListHeaderLabel = Label(editorPathsPane, text = "Song Mods:", bg = '#FFFFFF', fg = '#000000', font = FONT_INFO_HEADER, justify = 'left', anchor = 'w')
+    songListHeaderLabel.pack(fill = 'x', anchor = 'w')
+    
+    songListFrame = Frame(editorPathsPane)
+    songListFrame.pack(fill = 'both', expand = 1)
+
+    global songList
+    songList = Listbox(songListFrame, bg = '#FFFFFF', relief = 'sunken', bd = 1)
+    songList.pack(side = 'left', fill = 'both', expand = 1)
+
+    songListScrollbar = TTK.Scrollbar(songListFrame, orient = 'vertical', command = songList.yview)
+    songList.config(yscrollcommand = songListScrollbar.set)
+    songListScrollbar.pack(side = 'right', fill = 'y')
+
+    # -------------------------------
+    # SONG CATEGORIES (LEFT SIDE, BOTTOM)
+    # -------------------------------
+    songCatsHeaderLabel = Label(editorPathsPane, text = "Song Categories:", bg = '#FFFFFF', fg = '#000000', font = FONT_INFO_HEADER, justify = 'left', anchor = 'w')
+    songCatsHeaderLabel.pack(fill = 'x', anchor = 'w')
+
+    songCatsFrame = Frame(editorPathsPane)
+    songCatsFrame.pack(fill = 'both', expand = 1)
+
+    global songCatsList
+    songCatsList = Listbox(songCatsFrame, bg = '#FFFFFF', relief = 'sunken', bd = 1)
+    songCatsList.pack(side = 'left', fill = 'both', expand = 1)
+
+    songCatsList.bind('<ButtonRelease-1>', load_category_info_e)
+
+    songCatsListScrollbar = TTK.Scrollbar(songCatsFrame, orient = 'vertical', command = songCatsList.yview)
+    songCatsList.config(yscrollcommand = songCatsListScrollbar.set)
+    songCatsListScrollbar.pack(side = 'right', fill = 'y')
+
+    # =======================================================================================================
+    #   C A T E G O R Y       E D I T O R
+    # =======================================================================================================
+
+    categoryToolsFrame = Frame(editorPreviewPane, bg = '#FFFFFF')
+    categoryToolsFrame.pack(fill = 'x', anchor = 'nw', side = 'top')
+
+    categoryToolsHeader = Label(categoryToolsFrame, text = " Manage Selected Category:", bg = '#FFFFFF', fg = '#000000', font = FONT_INFO_HEADER)
+    categoryToolsHeader.grid(row = 0, column = 0, sticky = 'w', columnspan = 999)
+
+    loadSelectedCategoryInfo = TTK.Button(categoryToolsFrame, text = "Refresh Category Info", width = 25, command = load_category_info)
+    loadSelectedCategoryInfo.grid(row = 1, column = 0, padx = 10, pady = 3)
+
+    editCategoryData = TTK.Button(categoryToolsFrame, text = "Edit Data...", width = 15, command = lambda: edit_category_meta(loadedCategoryData))
+    editCategoryData.grid(row = 1, column = 1, padx = 0, pady = 3)
+
+    viewCateInFolder = TTK.Button(categoryToolsFrame, text = "Open Category Folder", width = 25, command = open_category_folder)
+    viewCateInFolder.grid(row = 1, column = 2, padx = 10, pady = 3)
+
+    categoryInfoFrame = Frame(editorPreviewPane, bg = '#FFFFFF')
+    categoryInfoFrame.pack(fill = 'x', side = 'top', pady = 3)
+
+    global selectedCatImage
+    selectedCatImage = Label(categoryInfoFrame, bg = '#FFFFFF', justify = 'center', width = 10, height = 10)
+    selectedCatImage.pack(fill = 'x', anchor = 'n')
+
+    global selectedCatData
+    selectedCatData = Label(categoryInfoFrame, text = "Name: N/A\nPath: N/A\nChecksum: N/A\nSongs Tied to Category: N/A", bg = '#FFFFFF', justify = 'left', anchor = 'w')
+    selectedCatData.pack(fill = 'x', anchor = 'nw')
+
+    cateSongsInfoFrame = Frame(categoryInfoFrame, bg = '#FFFFFF')
+    cateSongsInfoFrame.pack(fill = 'both', expand = 1)
+
+    global selectedCatSongs
+    selectedCatSongs = TTK.Treeview(cateSongsInfoFrame, height = 15)
+
+    # Add columns.
+    selectedCatSongs['columns'] = ("Song: Artist - Title", "Path", "Checksum")
+    selectedCatSongs.column("#0", width = 0, minwidth = 0, stretch = NO)
+    selectedCatSongs.column("Song: Artist - Title", anchor = 'w', width = 250, minwidth = 75)
+    selectedCatSongs.column("Path", anchor = 'w', width = 250, minwidth = 75)
+    selectedCatSongs.column("Checksum", anchor = 'w', width = 160, minwidth = 75)
+
+    # Make the headings.
+    selectedCatSongs.heading("#0")
+    selectedCatSongs.heading("Song: Artist - Title", text = "Song: Artist - Title", anchor = 'w')
+    selectedCatSongs.heading("Path", text = "Path", anchor = 'w')
+    selectedCatSongs.heading("Checksum", text = "Checksum", anchor = 'w')
+
+    selectedCatSongs.pack(side = 'left', fill = 'both', expand = 1)
+
+    cateSongsYBar = TTK.Scrollbar(cateSongsInfoFrame, orient = 'vertical', command = selectedCatSongs.yview)
+    cateSongsYBar.pack(side = 'right', fill = 'y')
+
+    selectedCatSongs.config(yscrollcommand = cateSongsYBar.set)
+
+    selectedCatSongs.bind('<ButtonRelease-1>', get_selected_song_mod_data)
+
+    # -------------------------------
+    # SELECTED SONG MOD FROM TREEVIEW
+    # -------------------------------
+    barSep1 = TTK.Separator(editorPreviewPane, orient = 'horizontal')
+    barSep1.pack(fill = 'x')
+    
+    selectedTreeInfoFrame = Frame(editorPreviewPane, bg = '#FFFFFF')
+    selectedTreeInfoFrame.pack(fill = 'both', expand = 1)
+
+    selectedModHeader = Label(selectedTreeInfoFrame, text = "  Selected Mod Data:", bg = '#FFFFFF', font = FONT_INFO_HEADER)
+    selectedModHeader.grid(row = 0, column = 0, pady = 5, columnspan = 999, sticky = 'w')
+
+    selectedSongChecksumLabel = Label(selectedTreeInfoFrame, text = "      Song Checksum: ", bg = '#FFFFFF')
+    selectedSongChecksumLabel.grid(row = 1, column = 0, sticky = 'e')
+
+    selectedSongChecksum = Label(selectedTreeInfoFrame, width = 21, text = "", bg = '#FFFFFF', fg = '#808080', justify = 'left', anchor = 'w', bd = 1, relief = 'solid')
+    selectedSongChecksum.grid(row = 1, column = 1, columnspan = 2, padx = 5, sticky = 'w')
+
+    selectedSongLinkedCateLabel = Label(selectedTreeInfoFrame, text = "     Game Icon/Logo: ", bg = '#FFFFFF')
+    selectedSongLinkedCateLabel.grid(row = 2, column = 0, pady = 5, sticky = 'e')
+
+    GAME_LOGO_IMAGES = [
+        "gamelogo_gh1", "gamelogo_gh1dlc", "gamelogo_gh2", "gamelogo_gh2dlc", "gamelogo_gh80s", "gamelogo_gh80sdlc",
+        "gamelogo_gh3", "gamelogo_gh3dlc", "gamelogo_gha", "gamelogo_ghadlc", "gamelogo_ghwt", "gamelogo_ghwtdlc",
+        "gamelogo_gh5", "gamelogo_gh5dlc", "gamelogo_ghm", "gamelogo_ghmdlc", "gamelogo_ghvh", "gamelogo_ghvhdlc",
+        "gamelogo_ghshits", "gamelogo_ghshitsdlc", "gamelogo_ghwor", "gamelogo_ghwordlc", "gamelogo_ghot",
+        "gamelogo_ghotdlc", "gamelogo_ghotd", "gamelogo_ghotddlc", "gamelogo_ghotmh", "gamelogo_ghotmhdlc",
+        "gamelogo_bh", "gamelogo_bhdlc", "gamelogo_djh", "gamelogo_djhdlc", "gamelogo_djh2", "gamelogo_djh2dlc",
+        "gamelogo_thps", "gamelogo_thps2", "gamelogo_thps3", "gamelogo_thps4", "gamelogo_thug", "gamelogo_thug2",
+        "gamelogo_thaw", "gamelogo_thpg", "gamelogo_thp8", "gamelogo_sm2000", "gamelogo_apocalypse"
+    ]
+    """ List of default logo images. """
+    selectedSongGameIcon = TTK.Combobox(selectedTreeInfoFrame, width = 16, values = GAME_LOGO_IMAGES)
+    selectedSongGameIcon.grid(row = 2, column = 1, padx = 5, pady = 5, sticky = 'w')
+
+    selectIconIMG = TTK.Button(selectedTreeInfoFrame, text = "...", width = 3, command = select_game_icon)
+    selectIconIMG.grid(row = 2, column = 2, sticky = 'w')
+                                                                        
+    songTitleEntryLabel = Label(selectedTreeInfoFrame, text = "      Title: ", bg = '#FFFFFF')
+    songTitleEntryLabel.grid(row = 1, column = 3, padx = 5, sticky = 'e')
+
+    songTitleEntry = TTK.Entry(selectedTreeInfoFrame, width = 20)
+    songTitleEntry.grid(row = 1, column = 4, sticky = 'w')
+
+    songArtistEntryLabel = Label(selectedTreeInfoFrame, text = "     Artist: ", bg = '#FFFFFF')
+    songArtistEntryLabel.grid(row = 2, column = 3, padx = 5, sticky = 'e')
+
+    songArtistEntry = TTK.Entry(selectedTreeInfoFrame, width = 20)
+    songArtistEntry.grid(row = 2, column = 4, sticky = 'w')
+
+    songYearEntryLabel = Label(selectedTreeInfoFrame, text = "       Year: ", bg = '#FFFFFF')
+    songYearEntryLabel.grid(row = 1, column = 5, padx = 5, sticky = 'e')
+
+    songYearEntry = TTK.Entry(selectedTreeInfoFrame, width = 10)
+    songYearEntry.grid(row = 1, column = 6, columnspan = 2, sticky = 'w')
+
+    songAdvSettings = TTK.Button(selectedTreeInfoFrame, text = "Advanced Settings...", width = 22)
+    songAdvSettings.grid(row = 2, column = 6, columnspan = 2)
+
+    # -------------------------------
+    # UPDATE RECORD & MOD
+    # -------------------------------
+    barSep2 = TTK.Separator(editorPreviewPane, orient = 'horizontal')
+    barSep2.pack(fill = 'x')
+
+    updateRecordCMDFrame = Frame(editorPreviewPane, bg = '#FFFFFF')
+    updateRecordCMDFrame.pack(fill = 'both', expand = 1)
+
+    updateMod = TTK.Button(updateRecordCMDFrame, text = "Update Mod Data", width = 20)
+    updateMod.grid(row = 0, column = 0, padx = 5)
+
+    openModDir = TTK.Button(updateRecordCMDFrame, text = "Open Mod Folder", width = 20, command = open_selected_song_mod_folder)
+    openModDir.grid(row = 0, column = 1)
+
+    unlinkFromCat = TTK.Button(updateRecordCMDFrame, text = "Unlink From Category", width = 20)
+    unlinkFromCat.grid(row = 0, column = 2, padx = 5)
+
+    # -------------------------------
+    # ADD STATUS BAR, ENTER MAIN LOOP
+    # -------------------------------
+    global editorStatusBar
+    editorStatusBar = Label(songCategoryManagerRoot, text = "Select a category or song mod from the left to begin editing stuff", anchor = 'w', justify = 'left', relief = 'sunken', bg = '#FFFFFF', width = 145)
+    editorStatusBar.pack(fill = 'x')
+
+    global songMods, songCategoryMods
+    songMods = get_song_mods()
+    songCategoryMods = get_song_categories()
+    songCategoryManagerRoot.mainloop()
+
+    # Fix the styling colors.
+    config.clear()
+    config.read(f"{wtde_find_config()}\\GHWTDE.ini")
+
+    colorToFixTo = "#" + config.get("Launcher", "BGColor")
+
+    # TTK.Style(root).configure("TButton", background = colorToFixTo)
+    # TTK.Style(root).configure("TEntry", background = colorToFixTo)
 
 # ===========================================================================================================
 # Other Required Functions
@@ -3010,7 +4221,6 @@ HOLIDAYS = [
     ["Christmas Theme", 'xmas'],
     ["Valentine's Day Theme", 'valentine'],
     ["April Fools Day Theme", 'aprilfools'],
-    ["The Dody Holiday", 'Dody'],
     ["No Holidays", 'none']
 ]
 
@@ -3208,7 +4418,9 @@ USER_HELPER_THEMES = [
 HUD_THEMES = [
     ["GH World Tour + (Default)", 'ghwt_plus'],
     ["GH World Tour", 'ghwt'],
-    ["Guitar Hero Metallica", 'ghm']
+    ["Guitar Hero: Metallica", 'ghm'],
+    ["Guitar Hero: Smash Hits", 'ghsh'],
+    ["Guitar Hero: Van Halen", 'ghvh']
 ]
 
 # Tap trail themes.
@@ -3378,6 +4590,12 @@ BG_COLOR = "#" + config.get("Launcher", "BGColor")
 
 FG_COLOR = "#" + config.get("Launcher", "FGColor")
 """ Text color. """
+
+# Reset the colors of the root window.
+def reset_colors(root: Tk | Toplevel) -> None:
+    """ Reset the color of the given root window. """
+    TTK.Style(root).configure('TButton', background = BG_COLOR)
+    TTK.Scale(root).configure('TEntry', background = BG_COLOR)
 
 FONT = config.get("Launcher", "TextFont")
 """ The main text font everything uses. """

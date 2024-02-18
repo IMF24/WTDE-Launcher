@@ -1,3 +1,11 @@
+# This is the archived source code for the GHWT: DE 2nd generation launcher.
+# It is very unorganized and it is not optimal. Compiled together, this EXE comes to around ~60 MB.
+# There will be no more commits to this launcher from this point forward.
+# For the new, updated launcher, visit the new 3rd generation launcher repository:
+# https://github.com/IMF24/WTDE-Launcher-V3
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # ================================================================================================================= #
 #   __          _________ _____  ______       _              _    _ _   _  _____ _    _ ______ _____                #
 #   \ \        / /__   __|  __ \|  ____|     | |        /\  | |  | | \ | |/ ____| |  | |  ____|  __ \  _     _      #
@@ -6,21 +14,31 @@
 #      \  /\  /     | |  | |__| | |____      | |____ / ____ \ |__| | |\  | |____| |  | | |____| | \ \ |_|   |_|     #
 #       \/  \/      |_|  |_____/|______|     |______/_/    \_\____/|_| \_|\_____|_|  |_|______|_|  \_\              #
 #                                                                                                                   #
-#                            GH World Tour: Definitive Edition Launcher++ Version 2.2.2                             #
+#                            GH World Tour: Definitive Edition Launcher++ Version 2.2.3                             #
 #                                                                                                                   #
 #          Coded by IMF24                Guitar Hero World Tour: Definitive Edition by Fretworks EST. 2021          #
 #                                                                                                                   #
 #                                    Updater Coded by Zedek the Plague Doctor ™                                     #
+#                                                                                                                   #
+#   Notes about this launcher version:                                                                              #
+#       - This has become quite bloated, and it is becoming harder and harder to manage. In V2.3, the next major    #
+#         release to the launcher, it will likely be the last major release, which will primarily consist of        #
+#         major code cleanup and possibly even rewrites of existing systems.                                        #
+#       - This version of the launcher has had a lot of stuff that is highly redundant and poorly written in it,    #
+#         and I've grown tired of trying to navigate through a bunch of uncommented code trying to understand what  #
+#         does what. This launcher will enter LTS soon; I don't know when, but it will at some point.               #
 # ================================================================================================================= #
 """
-GHWT: DE LAUNCHER++ BY IMF24
+GHWT: DE LAUNCHER V2.X BY IMF24
 ----------------------------
 A completely redesigned launcher for GH World Tour: Definitive Edition, based off of Uzis's original launcher.
+
+This launcher is destined for LTS some time next year, as the V3 launcher will be replacing it.
 """
 # Import required modules.
 from tkinter import *
 from tkinter import ttk as TTK, messagebox as MSG, filedialog as FD
-import ttkthemes as TKT
+# import ttkthemes as TKT
 # from ttkbootstrap import Treeview, Notebook
 # from ttkbootstrap import Style as STY
 from tkhtmlview import HTMLLabel
@@ -33,8 +51,9 @@ import webbrowser as WEB
 import os as OS
 import sys as SYS
 import hashlib as HASH
+import keyboard as KEY
 
-debug_add_entry("[init] All modules imported!")
+dirs_verify_ok()
 
 verify_updater_config()
 
@@ -357,7 +376,7 @@ def wtde_save_config(run: bool = False) -> None:
 
 # Load WTDE config settings.
 def wtde_load_config() -> None:
-    """ Using BS4 and ConfigParser, imports all configuration settings from GHWTDE.ini and AspyrConfig.xml.
+    """ Using BS4 and ConfigParser, imports all configuration settings from GHWTDE.ini and AspyrConfig.xml.\n
     Also contains functionality for reloading all config settings when requested."""
     
     # Delete contents of all entry widgets.
@@ -1230,7 +1249,13 @@ def note_info(mode: str, gemProperty: str, value: str) -> str:
 # 
 # Sets up the root window of the GHWT: DE Launcher++.
 # ===========================================================================================================
+
+# song_category_manager()
+# SYS.stdout.close()
+# exit()
+
 # Show the splash screen before we create the actual window.
+reset_working_directory()
 print("Displaying intro splash screen, neat")
 intro_splash()
 
@@ -1598,6 +1623,11 @@ class ModsSettings():
     modManagerRefresh = TTK.Button(modManagerCommandsFrame, text = "Refresh List", width = 20, takefocus = False, command = lambda: wtde_get_mods(root, modTree, modManagerStatus))
     modManagerRefresh.grid(row = 0, column = 1, padx = 5)
     ToolTip(modManagerRefresh, msg = "Refresh the list of installed mods.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
+
+    # Refresh Mods List
+    modManagerManageSongs = TTK.Button(modManagerCommandsFrame, text = "Manage Songs...", width = 20, takefocus = False, command = song_category_manager)
+    modManagerManageSongs.grid(row = 0, column = 2, padx = 5)
+    ToolTip(modManagerManageSongs, msg = "Manage songs, song categories, and handle categorization.", delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)
 
     # Mod Manager Setup
     modManagerFrame = Frame(wtdeOptionsMods, bg = BG_COLOR, relief = 'flat')
@@ -3054,7 +3084,11 @@ class GraphicsSettings():
                         "      progress bar above the score.\n" \
                         "  •  GH World Tour: The default Guitar Hero World Tour interface.\n" \
                         "  •  Guitar Hero Metallica: Uses the HUD layout used in Guitar Hero Metallica, including the\n" \
-                        "      multiplayer HUD layouts, result text when playing vocals, and the star counter!"
+                        "      multiplayer HUD layouts, result text when playing vocals, and the star counter!\n" \
+                        "  •  Guitar Hero Smash Hits: Exactly the same as Guitar Hero Metallica's HUD, but features a\n" \
+                        "      golden brown look to the interface as seen in GH Smash Hits!" \
+                        "  •  Guitar Hero Van Halen: Exactly the same as Guitar Hero Metallica's HUD, but with a few\n" \
+                        "      visual differences from the GHM and GHSH HUD layouts."
         graphicsHUDThemeLabel = Label(graphicsInterfaceSettings, text = "HUD Theme:", bg = BG_COLOR, fg = FG_COLOR, font = FONT_INFO, justify = 'left')
         graphicsHUDThemeLabel.grid(row = 4, column = 0, padx = 20, pady = 5, sticky = 'w')
         ToolTip(graphicsHUDThemeLabel, msg = HUD_THEME_TIP, delay = HOVER_DELAY, follow = False, width = TOOLTIP_WIDTH)

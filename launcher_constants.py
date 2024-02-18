@@ -8,12 +8,12 @@
 import os as OS
 
 # Version of the program.
-VERSION = "2.2.2"
+VERSION = "2.2.3"
 """ Version of the program. """
 
 # Hash list page.
 HASH_LIST = "https://gitgud.io/fretworks/ghwt-de-volatile/-/raw/master/GHWTDE/hashlist.dat"
-""" The hash list for GHWT: DE. Used by the launcher to check for updates. """
+""" The MD5 hash list for GHWT: DE. Used by the launcher to check for updates. We mainly use this for `tb.pab.xen`, but we can use this for other files too. """
 
 # Original working directory.
 OWD = OS.getcwd()
